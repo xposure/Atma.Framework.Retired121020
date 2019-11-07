@@ -1,9 +1,10 @@
 ﻿namespace Atma.Entities
 {
     using Atma.Common;
+    using static Atma.Debug;
 
     using System;
-
+    using System.Collections.Generic;
 
     public unsafe struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
     {
@@ -58,6 +59,120 @@
         {
             return StructHelper.ToString(ref this);
         }
+
+
+        public static int FindMatches(Span<ComponentType> a, Span<ComponentType> b, Span<ComponentType> results)
+        {
+            var i0 = 0;
+            var i1 = 0;
+            var index = 0;
+
+            while (i0 < a.Length && i1 < b.Length)
+            {
+                var aType = a[i0];
+                var bType = b[i1];
+                if (aType.ID > bType.ID) i1++;
+                else if (bType.ID > aType.ID) i0++;
+                else
+                {
+                    results[index++] = aType;
+                    //yield return aType;
+                    i0++;
+                    i1++;
+                }
+            }
+            return index;
+        }
+
+        public static bool HasAll(Span<ComponentType> a, Span<ComponentType> b/*, bool debug = false*/)
+        {
+            //all the debug code is left over for future need
+            //there was an issue where Entity type was always list in the array
+            //when running without the debugger attached, talk about a fun thing to
+            //debug.......
+            //oh and it only happened when I had my sample PlayerSystem enabled
+
+            var entity = typeof(Entity).GetHashCode();
+            var i0 = 0;
+            var i1 = 0;
+
+            while (i0 < a.Length && i1 < b.Length)
+            {
+                var aType = a[i0];
+                var bType = b[i1];
+                if (aType.ID == entity)
+                {
+                    throw new Exception("You can not create an archetype with Entity, this is assumed.");
+                    //i0++;
+                    //if (debug) Console.WriteLine($"aType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                }
+                else if (bType.ID == entity)
+                {
+                    i1++;
+                    //if (debug) Console.WriteLine($"bType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                }
+                else if (aType.ID > bType.ID)
+                {
+                    //if (debug) Console.WriteLine($"aType was > bType, exiting ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                    return false; // i1++;
+                }
+                else if (bType.ID > aType.ID)
+                {
+                    //if (debug) Console.WriteLine($"bType was > aType, advancing ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                    i0++;
+                }
+                else
+                {
+                    i0++;
+                    i1++;
+                    //if (debug) Console.WriteLine($"aType == bType ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                }
+            }
+
+            //entity should never be in aType, but if its the last element of bType
+            //we need to check and advance i1 pointer to move past it since its assumed
+            //to always exist
+            if (i1 < b.Length && b[i1].ID == entity)
+                i1++;
+
+            //if(debug) Console.WriteLine($"bSeek {i1}, len: {b.Length}");
+
+            return i1 == b.Length;
+        }
+
+
+        public static bool HasAny(Span<ComponentType> a, Span<ComponentType> b)
+        {
+            var i0 = 0;
+            var i1 = 0;
+
+            while (i0 < a.Length && i1 < b.Length)
+            {
+                var aType = a[i0];
+                var bType = b[i1];
+                if (aType.ID > bType.ID) i1++;
+                else if (bType.ID > aType.ID) i0++;
+                else
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static int CalculateId(Span<ComponentType> types)
+        {
+            Assert(types.Length > 0);
+
+            types.Sort();
+
+            var hashCode = new HashCode();
+            for (var i = 0; i < types.Length; i++)
+                hashCode.Add(types[i]);
+
+            return hashCode.ToHashCode();
+        }
     }
 
     public unsafe delegate void Copy(void* src, void* dst);
@@ -81,6 +196,8 @@
             Copy = copy;
             _helpers.Add(componentType.ID, this);
         }
+
+
     }
 
 

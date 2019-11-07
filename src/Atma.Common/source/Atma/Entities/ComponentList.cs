@@ -8,6 +8,7 @@
     using System.Linq;
     using System.Reflection;
 
+    //TODO: Think this is getting removed
     public class ComponentTypeInfo
     {
         public readonly ComponentType ComponentType;
