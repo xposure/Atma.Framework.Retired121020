@@ -8,11 +8,15 @@
     {
         public const int THRASH = 0;
 
+        public static bool IsAligned16(uint value) => ((long)value % 16) == 0;
+
         public static bool IsAligned16(IntPtr value) => ((long)value % 16) == 0;
 
         public static bool IsAligned16(int value) => (value % 16) == 0;
 
         public static bool IsAligned16(void* rawPointer) => ((long)rawPointer % 16) == 0;
+
+        public static uint Align16(uint value) => 16 * ((value + 15) / 16);
 
         public static int Align16(int value) => 16 * ((value + 15) / 16);
 
@@ -43,6 +47,17 @@
             Assert(IsAligned16(sizeInBytes));
 
             var begin = (int*)rawPointer;
+            var end = begin + sizeInBytes / 4;
+            while (begin < end)
+                *begin++ = value;
+        }
+
+        public static void ClearAlign16(void* rawPointer, int sizeInBytes, uint value)
+        {
+            Assert(IsAligned16(rawPointer));
+            Assert(IsAligned16(sizeInBytes));
+
+            var begin = (uint*)rawPointer;
             var end = begin + sizeInBytes / 4;
             while (begin < end)
                 *begin++ = value;
