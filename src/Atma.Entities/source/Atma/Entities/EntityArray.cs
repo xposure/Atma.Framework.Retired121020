@@ -12,7 +12,7 @@
 
         private List<NativeArray<Entity>> _entityMap;
 
-        private NativeStack<int> _freeIds = new NativeStack<int>(Allocators.Persistent, ENTITIES_PER_POOL);
+        private NativeStack<int> _freeIds = new NativeStack<int>(Allocator.Persistent, ENTITIES_PER_POOL);
 
         private int _free;
         private int _capacity;

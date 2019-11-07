@@ -9,9 +9,7 @@
         where T : unmanaged
     {
         private int _length, _maxLength;
-        private AllocationHandle _handle;
-        //private AllocatorBounds _bounds;
-        private IAllocator _allocator;
+        private AllocationHandleOld _handle;
 
         public int Length => _length;
 
@@ -25,15 +23,15 @@
         public T* EndPointer => (T*)_handle.Address + _length;
         public T* MaxPointer => (T*)_handle.Address + _maxLength;
 
-        public NativeStack(IAllocator allocator, int length = 8)
+        public NativeStack(Allocator allocator, int length = 8)
         {
-            _allocator = allocator;
             var sizeOfElement = SizeOf<T>.Size;
 
             Assert(length > 0);
-            _handle = allocator.Take<T>(length, AllocatorBounds.Front);// MemoryManager.Take(allocator, sizeOfElement * length);
+            _handle = MemoryManager.Take(allocator, sizeOfElement * length);
             _length = 0;
             _maxLength = length;
+
         }
 
         /// <summary>
@@ -44,7 +42,7 @@
         {
             get
             {
-                //Assert(_handle.IsValid);
+                Assert(_handle.IsValid);
                 Assert(index >= 0 && index < _length);
                 return ref RawPointer[index];
             }
@@ -55,7 +53,7 @@
         /// </summary>
         public void Clear()
         {
-            //Assert(_handle.IsValid);
+            Assert(_handle.IsValid);
             Unsafe.ClearAlign16(RawPointer, ElementSize * _maxLength);
             _length = 0;
         }
@@ -65,7 +63,7 @@
         /// </summary>
         public void Reset()
         {
-            //Assert(_handle.IsValid);
+            Assert(_handle.IsValid);
             _length = 0;
         }
 
@@ -74,7 +72,7 @@
         /// </summary>
         public void Push(in T item)
         {
-            //Assert(_handle.IsValid);
+            Assert(_handle.IsValid);
             if (_length == _maxLength)
             {
                 _maxLength = Math.Max(_maxLength * 3, 16) / 2;
@@ -89,7 +87,7 @@
         /// <param name="item">Item.</param>
         public T Pop()
         {
-            //Assert(_handle.IsValid);
+            Assert(_handle.IsValid);
             Assert(_length > 0);
             return RawPointer[--_length];
         }
@@ -97,7 +95,7 @@
 
         public T Peek()
         {
-            //Assert(_handle.IsValid);
+            Assert(_handle.IsValid);
             Assert(_length > 0);
             return RawPointer[_length];
         }
@@ -107,7 +105,7 @@
         /// </summary>
         public void EnsureCapacity(int additionalItemCount = 1)
         {
-            //Assert(_handle.IsValid);
+            Assert(_handle.IsValid);
             var neededLength = _length + additionalItemCount;
             if (neededLength < _maxLength)
                 return;
@@ -120,21 +118,19 @@
 
         private void Resize(int newSize)
         {
-            // _maxLength = newSize;
-            // //copy data, get new handle, etc
-            // //_allocator.Free(_handle);
+            _maxLength = newSize;
+            //copy data, get new handle, etc
+            var newHandle = MemoryManager.Take(_handle.Allocator, ElementSize * _maxLength);
+            if (_handle.IsValid)
+            {
+                var src = RawPointer;
+                var dst = (T*)newHandle.Address;
+                for (var i = 0; i < _length; i++)
+                    dst[i] = src[i];
 
-            // Assert(newSize > 0);
-            // var sizeOfElement = SizeOf<T>.Size;
-            // var newHandle = _allocator.Take<T>(_maxLength);// MemoryManager.Take(allocator, sizeOfElement * length);
-
-            // var src = RawPointer;
-            // var dst = (T*)newHandle.Address;
-            // for (var i = 0; i < _length; i++)
-            //     dst[i] = src[i];
-
-            // _allocator.Free(ref _handle);
-            // _handle = newHandle;
+                MemoryManager.Free(ref _handle);
+            }
+            _handle = newHandle;
         }
 
         ///// <summary>
@@ -168,9 +164,8 @@
 
         public void Dispose()
         {
-            //Assert(_handle.IsValid);
-            //MemoryManager.Free(ref _handle);
-            _allocator.Free(ref _handle);
+            Assert(_handle.IsValid);
+            MemoryManager.Free(ref _handle);
             _length = 0;
             _maxLength = 0;
         }

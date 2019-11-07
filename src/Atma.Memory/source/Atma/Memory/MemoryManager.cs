@@ -14,6 +14,7 @@
         private static List<HeapMemory> _stack = new List<HeapMemory>();
         private static object _syncObject = new object();
 
+
         static MemoryManager()
         {
             _persistent.Add(new HeapMemory(ALLOCATION_UNIT, 0, Allocator.Persistent));
