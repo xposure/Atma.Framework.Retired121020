@@ -14,28 +14,29 @@ namespace Atma.Memory
         //AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
         AllocationHandle Take<T>(int count, AllocatorBounds bounds = AllocatorBounds.Front)
             where T : unmanaged;
-        void Free(AllocationHandle handle2);
+        void Free(ref AllocationHandle handle);
+        //AllocatorBounds GetBounds(ref AllocationHandle handle);
     }
 
-    public unsafe struct AllocationHandle : IDisposable
+    public unsafe struct AllocationHandle //: IDisposable
     {
-        public readonly IAllocator Allocator;
+        //public readonly IAllocator Allocator;
         public readonly void* Address;
         public readonly uint Id;
         public readonly uint Length;
 
-        public AllocationHandle(IAllocator allocator, void* address, uint id, uint length)
+        public AllocationHandle(/*IAllocator allocator,*/ void* address, uint id, uint length)
         {
-            Allocator = allocator;
+            //Allocator = allocator;
             Address = address;
             Id = id;
             Length = length;
         }
 
-        public void Dispose()
-        {
-            Allocator.Free(this);
-        }
+        // public void Dispose()
+        // {
+        //     Allocator.Free(this);
+        // }
     }
 
     public class StackAllocator : IAllocator
@@ -92,29 +93,34 @@ namespace Atma.Memory
             _free -= (uint)size;
 
             //safe to do the uint cast since we are Assert > 0
-            return new AllocationHandle(this, addr, index, (uint)size);
+            return new AllocationHandle(addr, index, (uint)size);
         }
 
-        public unsafe void Free(AllocationHandle handle2)
+        private AllocatorBounds GetBounds(ref AllocationHandle handle)
         {
-            var bounds = (handle2.Id & 0x80000000) == 0 ?
-                            AllocatorBounds.Front : AllocatorBounds.Back;
+            return (handle.Id & 0x80000000) == 0 ?
+                                       AllocatorBounds.Front : AllocatorBounds.Back;
+        }
+
+        public unsafe void Free(ref AllocationHandle handle)
+        {
+            var bounds = GetBounds(ref handle);
 
             if (bounds == AllocatorBounds.Front)
             {
                 _frontIndex--;
-                Assert(handle2.Id == _frontIndex);
-                _front = IntPtr.Subtract(_front, (int)handle2.Length);
+                Assert(handle.Id == _frontIndex);
+                _front = IntPtr.Subtract(_front, (int)handle.Length);
             }
             else
             {
                 _backIndex++;
-                Assert(handle2.Id == _backIndex);
-                _back = IntPtr.Add(_back, (int)handle2.Length);
+                Assert(handle.Id == _backIndex);
+                _back = IntPtr.Add(_back, (int)handle.Length);
             }
 
             if (_thrash)
-                Unsafe.ClearAlign16(handle2.Address, (int)handle2.Length, _thrashValue);
+                Unsafe.ClearAlign16(handle.Address, (int)handle.Length, _thrashValue);
         }
     }
 }
