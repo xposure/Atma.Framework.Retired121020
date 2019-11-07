@@ -1,44 +1,9 @@
+
 namespace Atma.Memory
 {
-    using System;
     using static Atma.Debug;
 
-    public enum AllocatorBounds
-    {
-        Front,
-        Back
-    }
-
-    public interface IAllocator : IDisposable
-    {
-        //AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
-        AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
-        // AllocationHandle Take<T>(int count, AllocatorBounds bounds = AllocatorBounds.Front)
-        //     where T : unmanaged;
-        void Free(ref AllocationHandle handle);
-        //AllocatorBounds GetBounds(ref AllocationHandle handle);
-    }
-
-    public unsafe struct AllocationHandle //: IDisposable
-    {
-        //public readonly IAllocator Allocator;
-        public readonly void* Address;
-        public readonly uint Id;
-        public readonly uint Length;
-
-        public AllocationHandle(/*IAllocator allocator,*/ void* address, uint id, uint length)
-        {
-            //Allocator = allocator;
-            Address = address;
-            Id = id;
-            Length = length;
-        }
-
-        // public void Dispose()
-        // {
-        //     Allocator.Free(this);
-        // }
-    }
+    using System;
 
     public unsafe class StackAllocator : IAllocator
     {
