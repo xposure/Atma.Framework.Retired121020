@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Atma.Common\source\Atma.Common.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>8.0</LangVersion>
     <Authors>Chris Phillips</Authors>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Atma.Common" Version="0.9.5" />
-  </ItemGroup>
 </Project>

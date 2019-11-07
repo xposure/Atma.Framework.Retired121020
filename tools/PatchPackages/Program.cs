@@ -1,6 +1,7 @@
 ﻿namespace PatchPackages
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -12,19 +13,23 @@
         {
             string xml = await File.ReadAllTextAsync(file);
             var csproj = XDocument.Parse(xml);
+
+            var newGroup = new XElement("ItemGroup");
+
             foreach (var itemgroup in csproj.Root.Elements("ItemGroup"))
             {
-                foreach (var pr in itemgroup.Elements("PackageReference"))
+
+                var pRefs = itemgroup.Elements("ProjectReference").ToList();
+                foreach (var pr in pRefs)
                 {
                     var include = pr.Attribute("Include");
-                    var version = pr.Attribute("Version");
-
-                    if (include != null && version != null)
+                    if (include != null)
                     {
-                        if (include.Value.StartsWith("Atma.", StringComparison.InvariantCultureIgnoreCase))
+                        var packageName = Path.GetFileNameWithoutExtension(include.Value);
+                        if (packageName.StartsWith("Atma.", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            Console.WriteLine($"Patching package reference {include.Value} to version {gitVersion}");
-                            version.Value = gitVersion;
+                            Console.WriteLine($"Converting to package reference {packageName}@{gitVersion}");
+                            pr.ReplaceWith(new XElement("PackageReference", new XAttribute("Include", packageName), new XAttribute("Version", gitVersion)));
                         }
                     }
                     else
@@ -34,7 +39,6 @@
                     }
                 }
             }
-
 
             xml = csproj.ToString(SaveOptions.None);
             await File.WriteAllTextAsync(file, xml);
