@@ -1,0 +1,79 @@
+{
+    "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "buildVersion",
+            "type": "promptString",
+            "description": "Version to build and push to nuget."
+        }
+    ],
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/tests/${workspaceFolderBasename}.Tests.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "watch",
+                "--project",
+                "${workspaceFolder}/tests/${workspaceFolderBasename}.Tests.csproj",
+                "test",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "push",
+            "command": "..\\.build\\push.bat",
+            "type": "shell",
+            "args": [
+                "${input:buildVersion}",
+                "${workspaceFolderBasename}"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "package",
+            "command": "..\\.build\\package.bat",
+            "type": "shell",
+            "args": [
+                "${input:buildVersion}",
+                "${workspaceFolderBasename}"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ]
+}

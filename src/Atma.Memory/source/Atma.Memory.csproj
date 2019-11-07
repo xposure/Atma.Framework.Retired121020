@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>8.0</LangVersion>
+    <Authors>Chris Phillips</Authors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Atma.Common" Version="0.9.5" />
+  </ItemGroup>
+</Project>

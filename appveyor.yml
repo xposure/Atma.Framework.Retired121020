@@ -1,0 +1,59 @@
+﻿image: Visual Studio 2019
+install:
+  - choco install gitversion.portable --version 4.0.0 -y
+  - choco install nuget.commandline -y
+#  - appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+
+assembly_info:
+  patch: false
+
+cache:
+  - C:\ProgramData\chocolatey\lib -> appveyor.yml
+  - C:\ProgramData\chocolatey\bin -> appveyor.yml
+
+environment:
+  nuget_feed:
+    secure: T15Ie7zxXsFsN1JVkU6xtUz5PabRbt3nw3ce19qAo/qylg41YmbRcio/BWsV/1Pn
+  nuget_user:
+    secure: JFXulRBxuQFh7gO0f67O6/BTRJfqVQ5BKFpqfs5IZNo=
+  nuget_pass:
+    secure: 983j1Y1KlJombYlL6SbBWw==
+
+    matrix:
+  fast_finish: true
+
+configuration: Debug
+
+skip_tags: true
+
+before_build:
+  #- cmd: nuget sources
+  - cmd: mkdir %APPVEYOR_BUILD_FOLDER%\packages
+  - cmd: nuget source add -Name Local -Source %APPVEYOR_BUILD_FOLDER%\packages
+  - cmd: nuget sources add -Name "AccountFeed" -Source %nuget_feed% -UserName %nuget_user% -Password %nuget_pass%
+  - ps: gitversion /l console /output buildserver /updateAssemblyInfo
+  - ps: dotnet build tools\PatchPackages
+
+#must build in package reference order!
+build_script:
+  - cmd: build\build Common
+  - cmd: build\build Memory
+  - cmd: build\build Jobs
+  - cmd: build\build Entities
+  - cmd: build\build DI
+  - cmd: dotnet run --project tools\PatchPackages --no-build -- src\Atma.Framework\MetaPackage\Package.nuspec
+  - cmd: nuget pack src\Atma.Framework\MetaPackage\Package.nuspec -OutputDirectory publish\Atma.Framework
+#after_build:
+#  - cmd: appveyor PushArtifact "%APPVEYOR_PROJECT_NAME%.%GitVersion_NuGetVersion%.nupkg"
+#  - cmd: appveyor PushArtifact "%APPVEYOR_PROJECT_NAME%.%GitVersion_NuGetVersion%.symbols.nupkg"
+
+artifacts:
+  - path: 'publish\**\*.nupkg'
+
+# here we are going to override common configuration
+for:
+  - branches:
+      only:
+        - master
+
+    configuration: Release
