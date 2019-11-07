@@ -30,7 +30,7 @@
 
         public int Count => _entityCount;
 
-        public int Capacity => _chunks.Count * (int)Entity.MAX_ENTITIES_PER_CHUNK;
+        public int Capacity => _chunks.Count * (int)Entity.ENTITY_MAX;
 
         public int Free => Capacity - Count;
 
@@ -94,7 +94,7 @@
         internal Entity CreateEntityInternal(int id)
         {
             if (Free == 0)
-                _chunks.Add(new ArchetypeChunk(this, _chunks.Count, (int)Entity.MAX_ENTITIES_PER_CHUNK));
+                _chunks.Add(new ArchetypeChunk(this, _chunks.Count, (int)Entity.ENTITY_MAX));
 
             for (var i = 0; i < _chunks.Count; i++)
             {
@@ -116,7 +116,7 @@
         internal void CreateEntity(EntityPool entityPool, in NativeSlice<int> entities)
         {
             while (Free < entities.Length)
-                _chunks.Add(new ArchetypeChunk(this, _chunks.Count, (int)Entity.MAX_ENTITIES_PER_CHUNK));
+                _chunks.Add(new ArchetypeChunk(this, _chunks.Count, (int)Entity.ENTITY_MAX));
 
             var index = 0;
             for (var i = 0; i < _chunks.Count; i++)

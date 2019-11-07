@@ -50,7 +50,10 @@ namespace Atma.Memory
         private uint _thrashValue = 0x55aa5aa5;
         public uint FreeSize => _free;
 
-        public StackAllocator(uint size, bool thrash = false, bool clearToZero = false)
+
+        //TODO: Should we really clear to zero by default?
+        //the EntityChunk should be managing out of bounds indexing and moving of data
+        public StackAllocator(uint size, bool thrash = false, bool clearToZero = true)
         {
             _memory = new UnmanagedMemory(size);
             _free = _memory.Size;

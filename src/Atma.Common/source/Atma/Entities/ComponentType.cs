@@ -4,8 +4,11 @@
 
     using System;
 
-    public struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
+
+    public unsafe struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
     {
+
+
         public readonly int ID;
         public readonly int Size;
 
@@ -57,15 +60,43 @@
         }
     }
 
-    public static class ComponentType<T>
+    public unsafe delegate void Copy(void* src, void* dst);
+    public class ComponentTypeHelper
+    {
+        private static ConcurrentLookupList<ComponentTypeHelper> _helpers = new ConcurrentLookupList<ComponentTypeHelper>();
+
+        public static ComponentTypeHelper Get(in ComponentType componentType)
+        {
+            if (!_helpers.TryGetValue(componentType.ID, out var componentHelper))
+                return null;
+
+            return componentHelper;
+        }
+
+        public readonly ComponentType ComponentType;
+        public readonly Copy Copy;
+        internal ComponentTypeHelper(ComponentType componentType, Copy copy)
+        {
+            ComponentType = componentType;
+            Copy = copy;
+            _helpers.Add(componentType.ID, this);
+        }
+    }
+
+
+    public unsafe static class ComponentType<T>
         where T : unmanaged
     {
         public readonly static ComponentType Type;
+        public readonly static ComponentTypeHelper Helper;
 
         static ComponentType()
         {
             var unmanagedType = UnmanagedType<T>.Type;
             Type = new ComponentType(unmanagedType.ID, unmanagedType.Size);
+
+            Copy copy = (void* src, void* dst) => *(T*)dst = *(T*)src;
+            Helper = new ComponentTypeHelper(Type, copy);
         }
     }
 

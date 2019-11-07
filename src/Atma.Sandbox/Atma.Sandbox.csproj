@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Atma.Common\source\Atma.Common.csproj" />
@@ -10,5 +12,9 @@
     <ProjectReference Include="..\Atma.Jobs\source\Atma.Jobs.csproj" />
     <ProjectReference Include="..\Atma.Memory\source\Atma.Memory.csproj" />
     <ProjectReference Include="..\Atma.DI\source\Atma.DI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Shouldly" Version="3.0.2" />
   </ItemGroup>
 </Project>

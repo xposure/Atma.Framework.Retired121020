@@ -45,6 +45,6 @@ namespace Atma.Entities
 
         ComponentDataArrayWriteLock AsSpan<T>(out Span<T> span) where T : unmanaged;
         ComponentDataArrayReadLock AsReadOnlySpan<T>(out ReadOnlySpan<T> span) where T : unmanaged;
-        void Move<T>(int src, int dst) where T : unmanaged;
+        void Move(int src, int dst);
     }
 }

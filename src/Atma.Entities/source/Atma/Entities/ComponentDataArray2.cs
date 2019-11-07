@@ -16,22 +16,31 @@
 
         private IAllocator _allocator;
         private AllocationHandle _memoryHandle;
+        private ComponentType _componentType;
+        private ComponentTypeHelper _componentHelper;
 
         public ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
 
-        public ComponentDataArray2(IAllocator allocator, ComponentType type, int length)
+        public ComponentDataArray2(IAllocator allocator, ComponentType componentType, int length)
         {
-            ElementSize = type.Size;
+            ElementSize = componentType.Size;
             Length = length;
 
+            _componentType = componentType;
+            _componentHelper = ComponentTypeHelper.Get(componentType);
+
             _allocator = allocator;
-            _memoryHandle = allocator.Take(type.Size * length);
+            _memoryHandle = allocator.Take(componentType.Size * length);
         }
 
         public ComponentDataArrayWriteLock AsSpan<T>(out Span<T> span)
             where T : unmanaged
         {
-            Assert(UnmanagedType<T>.Type.Size == ElementSize);
+            var componentType = ComponentType<T>.Type;
+            if (componentType.ID != _componentType.ID)
+                throw new Exception("Invalid type.");
+
+            //Assert(UnmanagedType<T>.Type.Size == ElementSize);
 
             if (!_lock.TryEnterWriteLock(0))
                 throw new Exception("Could not take write lock on component data!");
@@ -43,7 +52,11 @@
         public ComponentDataArrayReadLock AsReadOnlySpan<T>(out ReadOnlySpan<T> span)
           where T : unmanaged
         {
-            Assert(UnmanagedType<T>.Type.Size == ElementSize);
+            var componentType = ComponentType<T>.Type;
+            if (componentType.ID != _componentType.ID)
+                throw new Exception("Invalid type.");
+
+            //Assert(UnmanagedType<T>.Type.Size == ElementSize);
             if (!_lock.TryEnterReadLock(0))
                 throw new Exception("Could not take write lock on component data!");
 
@@ -51,16 +64,20 @@
             return new ComponentDataArrayReadLock(_lock);
         }
 
-        public void Move<T>(int src, int dst)
-            where T : unmanaged
+        public void Move(int src, int dst)
         {
-            Assert(UnmanagedType<T>.Type.Size == ElementSize);
+            if (src == dst)
+                return;
+            //Assert(UnmanagedType<T>.Type.Size == ElementSize);
             Assert(src >= 0 && src < Length && dst >= 0 && dst < Length);
             if (!_lock.TryEnterWriteLock(0))
                 throw new Exception("Could not take write lock on component data!");
 
-            var data = (T*)_memoryHandle.Address;
-            data[dst] = data[src];
+            var baseAddr = (byte*)_memoryHandle.Address;
+            var srcAddr = baseAddr + src * ElementSize;
+            var dstAddr = baseAddr + dst * ElementSize;
+
+            _componentHelper.Copy(srcAddr, dstAddr);
             _lock.ExitWriteLock();
         }
 

@@ -1,52 +1,77 @@
-﻿//namespace Atma.Entities
-//{
-//    using static Atma.Debug;
+﻿// namespace Atma.Entities
+// {
+//     using System;
 
-//    public struct Entity2// : IEquatable<Entity2>
-//    {
-//        public const int MAX_ARCHETYPES = 16384; //2^14
-//        public const int MAX_ENTITIES_PER_CHUNK = 256; // 2^10
-//        public const int MAX_CHUNKS_PER_ARCHETYPE = 1024; //2^8
+//     using static Atma.Debug;
 
-//        public bool IsValid => ArchetypeIndex > 0;
+//     public ref struct Entity2 //: IEquatable<Entity2>, IEquatable<int>
+//     {
+//         //we have 32 bits to play with here
+//         public const int ARCHETYPE_BITS = 12;
+//         public const int CHUNK_BITS = 10;
+//         public const int ENTITY_BITS = 10;
 
-//        public int Key;
+//         public const int ARCHETYPE_MAX = 1 << ARCHETYPE_BITS;
+//         public const int CHUNK_MAX = 1 << CHUNK_BITS;
+//         public const int ENTITY_MAX = 1 << ENTITY_BITS;
 
-//        public int ArchetypeIndex => Key >> 18;
+//         public const int ARCHETYPE_SHIFT = ENTITY_BITS + CHUNK_BITS;
+//         public const int CHUNK_SHIFT = CHUNK_BITS;
 
-//        public int ChunkIndex => (Key >> 10) & 0xff;
+//         public const uint ENTITY_MASK = (1 << ENTITY_BITS) - 1;
+//         public const uint CHUNK_MASK = ((1 << CHUNK_SHIFT) - 1) << ENTITY_BITS;
+//         public const uint ARCHETYPE_MASK = ((1 << ARCHETYPE_SHIFT) - 1) ^ ENTITY_MASK ^ CHUNK_MASK;
+//         public const uint ARCHETYPECHUNK_MASK = ARCHETYPE_MASK + CHUNK_MASK;
 
-//        public int Index
-//        {
-//            get { return Key & 0x3ff; }
-//            set { Key = (Key & 0x7ffffc00) + (value & 0x7ff); }
-//        }
+//         public int ID;
+//         public bool IsValid => ID > 0;
 
-//        public Entity2(int archetypeIndex, int chunkIndex, int index)
-//        {
-//            Assert(archetypeIndex < MAX_ARCHETYPES);
-//            Assert(chunkIndex < MAX_CHUNKS_PER_ARCHETYPE);
-//            Assert(index < MAX_ENTITIES_PER_CHUNK);
+//         public uint Key;
 
-//            Key = (archetypeIndex << 18) + (chunkIndex << 8) + index;
+//         //TODO: should be uint
+//         public int ArchetypeIndex => (int)(Key >> ARCHETYPE_SHIFT); //no need to mask
 
-//            //Assert(ArchetypeIndex == archetypeIndex);
-//            //Assert(ChunkIndex == chunkIndex);
-//            //Assert(Index == index);
-//        }
+//         public int ChunkIndex => (int)((Key & CHUNK_MASK) >> CHUNK_SHIFT);
 
-//        //public static implicit operator int(Entity v) => v.ID;
+//         public int Index
+//         {
+//             get => (int)(Key & ENTITY_MASK);
+//             set
+//             {
+//                 var index = (uint)(value & ENTITY_MASK);
+//                 Key = (Key & ARCHETYPECHUNK_MASK) | index;
+//             }
+//         }
 
-//        //public static implicit operator Entity(int id) => new Entity(id);
+//         public Entity2(int id, int archetypeIndex, int chunkIndex, int index)
+//         {
+//             Assert(archetypeIndex < ARCHETYPE_MAX);
+//             Assert(chunkIndex < CHUNK_MAX);
+//             Assert(index < ENTITY_MAX);
 
-//        public override int GetHashCode() => Key;
+//             ID = id;
+//             Key = (uint)(archetypeIndex << ARCHETYPE_SHIFT) +
+//                   (uint)((chunkIndex << CHUNK_SHIFT) & CHUNK_MASK) +
+//                   (uint)(index & ENTITY_MASK);
 
-//        public override bool Equals(object obj) => (obj is Entity2 entity) && Key == entity.Key;
+//             Assert(ArchetypeIndex == archetypeIndex);
+//             Assert(ChunkIndex == chunkIndex);
+//             Assert(Index == index);
+//         }
 
-//        public bool Equals(Entity2 other) => Key == other.Key;
+//         public override int GetHashCode() => ID;
 
-//        public bool Equals(int other) => Key == other;
+//         public bool Equals(Entity2 other) => ID == other.ID;
 
-//        public override string ToString() => Key.ToString();
-//    }
-//}
+//         public bool Equals(int other) => ID == other;
+
+//         public static bool operator ==(Entity2 left, Entity2 right) => left.ID == right.ID && left.Key == right.Key;
+//         public static bool operator !=(Entity2 left, Entity2 right) => left.ID != right.ID && left.Key == right.Key;
+//         public static bool operator ==(Entity2 left, int right) => left.ID == right;
+//         public static bool operator !=(Entity2 left, int right) => left.ID != right;
+//         public static bool operator ==(int left, Entity2 right) => left == right.ID;
+//         public static bool operator !=(int left, Entity2 right) => left != right.ID;
+
+//         public override string ToString() => $"{{ Spec: {ArchetypeIndex}, Chunk: {ChunkIndex}, Index: {Index}, ID: {ID}";
+//     }
+// }

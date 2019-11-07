@@ -1,11 +1,11 @@
-﻿namespace Atma.Common
+namespace Atma.Common
 {
     using Atma.Entities;
     using Atma.Memory;
     using static Atma.Debug;
     using System.Collections.Generic;
 
-    public class EntityPool : IEntityPool2
+    public class EntityPool2 : IEntityPool2
     {
         public const int ENTITIES_PER_POOL = 4096;
 
@@ -23,7 +23,7 @@
         public int Free => _free;
 
 
-        public EntityPool()
+        public EntityPool2()
         {
             _entityMap = new List<NativeArray<Entity>>();
             AddPage();
