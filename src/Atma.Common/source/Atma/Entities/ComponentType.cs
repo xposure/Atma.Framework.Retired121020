@@ -57,4 +57,16 @@
         }
     }
 
+    public static class ComponentType<T>
+        where T : unmanaged
+    {
+        public readonly static ComponentType Type;
+
+        static ComponentType()
+        {
+            var unmanagedType = UnmanagedType<T>.Type;
+            Type = new ComponentType(unmanagedType.ID, unmanagedType.Size);
+        }
+    }
+
 }

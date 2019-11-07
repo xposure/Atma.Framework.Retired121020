@@ -33,21 +33,20 @@
             AddComponent<Entity>();
         }
 
-        public void AddComponent<T>() where T : unmanaged => AddComponent(typeof(T));
+        public ComponentType AddComponent<T>() where T : unmanaged => AddComponent(typeof(T));
 
-        public void AddComponent(Type type)
+        public ComponentType AddComponent(Type type)
         {
             if (_unmanagedHelper.GetInfo(type, out var unmanagedType))
             {
-
                 var componentType = new ComponentType(unmanagedType.ID, unmanagedType.Size);
                 _components.Add(componentType.ID, componentType);
                 _componentTypes.Add(componentType.ID, new ComponentTypeInfo(type, componentType));
+                return componentType;
             }
-            else
-            {
-                Assert(false);
-            }
+
+            Assert(false);
+            return default;
         }
 
         public void AddFromNamespace(Assembly assembly, string name)
@@ -74,6 +73,15 @@
                 return null;
 
             return type;
+        }
+
+        public ComponentType Get<T>()
+        {
+            if (Find<T>(out var componenType))
+                return componenType;
+
+            Assert(false);
+            return default;
         }
 
         public bool Find<T>(out ComponentType componentType) => Find(typeof(T), out componentType);

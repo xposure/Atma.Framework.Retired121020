@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Atma.Common\source\Atma.Common.csproj" />
+    <ProjectReference Include="..\Atma.Entities\source\Atma.Entities.csproj" />
+    <ProjectReference Include="..\Atma.Jobs\source\Atma.Jobs.csproj" />
+    <ProjectReference Include="..\Atma.Memory\source\Atma.Memory.csproj" />
+    <ProjectReference Include="..\Atma.DI\source\Atma.DI.csproj" />
+  </ItemGroup>
+</Project>

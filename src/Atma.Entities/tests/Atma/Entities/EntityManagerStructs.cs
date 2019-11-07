@@ -78,6 +78,7 @@ namespace Atma.Entities
             return $"*";
         }
     }
+    
     public struct ShouldFilterStruct
     {
         public Write<Valid> valid;

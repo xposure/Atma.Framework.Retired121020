@@ -63,6 +63,18 @@
                 *begin++ = value;
         }
 
+        public static void ClearAlign16(void* rawPointer, uint sizeInBytes)
+        {
+            Assert(IsAligned16(rawPointer));
+            Assert(IsAligned16(sizeInBytes));
+
+            var begin = (uint*)rawPointer;
+            var end = begin + sizeInBytes / 4;
+            while (begin < end)
+                *begin++ = 0;
+        }
+
+
         public static void CopyAlign16(void* src, void* dst, int sizeInBytes)
         {
             Assert(IsAligned16(src));

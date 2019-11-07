@@ -12,8 +12,9 @@ namespace Atma.Memory
     public interface IAllocator : IDisposable
     {
         //AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
-        AllocationHandle Take<T>(int count, AllocatorBounds bounds = AllocatorBounds.Front)
-            where T : unmanaged;
+        AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
+        // AllocationHandle Take<T>(int count, AllocatorBounds bounds = AllocatorBounds.Front)
+        //     where T : unmanaged;
         void Free(ref AllocationHandle handle);
         //AllocatorBounds GetBounds(ref AllocationHandle handle);
     }
@@ -39,7 +40,7 @@ namespace Atma.Memory
         // }
     }
 
-    public class StackAllocator : IAllocator
+    public unsafe class StackAllocator : IAllocator
     {
         private UnmanagedMemory _memory;
         private IntPtr _front, _back;
@@ -49,13 +50,16 @@ namespace Atma.Memory
         private uint _thrashValue = 0x55aa5aa5;
         public uint FreeSize => _free;
 
-        public StackAllocator(uint size, bool thrash = false)
+        public StackAllocator(uint size, bool thrash = false, bool clearToZero = false)
         {
             _memory = new UnmanagedMemory(size);
             _free = _memory.Size;
             _front = _memory.Begin;
             _back = _memory.End;
             _thrash = thrash;
+
+            if (clearToZero)
+                Unsafe.ClearAlign16((void*)_front, _memory.ActualSize);
         }
 
         public void Dispose()
@@ -64,10 +68,10 @@ namespace Atma.Memory
             _memory = null;
         }
 
-        public unsafe AllocationHandle Take<T>(int count, AllocatorBounds bounds)
-            where T : unmanaged
+        public unsafe AllocationHandle Take(int size, AllocatorBounds bounds)
+        //    where T : unmanaged
         {
-            var size = SizeOf<T>.Size;
+            //var size = SizeOf<T>.Size;
             Assert(size > 0);
 
             size = Unsafe.Align16(size);

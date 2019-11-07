@@ -9,6 +9,35 @@
 
     using static Atma.Debug;
 
+    public interface IEntityView
+    {
+
+    }
+
+    public interface IEntityView<T> : IEntityView
+    {
+        void ForEach(T t, int length);
+    }
+
+    public interface IEntityManager
+    {
+        IEntityView View<T>() where T : unmanaged;
+
+        void Assign<T>(int entity, in T t);
+        void Replace<T>(int entity, in T t);
+        void Update<T>(int entity, in T t);
+
+        void Has(int entity);
+        void Has<T>(int entity);
+
+        void Remove(int entity);
+        void Remove<T>(int entity);
+
+        void Reset(int entity);
+        void Reset<T>(int entity);
+    }
+
+
     public sealed partial class EntityManager : IService
     {
         //private DynamicMemoryPool _persistentMemory = new DynamicMemoryPool();
@@ -22,6 +51,7 @@
 
         internal IReadOnlyList<EntityArchetype> Archetypes => _archetypes;
         internal ComponentList ComponentList => _componentList;
+
         public EntityManager(ComponentList componentList)
         {
             _componentList = componentList;
@@ -32,7 +62,6 @@
         }
 
         public int Count => _archetypeIDLookup.AllObjects.Sum(x => x.Count);
-
 
         public int CreateEntity(EntityArchetype archetype)
         {
@@ -57,7 +86,6 @@
             archetype.CreateEntity(_entityPool, entities);
         }
 
-
         public void CreateEntity(EntityArchetype archetype, int count)
         {
             CreateEntity(archetype, count, out var entities);
@@ -70,6 +98,7 @@
             var view = _componentViewList.GetView<T>(this);
             view.UpdateEntity(this, t);
         }
+
         public void Update<T>(in T t, int entity)
            where T : unmanaged
         {
@@ -236,7 +265,6 @@
             return archetype;
         }
 
-
         public EntityArchetype CreateArchetype(params Type[] types)
         {
             var set = new HashSet<Type>();
@@ -245,7 +273,10 @@
             {
                 Assert(set.Add(types[i]));
                 if (!_componentList.Find(types[i], out var componentType))
-                    Assert(false);
+                {
+                    componentType = _componentList.AddComponent(types[i]);
+                    //Assert(false);
+                }
                 componentTypes[i] = componentType;
             }
 
@@ -261,6 +292,7 @@
             chunk = archetype.Chunks[e.ChunkIndex];
             index = e.Index;
         }
+
         public EntityArchetype GetEntityArchetype(int entity)
         {
             AssertMainThread();
