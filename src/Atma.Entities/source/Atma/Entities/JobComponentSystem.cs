@@ -11,7 +11,7 @@
         protected override void Update()
         {
             BeforeUpdate();
-            throw new System.Exception();
+            //throw new System.Exception();
             AfterUpdate();
         }
 
