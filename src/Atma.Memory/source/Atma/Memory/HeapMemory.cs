@@ -253,7 +253,7 @@
                 *begin++ = value;
         }
 
-        public AllocationHandle Take(int sizeInBytes)
+        public AllocationHandleOld Take(int sizeInBytes)
         {
             if (!TryTake(sizeInBytes, out var handle))
                 throw new OutOfMemoryException();
@@ -284,7 +284,7 @@
             }
         }
 
-        public bool TryTake(int size, out AllocationHandle handle)
+        public bool TryTake(int size, out AllocationHandleOld handle)
         {
             size = Unsafe.Align16(size);
             var alloc = _root;
@@ -322,7 +322,7 @@
 
             _freeSize -= size + HeapAllocation.HEADERSIZE;
 
-            handle = new AllocationHandle(
+            handle = new AllocationHandleOld(
                 (byte*)alloc + HeapAllocation.HEADERSIZE,
                 _allocator, _heapIndex, checksum);
             //Assert(handle.Version == checksum);
@@ -333,7 +333,7 @@
             return true;
         }
 
-        public void Free(ref AllocationHandle handle)
+        public void Free(ref AllocationHandleOld handle)
         {
             Assert(handle.IsValid);
 

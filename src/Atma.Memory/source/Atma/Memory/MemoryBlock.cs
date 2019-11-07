@@ -6,7 +6,7 @@
 
     public sealed class MemoryBlock : IDisposable
     {
-        private AllocationHandle _handle;
+        private AllocationHandleOld _handle;
         private int _length;
         private int _offset = 0;
 
@@ -53,7 +53,7 @@
         public void Dispose()
         {
             Dispose(true);
-             GC.SuppressFinalize(this);
+            GC.SuppressFinalize(this);
         }
         #endregion
 

@@ -21,7 +21,7 @@
             _stack.Add(new HeapMemory(ALLOCATION_UNIT, 0, Allocator.Stack));
         }
 
-        internal static AllocationHandle Take(Allocator allocator, int sizeInBytes)
+        internal static AllocationHandleOld Take(Allocator allocator, int sizeInBytes)
         {
             //AssertMainThread();
             lock (_syncObject)
@@ -58,7 +58,7 @@
             }
         }
 
-        internal static void Free(ref AllocationHandle handle)
+        internal static void Free(ref AllocationHandleOld handle)
         {
             //AssertMainThread();
             lock (_syncObject)

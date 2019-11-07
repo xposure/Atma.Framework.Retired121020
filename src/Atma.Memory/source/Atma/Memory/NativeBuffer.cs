@@ -7,7 +7,7 @@
     public unsafe struct NativeBuffer : IDisposable
     {
         private int _length, _maxLength;
-        private AllocationHandle _handle;
+        private AllocationHandleOld _handle;
 
         public int Length => _length;
 

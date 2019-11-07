@@ -11,19 +11,20 @@ namespace Atma.Memory
 
     public interface IAllocator : IDisposable
     {
-        AllocationHandle2 Take<T>(int count, AllocatorBounds bounds = AllocatorBounds.Front)
+        //AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
+        AllocationHandle Take<T>(int count, AllocatorBounds bounds = AllocatorBounds.Front)
             where T : unmanaged;
-        void Free(AllocationHandle2 handle2);
+        void Free(AllocationHandle handle2);
     }
 
-    public unsafe struct AllocationHandle2 : IDisposable
+    public unsafe struct AllocationHandle : IDisposable
     {
         public readonly IAllocator Allocator;
         public readonly void* Address;
         public readonly uint Id;
         public readonly uint Length;
 
-        public AllocationHandle2(IAllocator allocator, void* address, uint id, uint length)
+        public AllocationHandle(IAllocator allocator, void* address, uint id, uint length)
         {
             Allocator = allocator;
             Address = address;
@@ -62,7 +63,7 @@ namespace Atma.Memory
             _memory = null;
         }
 
-        public unsafe AllocationHandle2 Take<T>(int count, AllocatorBounds bounds)
+        public unsafe AllocationHandle Take<T>(int count, AllocatorBounds bounds)
             where T : unmanaged
         {
             var size = SizeOf<T>.Size;
@@ -91,10 +92,10 @@ namespace Atma.Memory
             _free -= (uint)size;
 
             //safe to do the uint cast since we are Assert > 0
-            return new AllocationHandle2(this, addr, index, (uint)size);
+            return new AllocationHandle(this, addr, index, (uint)size);
         }
 
-        public unsafe void Free(AllocationHandle2 handle2)
+        public unsafe void Free(AllocationHandle handle2)
         {
             var bounds = (handle2.Id & 0x80000000) == 0 ?
                             AllocatorBounds.Front : AllocatorBounds.Back;

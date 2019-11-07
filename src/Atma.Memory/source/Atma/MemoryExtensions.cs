@@ -7,7 +7,7 @@ namespace Atma
 
     public static class MemoryExtensions
     {
-        public static AllocationHandle Take<T>(this HeapMemory heap, int length)
+        public static AllocationHandleOld Take<T>(this HeapMemory heap, int length)
             where T : unmanaged
         {
             return heap.Take(SizeOf<T>.Size * length);

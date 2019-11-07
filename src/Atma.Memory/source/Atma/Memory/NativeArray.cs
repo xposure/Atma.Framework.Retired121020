@@ -9,7 +9,7 @@
         where T : unmanaged
     {
         private int _length;
-        private AllocationHandle _handle;
+        private AllocationHandleOld _handle;
 
         public int Length => _length;
 
@@ -54,7 +54,7 @@
             }
         }
 
-        internal AllocationHandle TakeOwnership()
+        internal AllocationHandleOld TakeOwnership()
         {
             Assert(IsCreated);
 

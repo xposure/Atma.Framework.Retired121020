@@ -15,7 +15,7 @@
         public T* RawPointer => _rawAddress;
         public T* EndPointer => _rawAddress + Length;
 
-        internal NativeSlice(AllocationHandle handle, int start, int length)
+        internal NativeSlice(AllocationHandleOld handle, int start, int length)
         {
             _rawAddress = (T*)handle.Address + start;
             Length = length;
@@ -78,7 +78,8 @@
         {
             var sb = new StringBuilder();
             sb.Append('[');
-            for (var i = 0; i < Length; i++) {
+            for (var i = 0; i < Length; i++)
+            {
                 sb.Append(this[i]);
                 if (i < Length - 1)
                     sb.Append(',');
