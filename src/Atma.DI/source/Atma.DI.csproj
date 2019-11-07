@@ -5,13 +5,11 @@
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Atma.Common" Version="0.9.5" />
-    <PackageReference Include="Atma.Entities" Version="0.9.1" />
-    <PackageReference Include="Atma.Jobs" Version="0.9.1" />
-    <PackageReference Include="Atma.Memory" Version="0.9.0" />
-    <PackageReference Include="FastMember" Version="1.5.0" />
-    <PackageReference Include="SimpleInjector" Version="4.6.0" />
-  </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Atma.Common\source\Atma.Common.csproj" />
+    <ProjectReference Include="..\..\Atma.Jobs\source\Atma.Entities.csproj" />
+    <ProjectReference Include="..\..\Atma.Jobs\source\Atma.Jobs.csproj" />
+    <ProjectReference Include="..\..\Atma.Memory\source\Atma.Memory.csproj" />
+  </ItemGroup>
 </Project>
