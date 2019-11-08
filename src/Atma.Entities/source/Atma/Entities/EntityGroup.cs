@@ -8,7 +8,7 @@ namespace Atma.Entities
         int Count { get; }
         int Free { get; }
 
-        EntitySpecification Specification { get; }
+        EntitySpec Specification { get; }
 
         int Create();
         void Delete(int index);
@@ -21,9 +21,9 @@ namespace Atma.Entities
 
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
-        public EntitySpecification Specification { get; }
+        public EntitySpec Specification { get; }
 
-        public EntityChunk(EntitySpecification specifcation)
+        public EntityChunk(EntitySpec specifcation)
         {
             Specification = specifcation;
             _groupArray = new EntityGroupArray(specifcation);

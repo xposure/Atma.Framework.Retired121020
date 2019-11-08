@@ -33,7 +33,7 @@ namespace Atma.Entities
         public void CanCreateEntityGroup()
         {
             //arrange
-            var specification = new EntitySpecification(
+            var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
@@ -59,7 +59,7 @@ namespace Atma.Entities
         public void ShouldThrowOnWrongType()
         {
             //arrange
-            var specification = new EntitySpecification(
+            var specification = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
@@ -78,7 +78,7 @@ namespace Atma.Entities
         public void ShouldReadAndWriteEntity()
         {
             //arrange
-            var specification = new EntitySpecification(
+            var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
@@ -119,7 +119,7 @@ namespace Atma.Entities
         public void ShouldMoveEntity()
         {
             //arrange
-            var specification = new EntitySpecification(
+            var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );

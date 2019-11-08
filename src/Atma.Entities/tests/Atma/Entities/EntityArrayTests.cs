@@ -32,11 +32,11 @@
         public void ShouldCreateArchetype()
         {
             //arrange
-            var specifcation = new EntitySpecification(
+            var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            var archetype = new EntityArchetype2(specifcation);
+            var archetype = new EntityArray(specifcation);
 
             //act
             var index0 = archetype.Create(out var chunkIndex);
@@ -51,11 +51,11 @@
         public void ShouldExpand()
         {
             //arrange
-            var specifcation = new EntitySpecification(
+            var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            var archetype = new EntityArchetype2(specifcation);
+            var archetype = new EntityArray(specifcation);
 
             //act
             for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)

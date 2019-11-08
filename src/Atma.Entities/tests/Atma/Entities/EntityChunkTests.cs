@@ -32,7 +32,7 @@ namespace Atma.Entities
         public void ShouldCreateEntity()
         {
             //arrange
-            var specification = new EntitySpecification(
+            var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
@@ -52,7 +52,7 @@ namespace Atma.Entities
         public void ShouldDeleteEntity()
         {
             //arrange
-            var specification = new EntitySpecification(
+            var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );

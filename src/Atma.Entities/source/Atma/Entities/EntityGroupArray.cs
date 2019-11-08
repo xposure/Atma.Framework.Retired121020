@@ -16,7 +16,7 @@ namespace Atma.Entities
         //int Free { get; }
         //int Count { get; }
 
-        EntitySpecification Specification { get; }
+        EntitySpec Specification { get; }
         int Length { get; }
 
         void Move(int src, int dst);
@@ -30,10 +30,10 @@ namespace Atma.Entities
         private ComponentDataArray2[] _componentData;
         private IAllocator _allocator;
 
-        public EntitySpecification Specification { get; }
+        public EntitySpec Specification { get; }
         public int Length => Entity.ENTITY_MAX;
 
-        public EntityGroupArray(EntitySpecification specification)
+        public EntityGroupArray(EntitySpec specification)
         {
             Specification = specification;
 

@@ -1,29 +1,26 @@
 namespace Atma.Entities
 {
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
-    using static Atma.Debug;
 
-    public class EntitySpecification
+    public class EntitySpec
     {
         public readonly int ID;
         public readonly ComponentType[] ComponentTypes;
         public readonly int EntitySize;
 
-        public EntitySpecification(params ComponentType[] componentTypes)
+        public EntitySpec(params ComponentType[] componentTypes)
         {
             ID = ComponentType.CalculateId(componentTypes);
             ComponentTypes = componentTypes;
             EntitySize = ComponentTypes.Sum(x => x.Size);
         }
 
-        public bool HasAll(EntitySpecification other)
+        public bool HasAll(EntitySpec other)
         {
             return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
         }
 
-        public bool HasAny(EntitySpecification other)
+        public bool HasAny(EntitySpec other)
         {
             return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
         }

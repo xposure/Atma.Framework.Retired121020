@@ -1,86 +1,121 @@
-﻿namespace Atma.Common
+﻿namespace Atma.Entities
 {
-    using Atma.Entities;
+    using Atma.Common;
     using Atma.Memory;
-    using static Atma.Debug;
+
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
 
-    public class EntityPool : IEntityPool2
+    using static Atma.Debug;
+
+    public interface IEntityArray
     {
-        public const int ENTITIES_PER_POOL = 4096;
+        int EntityCount { get; }
+        int Capacity { get; }
+        int Free { get; }
+        int ChunkCount { get; }
+        IReadOnlyList<EntityChunk> AllChunks { get; }
+        IEnumerable<EntityChunk> ActiveChunks { get; }
 
-        private List<NativeArray<Entity>> _entityMap;
+        EntitySpec Specification { get; }
 
-        private NativeStack<int> _freeIds = new NativeStack<int>(Allocator.Persistent, ENTITIES_PER_POOL);
+        int Create(out int chunkIndex);
+        void Delete(int chunkIndex, int index);
 
-        private int _free;
-        private int _capacity;
+        //bool HasComponent(in ComponentType componentType);
+    }
 
-        public int Capacity => _capacity;
+    public sealed class EntityArray : UnmanagedDispose, IEntityArray //IEquatable<EntityArchetype>
+    {
+        public int EntityCount => _entityCount;
+        public int Capacity => _chunks.Count * Entity.ENTITY_MAX;
+        public int Free => Capacity - _entityCount;
+        public int ChunkCount => _chunks.Count;
 
-        public int Count => _capacity - _free;
-
-        public int Free => _free;
-
-
-        public EntityPool()
-        {
-            _entityMap = new List<NativeArray<Entity>>();
-            AddPage();
-        }
-
-        public ref Entity this[int id]
+        public IReadOnlyList<EntityChunk> AllChunks => _chunks;
+        public IEnumerable<EntityChunk> ActiveChunks
         {
             get
             {
-                var index = id % ENTITIES_PER_POOL;
-                var page = id / ENTITIES_PER_POOL; // should we do >> 12 is the compiler ompitizing that
-                Assert(page >= 0 && page < _entityMap.Count, $"{page} was out of range[{0}-{_entityMap.Count}]");
-                Assert(index >= 0 && index < _entityMap[page].Length, $"{index} was out of range[{0}-{_entityMap[page].Length}]");
-                return ref _entityMap[page][index];
+                for (var i = 0; i < _chunks.Count; i++)
+                    if (_chunks[i].Count > 0)
+                        yield return _chunks[i];
             }
         }
+        public EntitySpec Specification { get; }
 
-        private void AddPage()
+        private int _entityCount = 0;
+        private List<EntityChunk> _chunks = new List<EntityChunk>();
+
+
+        public EntityArray(EntitySpec specification)
         {
-            var arr = new NativeArray<Entity>(Allocator.Persistent, ENTITIES_PER_POOL);
-
-            _freeIds.EnsureCapacity(ENTITIES_PER_POOL);
-            var newMax = _entityMap.Count * ENTITIES_PER_POOL + ENTITIES_PER_POOL;
-            for (int i = 0; i < ENTITIES_PER_POOL; i++)
-                _freeIds.Push(newMax - i - 1);
-            _free += ENTITIES_PER_POOL;
-            _capacity += ENTITIES_PER_POOL;
-            _entityMap.Add(arr);
+            Specification = specification;
         }
 
-        public void Return(int id)
+        public int Create(out int chunkIndex)
         {
-            this[id] = new Entity(0, 0, 0, 0);
-            _freeIds.Push(id);
-            _free++;
+            _entityCount++;
+            var chunk = GetOrCreateFreeChunk(out chunkIndex);
+            return chunk.Create();
         }
 
-        public int Take()
+        private EntityChunk GetOrCreateFreeChunk(out int chunkIndex)
         {
-            if (_freeIds.Length == 0)
-                AddPage();
+            for (chunkIndex = 0; chunkIndex < _chunks.Count; chunkIndex++)
+                if (_chunks[chunkIndex].Free > 0)
+                    return _chunks[chunkIndex];
 
-            _free--;
-
-            return _freeIds.Pop();
+            chunkIndex++;
+            var chunk = new EntityChunk(Specification);
+            _chunks.Add(chunk);
+            return chunk;
         }
 
-        public void Take(NativeSlice<int> items)
+        public void Delete(int chunkIndex, int index)
         {
-            while (_free < items.Length)
-                AddPage();
+            Assert(chunkIndex >= 0 && chunkIndex < _chunks.Count);
 
-            for (var i = 0; i < items.Length; i++)
-            {
-                _free--;
-                items[i] = _freeIds.Pop();
-            }
+            var chunk = _chunks[chunkIndex];
+            chunk.Delete(index);
+            _entityCount--;
         }
+
+        //public bool HasComponent(in ComponentType componentType) => Specification.Has(componentType);
     }
+
+    // public static void MoveEntity(EntityPool pool, int entity, ArchetypeChunk chunkSrc, int indexSrc, EntityArchetype archetype, EntityArchetype newArchetype)
+    // {
+    //     var i0 = 0;
+    //     var i1 = 0;
+
+    //     var dstEntity = newArchetype.CreateEntityInternal(entity);
+    //     var chunkDst = newArchetype.Chunks[dstEntity.ChunkIndex];
+    //     var indexDst = dstEntity.Index;
+
+    //     while (i0 < archetype.ComponentTypes.Length && i1 < newArchetype.ComponentTypes.Length)
+    //     {
+    //         var aType = archetype.ComponentTypes[i0];
+    //         var bType = newArchetype.ComponentTypes[i1];
+    //         if (aType.ID > bType.ID) i1++;
+    //         else if (bType.ID > aType.ID) i0++;
+    //         else
+    //         {
+    //             using var arrSrc = chunkSrc.GetReadComponentArray(i0);
+    //             using var arrDst = chunkDst.GetWriteComponentArray(i1);
+
+    //             arrSrc.Array.CopyTo(indexSrc, arrDst.Array, indexDst);
+
+    //             i0++;
+    //             i1++;
+    //         }
+    //     }
+
+    //     chunkSrc.DeleteIndex(pool, indexSrc, true);
+    //     archetype._entityCount--; //need to do house keeping
+    //     pool[entity] = new Entity(entity, newArchetype.Index, chunkDst.Index, indexDst);
+    // }
+
 }
