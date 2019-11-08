@@ -71,7 +71,8 @@ namespace Atma.Common
         public void Return(uint id)
         {
             ref var e = ref this[id];
-            Assert(e.Key != 0 && e.ID > 0 && e.ID == id);
+            Assert(e.ID > 0);
+            Assert(e.ID == id);
 
             e = new Entity2(0, 0, 0, 0);
             _freeIds.Push(id);

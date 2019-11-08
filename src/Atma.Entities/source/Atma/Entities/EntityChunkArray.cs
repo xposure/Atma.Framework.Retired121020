@@ -68,7 +68,6 @@
                 if (_chunks[chunkIndex].Free > 0)
                     return _chunks[chunkIndex];
 
-            chunkIndex++;
             var chunk = new EntityChunk(Specification);
             _chunks.Add(chunk);
             return chunk;
