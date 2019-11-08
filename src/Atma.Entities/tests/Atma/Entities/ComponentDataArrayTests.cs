@@ -12,14 +12,25 @@ namespace Atma.Entities
         {
             public int X;
             public int Y;
+
+            public Position(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
         }
 
         private struct Velocity
         {
             public int VX;
             public int VY;
-        }
 
+            public Velocity(int vx, int vy)
+            {
+                VX = vx;
+                VY = vy;
+            }
+        }
         public void ShouldGetIndex()
         {
             //arrange

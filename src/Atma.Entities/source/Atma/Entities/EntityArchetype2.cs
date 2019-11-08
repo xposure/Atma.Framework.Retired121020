@@ -12,9 +12,6 @@
 
     public interface IEntityArchetype2
     {
-        int ID { get; }
-        bool IsValid { get; }
-        int ArchetypeIndex { get; }
         int EntityCount { get; }
         int Capacity { get; }
         int Free { get; }
@@ -22,51 +19,103 @@
         IReadOnlyList<EntityChunk> AllChunks { get; }
         IEnumerable<EntityChunk> ActiveChunks { get; }
 
-        int Create();
-        void Create(NativeSlice<int> indices);
-        //internal void CreateEntity(EntityPool entityPool, in NativeSlice<int> entities)
-        void Delete(int index);
+        EntitySpecification Specification { get; }
 
-        //bool HasEntity(int entity);
+        int Create(out int chunkIndex);
+        void Delete(int chunkIndex, int index);
 
-        bool HasComponent(ComponentType componentType);
-        bool HasComponent<T>() where T : unmanaged;
-        //internal void DestroyEntity(EntityPool pool, int entity, ArchetypeChunk chunk, int index)
+        //bool HasComponent(in ComponentType componentType);
     }
 
-    public sealed class EntityArchetype2 //: IEquatable<EntityArchetype>
+    public sealed class EntityArchetype2 : UnmanagedDispose, IEntityArchetype2 //IEquatable<EntityArchetype>
     {
+        public int EntityCount => _entityCount;
+        public int Capacity => _chunks.Count * Entity.ENTITY_MAX;
+        public int Free => Capacity - _entityCount;
+        public int ChunkCount => _chunks.Count;
 
-        // public static void MoveEntity(EntityPool pool, int entity, ArchetypeChunk chunkSrc, int indexSrc, EntityArchetype archetype, EntityArchetype newArchetype)
-        // {
-        //     var i0 = 0;
-        //     var i1 = 0;
+        public IReadOnlyList<EntityChunk> AllChunks => _chunks;
+        public IEnumerable<EntityChunk> ActiveChunks
+        {
+            get
+            {
+                for (var i = 0; i < _chunks.Count; i++)
+                    if (_chunks[i].Count > 0)
+                        yield return _chunks[i];
+            }
+        }
+        public EntitySpecification Specification { get; }
 
-        //     var dstEntity = newArchetype.CreateEntityInternal(entity);
-        //     var chunkDst = newArchetype.Chunks[dstEntity.ChunkIndex];
-        //     var indexDst = dstEntity.Index;
+        private int _entityCount = 0;
+        private List<EntityChunk> _chunks = new List<EntityChunk>();
 
-        //     while (i0 < archetype.ComponentTypes.Length && i1 < newArchetype.ComponentTypes.Length)
-        //     {
-        //         var aType = archetype.ComponentTypes[i0];
-        //         var bType = newArchetype.ComponentTypes[i1];
-        //         if (aType.ID > bType.ID) i1++;
-        //         else if (bType.ID > aType.ID) i0++;
-        //         else
-        //         {
-        //             using var arrSrc = chunkSrc.GetReadComponentArray(i0);
-        //             using var arrDst = chunkDst.GetWriteComponentArray(i1);
 
-        //             arrSrc.Array.CopyTo(indexSrc, arrDst.Array, indexDst);
+        public EntityArchetype2(EntitySpecification specification)
+        {
+            Specification = specification;
+        }
 
-        //             i0++;
-        //             i1++;
-        //         }
-        //     }
+        public int Create(out int chunkIndex)
+        {
+            _entityCount++;
+            var chunk = GetOrCreateFreeChunk(out chunkIndex);
+            return chunk.Create();
+        }
 
-        //     chunkSrc.DeleteIndex(pool, indexSrc, true);
-        //     archetype._entityCount--; //need to do house keeping
-        //     pool[entity] = new Entity(entity, newArchetype.Index, chunkDst.Index, indexDst);
-        // }
+        private EntityChunk GetOrCreateFreeChunk(out int chunkIndex)
+        {
+            for (chunkIndex = 0; chunkIndex < _chunks.Count; chunkIndex++)
+                if (_chunks[chunkIndex].Free > 0)
+                    return _chunks[chunkIndex];
+
+            chunkIndex++;
+            var chunk = new EntityChunk(Specification);
+            _chunks.Add(chunk);
+            return chunk;
+        }
+
+        public void Delete(int chunkIndex, int index)
+        {
+            Assert(chunkIndex >= 0 && chunkIndex < _chunks.Count);
+
+            var chunk = _chunks[chunkIndex];
+            chunk.Delete(index);
+            _entityCount--;
+        }
+
+        //public bool HasComponent(in ComponentType componentType) => Specification.Has(componentType);
     }
+
+    // public static void MoveEntity(EntityPool pool, int entity, ArchetypeChunk chunkSrc, int indexSrc, EntityArchetype archetype, EntityArchetype newArchetype)
+    // {
+    //     var i0 = 0;
+    //     var i1 = 0;
+
+    //     var dstEntity = newArchetype.CreateEntityInternal(entity);
+    //     var chunkDst = newArchetype.Chunks[dstEntity.ChunkIndex];
+    //     var indexDst = dstEntity.Index;
+
+    //     while (i0 < archetype.ComponentTypes.Length && i1 < newArchetype.ComponentTypes.Length)
+    //     {
+    //         var aType = archetype.ComponentTypes[i0];
+    //         var bType = newArchetype.ComponentTypes[i1];
+    //         if (aType.ID > bType.ID) i1++;
+    //         else if (bType.ID > aType.ID) i0++;
+    //         else
+    //         {
+    //             using var arrSrc = chunkSrc.GetReadComponentArray(i0);
+    //             using var arrDst = chunkDst.GetWriteComponentArray(i1);
+
+    //             arrSrc.Array.CopyTo(indexSrc, arrDst.Array, indexDst);
+
+    //             i0++;
+    //             i1++;
+    //         }
+    //     }
+
+    //     chunkSrc.DeleteIndex(pool, indexSrc, true);
+    //     archetype._entityCount--; //need to do house keeping
+    //     pool[entity] = new Entity(entity, newArchetype.Index, chunkDst.Index, indexDst);
+    // }
+
 }

@@ -18,14 +18,24 @@ namespace Atma.Entities
             EntitySize = ComponentTypes.Sum(x => x.Size);
         }
 
-        public static bool HasAll(EntitySpecification a, EntitySpecification b)
+        public bool HasAll(EntitySpecification other)
         {
-            return ComponentType.HasAll(a.ComponentTypes, b.ComponentTypes);
+            return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
         }
 
-        public static bool HasAny(EntitySpecification a, EntitySpecification b)
+        public bool HasAny(EntitySpecification other)
         {
-            return ComponentType.HasAll(a.ComponentTypes, b.ComponentTypes);
+            return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
+        }
+
+        public bool Has(in ComponentType type)
+        {
+            var id = type.ID;
+            for (var i = 0; i < ComponentTypes.Length; i++)
+                if (ComponentTypes[i].ID == id)
+                    return true;
+
+            return false;
         }
     }
 }

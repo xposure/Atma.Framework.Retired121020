@@ -41,9 +41,7 @@ namespace Atma.Entities
         {
             Assert(index >= 0 && index < _entityCount);
             if (index < _entityCount - 1)
-            {
-
-            }
+                _groupArray.Move(_entityCount - 1, index);
 
             _entityCount--;
         }
