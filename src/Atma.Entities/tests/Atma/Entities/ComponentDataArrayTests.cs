@@ -37,7 +37,7 @@ namespace Atma.Entities
             //arrange
             var componentType = ComponentType<Position>.Type;
             using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
-            using var data = new ComponentDataArray2(allocator, componentType, 32);
+            using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();
@@ -53,7 +53,7 @@ namespace Atma.Entities
             //arrange
             var componentType = ComponentType<Position>.Type;
             using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
-            using var data = new ComponentDataArray2(allocator, componentType, 32);
+            using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();
@@ -75,9 +75,9 @@ namespace Atma.Entities
             //arrange
             var componentType = ComponentType<Position>.Type;
             using IAllocator allocator0 = new StackAllocator(1024, clearToZero: true);
-            using var data0 = new ComponentDataArray2(allocator0, componentType, 32);
+            using var data0 = new ComponentDataArray(allocator0, componentType, 32);
             using IAllocator allocator1 = new StackAllocator(1024, clearToZero: true);
-            using var data1 = new ComponentDataArray2(allocator0, componentType, 32);
+            using var data1 = new ComponentDataArray(allocator0, componentType, 32);
 
             //act
             var span0 = data0.AsSpan<Position>();
@@ -85,7 +85,7 @@ namespace Atma.Entities
             p0.X = 10;
             p0.Y = 20;
 
-            ComponentDataArray2.CopyTo(data0, 0, data1, 1);
+            ComponentDataArray.CopyTo(data0, 0, data1, 1);
 
             //assert
             var span1 = data1.AsSpan<Position>();
@@ -99,7 +99,7 @@ namespace Atma.Entities
             //arrange
             var componentType = ComponentType<Position>.Type;
             using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
-            using var data = new ComponentDataArray2(allocator, componentType, 32);
+            using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();
@@ -127,7 +127,7 @@ namespace Atma.Entities
             //arrange
             var componentType = ComponentType<Position>.Type;
             using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
-            using var data = new ComponentDataArray2(allocator, componentType, 32);
+            using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
 
@@ -143,7 +143,7 @@ namespace Atma.Entities
             //arrange
             var componentType = ComponentType<Position>.Type;
             using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
-            using var data = new ComponentDataArray2(allocator, componentType, 32);
+            using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();

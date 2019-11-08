@@ -5,7 +5,7 @@
 
     using System;
 
-    public unsafe class ComponentDataArray2 : UnmanagedDispose, IComponentDataArray2
+    public unsafe class ComponentDataArray : UnmanagedDispose, IComponentDataArray2
     {
         public int ElementSize { get; }
 
@@ -17,7 +17,7 @@
         private readonly ComponentTypeHelper _componentHelper;
 
 
-        public ComponentDataArray2(IAllocator allocator, ComponentType componentType, int length)
+        public ComponentDataArray(IAllocator allocator, ComponentType componentType, int length)
         {
             ElementSize = componentType.Size;
             Length = length;
@@ -106,7 +106,7 @@
             //_lock.ExitWriteLock();
         }
 
-        public static void CopyTo(ComponentDataArray2 srcArray, int srcIndex, ComponentDataArray2 dstArray, int dstIndex)
+        public static void CopyTo(ComponentDataArray srcArray, int srcIndex, ComponentDataArray dstArray, int dstIndex)
         {
             Assert(srcArray._componentType.ID == dstArray._componentType.ID);
             Assert(srcIndex >= 0 && srcIndex < srcArray.Length && dstIndex >= 0 && dstIndex < dstArray.Length);

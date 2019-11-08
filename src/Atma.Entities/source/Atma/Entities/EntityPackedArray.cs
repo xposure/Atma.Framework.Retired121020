@@ -31,7 +31,7 @@ namespace Atma.Entities
 
     public unsafe sealed class EntityPackedArray : UnmanagedDispose, IEntityPackedArray
     {
-        private ComponentDataArray2[] _componentData;
+        private ComponentDataArray[] _componentData;
         private IAllocator _allocator;
 
         public EntitySpec Specification { get; }
@@ -44,9 +44,9 @@ namespace Atma.Entities
             _allocator = new StackAllocator((uint)(Specification.EntitySize * Entity.ENTITY_MAX));
 
             var _componentTypes = Specification.ComponentTypes;
-            _componentData = new ComponentDataArray2[_componentTypes.Length];
+            _componentData = new ComponentDataArray[_componentTypes.Length];
             for (var i = 0; i < _componentTypes.Length; i++)
-                _componentData[i] = new ComponentDataArray2(_allocator, _componentTypes[i], Entity.ENTITY_MAX);
+                _componentData[i] = new ComponentDataArray(_allocator, _componentTypes[i], Entity.ENTITY_MAX);
         }
 
         // public ref readonly Entity Create()
@@ -174,10 +174,10 @@ namespace Atma.Entities
 
         internal static void CopyTo(EntityPackedArray srcArray, int srcIndex, EntityPackedArray dstArray, int dstIndex)
         {
-            SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray2.CopyTo(src, srcIndex, dst, dstIndex));
+            SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray.CopyTo(src, srcIndex, dst, dstIndex));
         }
 
-        internal delegate void SharedComponentCallback(ComponentDataArray2 srcArray, ComponentDataArray2 dstArray);
+        internal delegate void SharedComponentCallback(ComponentDataArray srcArray, ComponentDataArray dstArray);
         internal static int SharedComponentArrays(EntityPackedArray srcArray, EntityPackedArray dstArray, SharedComponentCallback shareCallback)
         {
             var i0 = 0;

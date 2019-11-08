@@ -35,7 +35,7 @@
         public void ShouldCreateEntityManager()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -58,7 +58,7 @@
         public void ShouldShouldDeleteEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -73,7 +73,7 @@
         public void ShouldShiftAllEntitiesOnDelete()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -103,7 +103,7 @@
         public void ShouldAssignEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -124,7 +124,7 @@
         public void ShouldReplaceEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -145,7 +145,7 @@
         public void ShouldUpdateEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(
                 ComponentType<Position>.Type
             );
@@ -169,7 +169,7 @@
         public void ShouldMoveEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var srcSpec = new EntitySpec(ComponentType<Position>.Type);
             var dstSpec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -201,7 +201,7 @@
         public void ShouldRemoveEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -217,7 +217,7 @@
         public void ShouldRemoveComponent()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
@@ -237,7 +237,7 @@
         public void ShouldRemoveEntityWithNoComponents()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(
                 ComponentType<Position>.Type
             );
@@ -255,7 +255,7 @@
         public void ShouldResetEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
@@ -282,7 +282,7 @@
         public void ShouldResetEntityComponent()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var spec = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type

@@ -7,7 +7,7 @@ namespace Atma
     {
         public delegate void ForEachView<T0>(uint entity, ref T0 t0) where T0 : unmanaged;
 
-        public unsafe static void ForEach<T0>(this EntityManager2 em, ForEachView<T0> view)
+        public unsafe static void ForEach<T0>(this EntityManager em, ForEachView<T0> view)
               where T0 : unmanaged
         {
             Span<ComponentType> componentTypes = stackalloc ComponentType[] {

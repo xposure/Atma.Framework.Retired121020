@@ -9,11 +9,6 @@
 
     class Program
     {
-        public struct Test
-        {
-            public float x;
-            public float y;
-        }
 
         private struct Position
         {
@@ -50,7 +45,7 @@
             for (var y = 0; y < 3; y++)
             {
                 var sw = Stopwatch.StartNew();
-                var em = new EntityManager2();
+                var em = new EntityManager();
                 var spec = new EntitySpec(
                     ComponentType<Position>.Type
                 );
@@ -79,7 +74,7 @@
         public static void ShouldMoveEntity()
         {
             //arrange
-            using var em = new EntityManager2();
+            using var em = new EntityManager();
             var srcSpec = new EntitySpec(ComponentType<Position>.Type);
             var dstSpec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
