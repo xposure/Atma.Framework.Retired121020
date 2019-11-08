@@ -1,5 +1,6 @@
 namespace Atma.Entities
 {
+    using System;
     using System.Linq;
 
     public class EntitySpec
@@ -22,7 +23,7 @@ namespace Atma.Entities
 
         public bool HasAny(EntitySpec other)
         {
-            return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
+            return ComponentType.HasAny(ComponentTypes, other.ComponentTypes);
         }
 
         public bool Has(in ComponentType type)
@@ -33,6 +34,11 @@ namespace Atma.Entities
                     return true;
 
             return false;
+        }
+
+        public int FindMatches(EntitySpec other, Span<ComponentType> matches)
+        {
+            return ComponentType.FindMatches(ComponentTypes, other.ComponentTypes, matches);
         }
     }
 }

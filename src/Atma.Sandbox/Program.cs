@@ -24,46 +24,6 @@
 
             Console.WriteLine("Hello World!");
         }
-        public static void EntitySetComponent()
-        {
-            var _manager = GetEntityManager();
-            var archetype = _manager.CreateArchetype(typeof(Valid), typeof(Valid2), typeof(Valid3));
-            var entity1 = _manager.CreateEntity(archetype);
-            var entity2 = _manager.CreateEntity(archetype);
-
-            var setComponentData = new Valid() { X = 1, Y = 2 };
-            _manager.SetComponentData(entity2, setComponentData);
-
-            var getComponentData = _manager.GetComponentData<Valid>(entity2);
-
-            getComponentData.X.ShouldBe(setComponentData.X);
-            getComponentData.Y.ShouldBe(setComponentData.Y);
-
-            _manager.DestroyEntity(entity1);
-
-            //check if the data moves
-            getComponentData = _manager.GetComponentData<Valid>(entity2);
-
-            getComponentData.X.ShouldBe(setComponentData.X);
-            getComponentData.Y.ShouldBe(setComponentData.Y);
-
-            //data is cleared on delete, not sure if this will change in the future
-            entity1 = _manager.CreateEntity(archetype);
-            getComponentData = _manager.GetComponentData<Valid>(entity1);
-
-            getComponentData.X.ShouldBe(0);
-            getComponentData.Y.ShouldBe(0);
-        }
-
-        public static void BulkCreateArray()
-        {
-            var _manager = GetEntityManager();
-            var archetype0 = _manager.CreateArchetype(typeof(Valid), typeof(Valid2), typeof(Valid5));
-
-            _manager.CreateEntity(archetype0, 8192, out var entities);
-            for (var i = 0; i < entities.Length; i++)
-                entities[i].ShouldBe(i + 1);
-        }
 
         private static EntityManager GetEntityManager()
         {

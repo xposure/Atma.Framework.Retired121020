@@ -8,8 +8,6 @@
 
     public unsafe struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
     {
-
-
         public readonly int ID;
         public readonly int Size;
 
@@ -176,6 +174,8 @@
     }
 
     public unsafe delegate void Copy(void* src, void* dst);
+    public unsafe delegate void Reset(void* dst);
+
     public class ComponentTypeHelper
     {
         private static ConcurrentLookupList<ComponentTypeHelper> _helpers = new ConcurrentLookupList<ComponentTypeHelper>();
@@ -190,16 +190,15 @@
 
         public readonly ComponentType ComponentType;
         public readonly Copy Copy;
-        internal ComponentTypeHelper(ComponentType componentType, Copy copy)
+        public readonly Reset Reset;
+        internal ComponentTypeHelper(ComponentType componentType, Copy copy, Reset reset)
         {
             ComponentType = componentType;
             Copy = copy;
+            Reset = reset;
             _helpers.Add(componentType.ID, this);
         }
-
-
     }
-
 
     public unsafe static class ComponentType<T>
         where T : unmanaged
@@ -213,7 +212,8 @@
             Type = new ComponentType(unmanagedType.ID, unmanagedType.Size);
 
             Copy copy = (void* src, void* dst) => *(T*)dst = *(T*)src;
-            Helper = new ComponentTypeHelper(Type, copy);
+            Reset reset = (void* dst) => *(T*)dst = default;
+            Helper = new ComponentTypeHelper(Type, copy, reset);
         }
     }
 

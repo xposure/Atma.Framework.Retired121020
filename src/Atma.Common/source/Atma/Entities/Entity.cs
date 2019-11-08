@@ -7,21 +7,21 @@
     public struct Entity : IEquatable<Entity>, IEquatable<int>
     {
         //we have 32 bits to play with here
-        public const int ARCHETYPE_BITS = 12;
+        public const int SPEC_BITS = 12;
         public const int CHUNK_BITS = 10;
         public const int ENTITY_BITS = 10;
 
-        public const int ARCHETYPE_MAX = 1 << ARCHETYPE_BITS;
+        public const int SPEC_MAX = 1 << SPEC_BITS;
         public const int CHUNK_MAX = 1 << CHUNK_BITS;
         public const int ENTITY_MAX = 1 << ENTITY_BITS;
 
-        public const int ARCHETYPE_SHIFT = ENTITY_BITS + CHUNK_BITS;
+        public const int SPEC_SHIFT = ENTITY_BITS + CHUNK_BITS;
         public const int CHUNK_SHIFT = CHUNK_BITS;
 
         public const uint ENTITY_MASK = (1 << ENTITY_BITS) - 1;
         public const uint CHUNK_MASK = ((1 << CHUNK_SHIFT) - 1) << ENTITY_BITS;
-        public const uint ARCHETYPE_MASK = ((1 << ARCHETYPE_SHIFT) - 1) ^ ENTITY_MASK ^ CHUNK_MASK;
-        public const uint ARCHETYPECHUNK_MASK = ARCHETYPE_MASK + CHUNK_MASK;
+        public const uint SPEC_MASK = ((1 << SPEC_SHIFT) - 1) ^ ENTITY_MASK ^ CHUNK_MASK;
+        public const uint SPECCHUNK_MASK = SPEC_MASK + CHUNK_MASK;
 
         public int ID;
         public bool IsValid => ID > 0;
@@ -29,7 +29,7 @@
         public uint Key;
 
         //TODO: should be uint
-        public int ArchetypeIndex => (int)(Key >> ARCHETYPE_SHIFT); //no need to mask
+        public int SpecIndex => (int)(Key >> SPEC_SHIFT); //no need to mask
 
         public int ChunkIndex => (int)((Key & CHUNK_MASK) >> CHUNK_SHIFT);
 
@@ -39,22 +39,22 @@
             set
             {
                 var index = (uint)(value & ENTITY_MASK);
-                Key = (Key & ARCHETYPECHUNK_MASK) | index;
+                Key = (Key & SPECCHUNK_MASK) | index;
             }
         }
 
         public Entity(int id, int archetypeIndex, int chunkIndex, int index)
         {
-            Assert(archetypeIndex < ARCHETYPE_MAX);
+            Assert(archetypeIndex < SPEC_MAX);
             Assert(chunkIndex < CHUNK_MAX);
             Assert(index < ENTITY_MAX);
 
             ID = id;
-            Key = (uint)(archetypeIndex << ARCHETYPE_SHIFT) +
+            Key = (uint)(archetypeIndex << SPEC_SHIFT) +
                   (uint)((chunkIndex << CHUNK_SHIFT) & CHUNK_MASK) +
                   (uint)(index & ENTITY_MASK);
 
-            Assert(ArchetypeIndex == archetypeIndex);
+            Assert(SpecIndex == archetypeIndex);
             Assert(ChunkIndex == chunkIndex);
             Assert(Index == index);
         }

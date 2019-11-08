@@ -7,29 +7,29 @@
     public struct Entity2 //: IEquatable<Entity2>, IEquatable<int>
     {
         //we have 32 bits to play with here
-        public const int ARCHETYPE_BITS = 12;
+        public const int SPEC_BITS = 12;
         public const int CHUNK_BITS = 10;
         public const int ENTITY_BITS = 10;
 
-        public const int ARCHETYPE_MAX = 1 << ARCHETYPE_BITS;
+        public const int SPEC_MAX = 1 << SPEC_BITS;
         public const int CHUNK_MAX = 1 << CHUNK_BITS;
         public const int ENTITY_MAX = 1 << ENTITY_BITS;
 
-        public const int ARCHETYPE_SHIFT = ENTITY_BITS + CHUNK_BITS;
+        public const int SPEC_SHIFT = ENTITY_BITS + CHUNK_BITS;
         public const int CHUNK_SHIFT = CHUNK_BITS;
 
         public const uint ENTITY_MASK = (1 << ENTITY_BITS) - 1;
         public const uint CHUNK_MASK = ((1 << CHUNK_SHIFT) - 1) << ENTITY_BITS;
-        public const uint ARCHETYPE_MASK = ((1 << ARCHETYPE_SHIFT) - 1) ^ ENTITY_MASK ^ CHUNK_MASK;
-        public const uint ARCHETYPECHUNK_MASK = ARCHETYPE_MASK + CHUNK_MASK;
+        public const uint SPEC_MASK = ((1 << SPEC_SHIFT) - 1) ^ ENTITY_MASK ^ CHUNK_MASK;
+        public const uint SPECCHUNK_MASK = SPEC_MASK + CHUNK_MASK;
 
         public uint ID;
         public uint Key;
 
         public bool IsValid => ID > 0;
-        public uint Version => ID >> 24;
+        //public uint Version => ID >> 24;
 
-        public int ArchetypeIndex => (int)(Key >> ARCHETYPE_SHIFT); //no need to mask
+        public int SpecIndex => (int)(Key >> SPEC_SHIFT); //no need to mask
         public int ChunkIndex => (int)((Key & CHUNK_MASK) >> CHUNK_SHIFT);
         public int Index
         {
@@ -37,23 +37,23 @@
             set
             {
                 var index = (uint)(value & ENTITY_MASK);
-                Key = (Key & ARCHETYPECHUNK_MASK) | index;
+                Key = (Key & SPECCHUNK_MASK) | index;
             }
         }
 
-        public Entity2(byte version, int id, int archetypeIndex, int chunkIndex, int index)
+        public Entity2(uint id, int specIndex, int chunkIndex, int index)
         {
-            Assert(archetypeIndex < ARCHETYPE_MAX);
+            Assert(specIndex < SPEC_MAX);
             Assert(chunkIndex < CHUNK_MAX);
             Assert(index < ENTITY_MAX);
 
-            ID = (uint)(id & 0xfffff) | (uint)version << 24;
+            ID = id;//(uint)(id & 0xfffff) | (uint)version << 24;
 
-            Key = (uint)(archetypeIndex << ARCHETYPE_SHIFT) +
+            Key = (uint)(specIndex << SPEC_SHIFT) +
                   (uint)((chunkIndex << CHUNK_SHIFT) & CHUNK_MASK) +
                   (uint)(index & ENTITY_MASK);
 
-            Assert(ArchetypeIndex == archetypeIndex);
+            Assert(SpecIndex == specIndex);
             Assert(ChunkIndex == chunkIndex);
             Assert(Index == index);
         }
@@ -71,6 +71,6 @@
         // public static bool operator ==(int left, Entity2 right) => left == right.ID;
         // public static bool operator !=(int left, Entity2 right) => left != right.ID;
 
-        public override string ToString() => $"{{ Spec: {ArchetypeIndex}, Chunk: {ChunkIndex}, Index: {Index}, ID: {ID}";
+        public override string ToString() => $"{{ Spec: {SpecIndex}, Chunk: {ChunkIndex}, Index: {Index}, ID: {ID}";
     }
 }

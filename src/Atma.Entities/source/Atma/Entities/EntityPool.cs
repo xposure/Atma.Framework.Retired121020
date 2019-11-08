@@ -5,7 +5,7 @@
     using static Atma.Debug;
     using System.Collections.Generic;
 
-    public class EntityPool : IEntityPool2
+    public class EntityPool //: IEntityPool2
     {
         public const int ENTITIES_PER_POOL = 4096;
 

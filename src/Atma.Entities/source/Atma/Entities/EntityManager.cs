@@ -288,7 +288,7 @@
             ref var e = ref _entityPool[entity];
             Assert(e.IsValid);
 
-            archetype = _archetypes[e.ArchetypeIndex];
+            archetype = _archetypes[e.SpecIndex];
             chunk = archetype.Chunks[e.ChunkIndex];
             index = e.Index;
         }
@@ -296,7 +296,7 @@
         public EntityArchetype GetEntityArchetype(int entity)
         {
             AssertMainThread();
-            return _archetypes[_entityPool[entity].ArchetypeIndex];
+            return _archetypes[_entityPool[entity].SpecIndex];
         }
 
         internal ComponentView GetView<T>()

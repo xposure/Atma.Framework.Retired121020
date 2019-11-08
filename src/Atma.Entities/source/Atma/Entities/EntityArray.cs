@@ -83,6 +83,18 @@
             _entityCount--;
         }
 
+        protected override void OnUnmanagedDispose()
+        {
+            for (int i = _chunks.Count - 1; i >= 0; i--)
+            {
+                _chunks[i].Dispose();
+                _chunks[i] = null;
+            }
+
+            _chunks.Clear();
+            _chunks = null;
+        }
+
         //public bool HasComponent(in ComponentType componentType) => Specification.Has(componentType);
     }
 

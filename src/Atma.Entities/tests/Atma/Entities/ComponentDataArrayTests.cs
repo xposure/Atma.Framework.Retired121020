@@ -31,6 +31,7 @@ namespace Atma.Entities
                 VY = vy;
             }
         }
+
         public void ShouldGetIndex()
         {
             //arrange
@@ -67,6 +68,34 @@ namespace Atma.Entities
             p0.Y.ShouldBe(20);
             p0.X.ShouldBe(p1.X);
             p0.Y.ShouldBe(p1.Y);
+        }
+
+        public void ShouldReset()
+        {
+            //arrange
+            var componentType = ComponentType<Position>.Type;
+            using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
+            using var data = new ComponentDataArray2(allocator, componentType, 32);
+
+            //act
+            using (var writeLock = data.AsSpan<Position>(out var span))
+            {
+                ref var p0 = ref span[0];
+                p0.X = 10;
+                p0.Y = 20;
+            }
+
+            data.Reset(0);
+
+            //assert
+            using (var readLock = data.AsReadOnlySpan<Position>(out var readspan))
+            {
+                ref readonly var p0 = ref readspan[0];
+                p0.X.ShouldBe(0);
+                p0.Y.ShouldBe(0);
+                p0.X.ShouldBe(0);
+                p0.Y.ShouldBe(0);
+            }
         }
 
         public void ShouldThrowOnWrongType()

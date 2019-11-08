@@ -40,8 +40,6 @@
             if (componentType.ID != _componentType.ID)
                 throw new Exception("Invalid type.");
 
-            //Assert(UnmanagedType<T>.Type.Size == ElementSize);
-
             if (!_lock.TryEnterWriteLock(0))
                 throw new Exception("Could not take write lock on component data!");
 
@@ -56,7 +54,6 @@
             if (componentType.ID != _componentType.ID)
                 throw new Exception("Invalid type.");
 
-            //Assert(UnmanagedType<T>.Type.Size == ElementSize);
             if (!_lock.TryEnterReadLock(0))
                 throw new Exception("Could not take write lock on component data!");
 
@@ -64,20 +61,33 @@
             return new ComponentDataArrayReadLock(_lock);
         }
 
-        public void Move(int src, int dst)
+        public void Reset(int index)
         {
-            if (src == dst)
-                return;
-            //Assert(UnmanagedType<T>.Type.Size == ElementSize);
-            Assert(src >= 0 && src < Length && dst >= 0 && dst < Length);
+            Assert(index >= 0 && index < Length);
             if (!_lock.TryEnterWriteLock(0))
                 throw new Exception("Could not take write lock on component data!");
 
-            var baseAddr = (byte*)_memoryHandle.Address;
-            var srcAddr = baseAddr + src * ElementSize;
-            var dstAddr = baseAddr + dst * ElementSize;
+            var addr = (byte*)_memoryHandle.Address;
+            var dst = addr + index * ElementSize;
 
-            _componentHelper.Copy(srcAddr, dstAddr);
+            _componentHelper.Reset(dst);
+            _lock.ExitWriteLock();
+        }
+
+        public void Move(int srcIndex, int dstIndex)
+        {
+            if (srcIndex == dstIndex)
+                return;
+
+            Assert(srcIndex >= 0 && srcIndex < Length && dstIndex >= 0 && dstIndex < Length);
+            if (!_lock.TryEnterWriteLock(0))
+                throw new Exception("Could not take write lock on component data!");
+
+            var addr = (byte*)_memoryHandle.Address;
+            var src = addr + srcIndex * ElementSize;
+            var dst = addr + dstIndex * ElementSize;
+
+            _componentHelper.Copy(src, dst);
             _lock.ExitWriteLock();
         }
 
