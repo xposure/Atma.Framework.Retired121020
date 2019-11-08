@@ -1,6 +1,8 @@
 ﻿namespace Atma.Sandbox
 {
     using System;
+    using System.Linq;
+    using System.Collections.Generic;
     using Atma.Entities;
     using Shouldly;
 
@@ -20,9 +22,51 @@
             // var type = em.CreateArchetype(typeof(Test));
             // var e = em.CreateEntity(type);
 
-            EntitySetComponent();
+            SpecShouldFindMatches();
 
             Console.WriteLine("Hello World!");
+        }
+
+
+        public static void SpecShouldFindMatches()
+        {
+            var specs = new[]
+            {
+                new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid6>.Type, ComponentType<Valid5>.Type),
+                new EntitySpec(ComponentType<Valid4>.Type,ComponentType<Valid2>.Type,ComponentType<Valid3>.Type, ComponentType<Valid5>.Type),
+                new EntitySpec(ComponentType<Valid6>.Type, ComponentType<Valid3>.Type, ComponentType<Valid>.Type, ComponentType<Valid4>.Type)
+            };
+
+            Span<ComponentType> componentTypes0 = stackalloc ComponentType[8];
+            var c0 = specs[0].FindMatches(specs[1], componentTypes0);
+            var m0 = new List<ComponentType>(componentTypes0.Slice(0, c0).ToArray());
+            var componentTypes1 = new ComponentType[8];
+            //var c1 = specs[1].FindMatches(specs[2], componentTypes1.AsSpan());
+            var m1 = new List<ComponentType>(componentTypes1);// new List<ComponentType>(componentTypes1.AsSpan().Slice(c1).ToArray()).ToList();
+            var componentTypes2 = new ComponentType[8];
+            //var c2 = specs[2].FindMatches(specs[0], componentTypes2.AsSpan());
+            var m2 = new List<ComponentType>(componentTypes2);// new List<ComponentType>(componentTypes2.AsSpan().Slice(c2).ToArray()).ToList();
+
+            var valid2 = ComponentType<Valid2>.Type.ID;
+            m0.Any(x => x.ID == ComponentType<Valid2>.Type.ID).ShouldBe(true);
+            //`m0.ShouldContain(x => x.ID == (() => valid2)());
+            // m0.ShouldContain(x => x.ID == ComponentType<Valid5>.Type.ID);
+            // m0.ShouldNotContain(x => x.ID == ComponentType<Valid>.Type.ID);
+            // m0.ShouldNotContain(x => x.ID == ComponentType<Valid3>.Type.ID);
+            // m0.ShouldNotContain(x => x.ID == ComponentType<Valid6>.Type.ID);
+
+            // m1.ShouldContain(x => x.ID == ComponentType<Valid4>.Type.ID);
+            // m1.ShouldContain(x => x.ID == ComponentType<Valid3>.Type.ID);
+            // m1.ShouldNotContain(x => x.ID == ComponentType<Valid>.Type.ID);
+            // m1.ShouldNotContain(x => x.ID == ComponentType<Valid6>.Type.ID);
+            // m1.ShouldNotContain(x => x.ID == ComponentType<Valid2>.Type.ID);
+
+            // m2.ShouldContain(x => x.ID == ComponentType<Valid6>.Type.ID);
+            // m2.ShouldContain(x => x.ID == ComponentType<Valid>.Type.ID);
+            // m2.ShouldNotContain(x => x.ID == ComponentType<Valid3>.Type.ID);
+            // m2.ShouldNotContain(x => x.ID == ComponentType<Valid4>.Type.ID);
+            // m2.ShouldNotContain(x => x.ID == ComponentType<Valid2>.Type.ID);
+
         }
 
         private static EntityManager GetEntityManager()

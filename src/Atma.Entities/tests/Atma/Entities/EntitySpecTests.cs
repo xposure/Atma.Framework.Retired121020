@@ -2,6 +2,7 @@ namespace Atma.Entities
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Shouldly;
 
     public class EntitySpecTests
@@ -27,7 +28,7 @@ namespace Atma.Entities
             }
         }
 
-        public void ArchetypeComponentsShouldBeSorted()
+        public void SpecComponentsShouldBeSorted()
         {
             var specs = new[]
             {
@@ -56,7 +57,7 @@ namespace Atma.Entities
 
             var valid = new[]
             {
-                new EntitySpec(ComponentType<Entity>.Type, ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid3>.Type),
+                new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid3>.Type),
                 new EntitySpec(ComponentType<Valid2>.Type, ComponentType<Valid3>.Type, ComponentType<Valid4>.Type),
                 new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid4>.Type),
                 new EntitySpec(ComponentType<Valid>.Type),
@@ -116,7 +117,7 @@ namespace Atma.Entities
         }
 
 
-        public void ArchetypeShouldFindMatches()
+        public void SpecShouldFindMatches()
         {
             var specs = new[]
             {
@@ -125,34 +126,31 @@ namespace Atma.Entities
                 new EntitySpec(ComponentType<Valid6>.Type, ComponentType<Valid3>.Type, ComponentType<Valid>.Type, ComponentType<Valid4>.Type)
             };
 
-            Span<ComponentType> temp = stackalloc ComponentType[24];
+            Span<ComponentType> componentTypes0 = stackalloc ComponentType[8];
+            var c0 = specs[0].FindMatches(specs[1], componentTypes0);
+            var m0 = new List<ComponentType>(componentTypes0.Slice(0, c0).ToArray());
+            var c1 = specs[1].FindMatches(specs[2], componentTypes0);
+            var m1 = new List<ComponentType>(componentTypes0.Slice(0, c1).ToArray());
+            var c2 = specs[2].FindMatches(specs[0], componentTypes0);
+            var m2 = new List<ComponentType>(componentTypes0.Slice(0, c2).ToArray());
 
-            var c0 = specs[0].FindMatches(specs[1], temp);
-            var m0 = new List<ComponentType>(temp.Slice(c0).ToArray());
+            m0.Any(x => x.ID == ComponentType<Valid2>.Type.ID).ShouldBe(true);
+            m0.Any(x => x.ID == ComponentType<Valid5>.Type.ID).ShouldBe(true);
+            m0.Any(x => x.ID == ComponentType<Valid>.Type.ID).ShouldBe(false);
+            m0.Any(x => x.ID == ComponentType<Valid3>.Type.ID).ShouldBe(false);
+            m0.Any(x => x.ID == ComponentType<Valid6>.Type.ID).ShouldBe(false);
 
-            var c1 = specs[1].FindMatches(specs[2], temp);
-            var m1 = new List<ComponentType>(temp.Slice(c1).ToArray());
+            m1.Any(x => x.ID == ComponentType<Valid4>.Type.ID).ShouldBe(true);
+            m1.Any(x => x.ID == ComponentType<Valid3>.Type.ID).ShouldBe(true);
+            m1.Any(x => x.ID == ComponentType<Valid>.Type.ID).ShouldBe(false);
+            m1.Any(x => x.ID == ComponentType<Valid6>.Type.ID).ShouldBe(false);
+            m1.Any(x => x.ID == ComponentType<Valid2>.Type.ID).ShouldBe(false);
 
-            var c2 = specs[2].FindMatches(specs[0], temp);
-            var m2 = new List<ComponentType>(temp.Slice(c2).ToArray());
-
-            m0.ShouldContain(x => x.ID == ComponentType<Valid2>.Type.ID);
-            m0.ShouldContain(x => x.ID == ComponentType<Valid5>.Type.ID);
-            m0.ShouldNotContain(x => x.ID == ComponentType<Valid>.Type.ID);
-            m0.ShouldNotContain(x => x.ID == ComponentType<Valid3>.Type.ID);
-            m0.ShouldNotContain(x => x.ID == ComponentType<Valid6>.Type.ID);
-
-            m1.ShouldContain(x => x.ID == ComponentType<Valid4>.Type.ID);
-            m1.ShouldContain(x => x.ID == ComponentType<Valid3>.Type.ID);
-            m1.ShouldNotContain(x => x.ID == ComponentType<Valid>.Type.ID);
-            m1.ShouldNotContain(x => x.ID == ComponentType<Valid6>.Type.ID);
-            m1.ShouldNotContain(x => x.ID == ComponentType<Valid2>.Type.ID);
-
-            m2.ShouldContain(x => x.ID == ComponentType<Valid6>.Type.ID);
-            m2.ShouldContain(x => x.ID == ComponentType<Valid>.Type.ID);
-            m2.ShouldNotContain(x => x.ID == ComponentType<Valid3>.Type.ID);
-            m2.ShouldNotContain(x => x.ID == ComponentType<Valid4>.Type.ID);
-            m2.ShouldNotContain(x => x.ID == ComponentType<Valid2>.Type.ID);
+            m2.Any(x => x.ID == ComponentType<Valid6>.Type.ID).ShouldBe(true);
+            m2.Any(x => x.ID == ComponentType<Valid>.Type.ID).ShouldBe(true);
+            m2.Any(x => x.ID == ComponentType<Valid3>.Type.ID).ShouldBe(false);
+            m2.Any(x => x.ID == ComponentType<Valid4>.Type.ID).ShouldBe(false);
+            m2.Any(x => x.ID == ComponentType<Valid2>.Type.ID).ShouldBe(false);
 
         }
     }
