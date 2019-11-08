@@ -6,7 +6,7 @@
     using System;
     using System.Collections.Generic;
 
-    public unsafe struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
+    public unsafe readonly struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
     {
         public readonly int ID;
         public readonly int Size;
@@ -55,7 +55,7 @@
 
         public override string ToString()
         {
-            return StructHelper.ToString(ref this);
+            return StructHelper.ToString(this);
         }
 
 

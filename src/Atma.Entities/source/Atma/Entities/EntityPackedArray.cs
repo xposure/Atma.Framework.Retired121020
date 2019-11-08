@@ -1,13 +1,11 @@
 namespace Atma.Entities
 {
     using System;
-    using System.Linq;
-    using Atma.Common;
     using Atma.Memory;
 
     using static Atma.Debug;
 
-    public interface IEntityGroupArray : IDisposable
+    public interface IEntityPackedArray : IDisposable
     {
         //ref readonly Entity Create();
         //int Create();
@@ -20,12 +18,14 @@ namespace Atma.Entities
         int Length { get; }
 
         void Move(int src, int dst);
+        Span<T> GetComponentSpan<T>() where T : unmanaged;
+        //RWLock Lock(LockType lockType);
 
-        ComponentDataArrayReadLock ReadComponent<T>(out ReadOnlySpan<T> span) where T : unmanaged;
-        ComponentDataArrayWriteLock WriteComponent<T>(out Span<T> span) where T : unmanaged;
+        //ReadLock ReadComponent<T>(out ReadOnlySpan<T> span) where T : unmanaged;
+        //WriteLock WriteComponent<T>(out Span<T> span) where T : unmanaged;
     }
 
-    public unsafe sealed class EntityGroupArray : UnmanagedDispose, IEntityGroupArray
+    public unsafe sealed class EntityPackedArray : UnmanagedDispose, IEntityPackedArray
     {
         private ComponentDataArray2[] _componentData;
         private IAllocator _allocator;
@@ -33,7 +33,7 @@ namespace Atma.Entities
         public EntitySpec Specification { get; }
         public int Length => Entity.ENTITY_MAX;
 
-        public EntityGroupArray(EntitySpec specification)
+        public EntityPackedArray(EntitySpec specification)
         {
             Specification = specification;
 
@@ -97,26 +97,35 @@ namespace Atma.Entities
                 _componentData[i].Move(src, dst);
         }
 
-        public ComponentDataArrayReadLock ReadComponent<T>(out ReadOnlySpan<T> span)
+        public Span<T> GetComponentSpan<T>()
             where T : unmanaged
         {
             var index = GetComponentIndex<T>();
             Assert(index > -1);
 
             var componentDataArray = _componentData[index];
-            return componentDataArray.AsReadOnlySpan(out span);
+            return componentDataArray.AsSpan<T>();
         }
 
-        public ComponentDataArrayWriteLock WriteComponent<T>(out Span<T> span)
-            where T : unmanaged
-        {
-            var index = GetComponentIndex<T>();
-            Assert(index > -1);
+        // public ReadLock ReadComponent<T>(out ReadOnlySpan<T> span)
+        //     where T : unmanaged
+        // {
+        //     var index = GetComponentIndex<T>();
+        //     Assert(index > -1);
 
-            var componentDataArray = _componentData[index];
-            return componentDataArray.AsSpan(out span);
+        //     var componentDataArray = _componentData[index];
+        //     return componentDataArray.AsReadOnlySpan(out span);
+        // }
 
-        }
+        // public WriteLock WriteComponent<T>(out Span<T> span)
+        //     where T : unmanaged
+        // {
+        //     var index = GetComponentIndex<T>();
+        //     Assert(index > -1);
+
+        //     var componentDataArray = _componentData[index];
+        //     return componentDataArray.AsSpan(out span);
+        // }
 
         protected override void OnManagedDispose()
         {
@@ -129,6 +138,36 @@ namespace Atma.Entities
             //using stackalocator, must do it backwards
             for (int i = _componentData.Length - 1; i >= 0; i--)
                 _componentData[i].Dispose();
+        }
+
+        internal static void CopyTo(EntityPackedArray srcArray, int srcIndex, EntityPackedArray dstArray, int dstIndex)
+        {
+            SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray2.CopyTo(src, srcIndex, dst, dstIndex));
+        }
+
+        internal delegate void SharedComponentCallback(ComponentDataArray2 srcArray, ComponentDataArray2 dstArray);
+        internal static int SharedComponentArrays(EntityPackedArray srcArray, EntityPackedArray dstArray, SharedComponentCallback shareCallback)
+        {
+            var i0 = 0;
+            var i1 = 0;
+            var index = 0;
+
+            Span<ComponentType> a = srcArray.Specification.ComponentTypes;
+            Span<ComponentType> b = dstArray.Specification.ComponentTypes;
+            while (i0 < a.Length && i1 < b.Length)
+            {
+                var aType = a[i0];
+                var bType = b[i1];
+                if (aType.ID > bType.ID) i1++;
+                else if (bType.ID > aType.ID) i0++;
+                else
+                {
+                    shareCallback(srcArray._componentData[i0], dstArray._componentData[i1]);
+                    i0++;
+                    i1++;
+                }
+            }
+            return index;
         }
     }
 }

@@ -68,5 +68,28 @@ namespace Atma.Entities
             entityChunk.Count.ShouldBe(0);
             entityChunk.Free.ShouldBe(free);
         }
+
+        public void ShouldCopyToOtherChunk()
+        {
+            //arrange
+            var specification = new EntitySpec(
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            );
+
+            var chunk0 = new EntityChunk(specification);
+            var chunk1 = new EntityChunk(specification);
+
+
+
+            //act
+            var free = chunk0.Free;
+            var index = chunk0.Create();
+
+            //assert
+            index.ShouldBe(0);
+            chunk0.Count.ShouldBe(1);
+            chunk0.Free.ShouldBe(free - 1);
+        }
     }
 }

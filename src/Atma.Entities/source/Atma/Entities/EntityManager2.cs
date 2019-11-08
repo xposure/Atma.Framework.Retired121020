@@ -25,18 +25,20 @@
 
         uint Create(EntitySpec spec);
 
-        void Assign<T>(uint entity, in T t);
-        void Replace<T>(uint entity, in T t);
-        void Update<T>(uint entity, in T t);
+        void Assign<T>(uint entity, in T t) where T : unmanaged;
+        void Replace<T>(uint entity, in T t) where T : unmanaged;
+        void Update<T>(uint entity, in T t) where T : unmanaged;
 
         bool Has(uint entity);
         bool Has<T>(uint entity) where T : unmanaged;
 
         void Remove(uint entity);
-        void Remove<T>(uint entity);
+        void Remove<T>(uint entity) where T : unmanaged;
 
         void Reset(uint entity);
-        void Reset<T>(uint entity);
+        void Reset<T>(uint entity) where T : unmanaged;
+
+        void Move(uint entity, EntitySpec spec);
     }
 
     public sealed partial class EntityManager2 : UnmanagedDispose, IEntityManager2
@@ -63,7 +65,7 @@
         // }
         private EntityPool2 _entityPool = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
-        private List<EntityArray> _entityArrays = new List<EntityArray>();
+        private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
 
         public EntityManager2()
         {
@@ -71,7 +73,7 @@
             _entityPool.Take(0, 0, 0);
         }
 
-        public uint Create(EntitySpec spec)
+        private int GetOrCreateSpec(EntitySpec spec)
         {
             var specIndex = _knownSpecs.IndexOf(spec.ID);
             if (specIndex == -1)
@@ -80,16 +82,56 @@
                 specIndex = _knownSpecs.Count;
                 Assert(specIndex < Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityArray(spec));
+                _entityArrays.Add(new EntityChunkArray(spec));
             }
+            return specIndex;
+        }
 
+        private int GetOrCreateSpec(Span<ComponentType> componentTypes)
+        {
+            var specId = ComponentType.CalculateId(componentTypes);
+            var specIndex = _knownSpecs.IndexOf(specId);
+            if (specIndex == -1)
+            {
+                var spec = new EntitySpec(specId, componentTypes.ToArray());
+                //we are limited to this many unique specs per EM
+                specIndex = _knownSpecs.Count;
+                Assert(specIndex < Entity.SPEC_MAX);
+                _knownSpecs.Add(spec.ID, spec);
+                _entityArrays.Add(new EntityChunkArray(spec));
+            }
+            return specIndex;
+        }
+
+        public uint Create(EntitySpec spec)
+        {
+            var specIndex = GetOrCreateSpec(spec);
             var index = _entityArrays[specIndex].Create(out var chunkIndex);
             return _entityPool.Take(specIndex, chunkIndex, index);
         }
 
         public void Assign<T>(uint entity, in T t)
+            where T : unmanaged
         {
-            throw new NotImplementedException();
+            Assert(!Has<T>(entity));
+
+            ref readonly var e = ref _entityPool.Get(entity);
+            var spec = _knownSpecs[e.SpecIndex];
+
+
+            //we need to move the entity to the new spec
+            Span<ComponentType> componentTypes = stackalloc ComponentType[spec.ComponentTypes.Length + 1];
+            spec.ComponentTypes.CopyTo(componentTypes);
+
+            var newComponentType = ComponentType<T>.Type;
+            componentTypes[spec.ComponentTypes.Length] = newComponentType;
+
+            var specId = ComponentType.CalculateId(componentTypes);
+            var specIndex = GetOrCreateSpec(componentTypes);
+            var newSpec = _knownSpecs[specIndex];
+
+            Move(entity, spec);
+            Replace<T>(entity, t);
         }
 
         public bool Has(uint entity)
@@ -112,12 +154,20 @@
         }
 
         public void Remove<T>(uint entity)
+            where T : unmanaged
         {
             throw new NotImplementedException();
         }
 
         public void Replace<T>(uint entity, in T t)
+            where T : unmanaged
         {
+            Assert(Has<T>(entity));
+            ref readonly var e = ref _entityPool.Get(entity);
+            var array = _entityArrays[e.SpecIndex];
+            //var chunk = array.AllChunks
+
+            //using var writelock
             throw new NotImplementedException();
         }
 
@@ -127,19 +177,26 @@
         }
 
         public void Reset<T>(uint entity)
+            where T : unmanaged
         {
             throw new NotImplementedException();
         }
 
         public void Update<T>(uint entity, in T t)
+            where T : unmanaged
         {
             throw new NotImplementedException();
         }
 
-        public IEntityView View<T>() where T : unmanaged
+        public void Move(uint enitty, EntitySpec spec)
         {
-            throw new NotImplementedException();
+
         }
+
+        // public IEntityView View<T>() where T : unmanaged
+        // {
+        //     throw new NotImplementedException();
+        // }
 
 
         // internal void GetEntityStorage(int entity, out EntityArchetype archetype, out ArchetypeChunk chunk, out int index)

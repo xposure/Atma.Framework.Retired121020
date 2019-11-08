@@ -7,7 +7,16 @@ namespace Atma.Entities
     {
         public readonly int ID;
         public readonly ComponentType[] ComponentTypes;
+        //public readonly ComponentTypeHelper[] componentTypeHelpers;
         public readonly int EntitySize;
+
+
+        internal EntitySpec(int id, params ComponentType[] componentTypes)
+        {
+            ID = id;
+            ComponentTypes = componentTypes;
+            EntitySize = ComponentTypes.Sum(x => x.Size);
+        }
 
         public EntitySpec(params ComponentType[] componentTypes)
         {

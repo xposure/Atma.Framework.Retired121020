@@ -66,6 +66,21 @@
             em.Has(id0).ShouldBe(false);
         }
 
+        // public void ShouldAssignEntity()
+        // {
+        //     //arrange
+        //     using var em = new EntityManager2();
+        //     var spec = new EntitySpec(ComponentType<Position>.Type);
+
+        //     //act
+        //     var id0 = em.Create(spec);
+        //     em.Assign<Velocity>(id0, new Velocity(10, 20));
+
+        //     //assert
+        //     em.Has<Velocity>(id0).ShouldBe(true);
+
+        // }
+
 
         // public void ShouldCreateValidArchetype()
         // {

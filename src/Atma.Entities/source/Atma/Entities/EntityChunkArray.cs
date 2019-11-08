@@ -23,11 +23,11 @@
 
         int Create(out int chunkIndex);
         void Delete(int chunkIndex, int index);
-
+        //void MoveTo()
         //bool HasComponent(in ComponentType componentType);
     }
 
-    public sealed class EntityArray : UnmanagedDispose, IEntityArray //IEquatable<EntityArchetype>
+    public sealed class EntityChunkArray : UnmanagedDispose, IEntityArray //IEquatable<EntityArchetype>
     {
         public int EntityCount => _entityCount;
         public int Capacity => _chunks.Count * Entity.ENTITY_MAX;
@@ -50,7 +50,7 @@
         private List<EntityChunk> _chunks = new List<EntityChunk>();
 
 
-        public EntityArray(EntitySpec specification)
+        public EntityChunkArray(EntitySpec specification)
         {
             Specification = specification;
         }
@@ -95,7 +95,18 @@
             _chunks = null;
         }
 
-        //public bool HasComponent(in ComponentType componentType) => Specification.Has(componentType);
+        public static void MoveTo(EntityChunkArray src, int srcChunkIndex, int srcIndex, EntityChunkArray dst, out int dstChunkIndex, out int dstIndex)
+        {
+            dstIndex = dst.Create(out dstChunkIndex);
+            var srcChunk = src._chunks[srcChunkIndex];
+            var dstChunk = dst._chunks[dstChunkIndex];
+
+            EntityChunk.MoveTo(srcChunk, srcIndex, dstChunk, dstIndex);
+
+            src.Delete(srcChunkIndex, srcIndex);
+        }
+
+
     }
 
     // public static void MoveEntity(EntityPool pool, int entity, ArchetypeChunk chunkSrc, int indexSrc, EntityArchetype archetype, EntityArchetype newArchetype)

@@ -36,7 +36,7 @@
                 ComponentType<Position>.Type
             );
 
-            var archetype = new EntityArray(specifcation);
+            var archetype = new EntityChunkArray(specifcation);
 
             //act
             var index0 = archetype.Create(out var chunkIndex);
@@ -55,7 +55,7 @@
                 ComponentType<Position>.Type
             );
 
-            var archetype = new EntityArray(specifcation);
+            var archetype = new EntityChunkArray(specifcation);
 
             //act
             for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)

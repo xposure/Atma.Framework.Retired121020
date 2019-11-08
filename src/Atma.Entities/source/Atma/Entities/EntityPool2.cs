@@ -47,6 +47,7 @@ namespace Atma.Common
                 return ref _entityMap[page][index];
             }
         }
+        public ref readonly Entity2 Get(uint entity) => ref this[entity];
 
         public bool IsValid(uint id)
         {

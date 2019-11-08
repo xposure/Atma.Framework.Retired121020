@@ -17,7 +17,7 @@ namespace Atma.Entities
     public class EntityChunk : UnmanagedDispose, IEntityChunk
     {
         private int _entityCount = 0;
-        private EntityGroupArray _groupArray;
+        private EntityPackedArray _groupArray;
 
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
@@ -26,7 +26,7 @@ namespace Atma.Entities
         public EntityChunk(EntitySpec specifcation)
         {
             Specification = specifcation;
-            _groupArray = new EntityGroupArray(specifcation);
+            _groupArray = new EntityPackedArray(specifcation);
         }
 
         public int Create()
@@ -34,7 +34,6 @@ namespace Atma.Entities
             Assert(Free > 0);
 
             return _entityCount++;
-            //throw new System.NotImplementedException();
         }
 
         public void Delete(int index)
@@ -54,6 +53,11 @@ namespace Atma.Entities
         protected override void OnUnmanagedDispose()
         {
             _groupArray.Dispose();
+        }
+
+        public static void MoveTo(EntityChunk srcChunk, int srcIndex, EntityChunk dstChunk, int dstIndex)
+        {
+            EntityPackedArray.CopyTo(srcChunk._groupArray, srcIndex, dstChunk._groupArray, dstIndex);
         }
     }
 }

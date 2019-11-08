@@ -26,7 +26,7 @@ namespace Atma.Common
                 name = type.Name;
             }
 
-            public static string ToString(ref T t)
+            public static string ToString(in T t)
             {
                 var o = (object)t;
                 sb.Clear();
@@ -46,10 +46,10 @@ namespace Atma.Common
             }
         }
 
-        public static string ToString<T>(ref T t)
+        public static string ToString<T>(in T t)
             where T : unmanaged
         {
-            return StructHelperCache<T>.ToString(ref t);
+            return StructHelperCache<T>.ToString(t);
         }
     }
 }

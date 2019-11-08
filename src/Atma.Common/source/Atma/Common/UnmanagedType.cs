@@ -3,7 +3,7 @@
     using System;
     using System.Threading;
 
-    public struct UnmanagedType
+    public readonly struct UnmanagedType
     {
         internal static int UniqueID;
 

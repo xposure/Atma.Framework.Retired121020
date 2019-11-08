@@ -38,17 +38,17 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityGroupArray(specification);
+            var entityGroup = new EntityPackedArray(specification);
 
             //act
-            using var lockPositions = entityGroup.ReadComponent<Position>(out var positions);
-            using var lockVelocities = entityGroup.ReadComponent<Velocity>(out var velocities);
+            var positions = entityGroup.GetComponentSpan<Position>();
+            var velocities = entityGroup.GetComponentSpan<Velocity>();
 
             //assert
             for (var i = 0; i < entityGroup.Length; i++)
             {
-                ref readonly var p = ref positions[i];
-                ref readonly var v = ref velocities[i];
+                ref var p = ref positions[i];
+                ref var v = ref velocities[i];
                 p.X.ShouldBe(0);
                 p.Y.ShouldBe(0);
                 v.VX.ShouldBe(0);
@@ -63,13 +63,13 @@ namespace Atma.Entities
                 ComponentType<Position>.Type
             );
 
-            var entityGroup = new EntityGroupArray(specification);
+            var entityGroup = new EntityPackedArray(specification);
 
             //act
             //assert
             Should.Throw<Exception>(() =>
             {
-                using var lockVelocities = entityGroup.ReadComponent<Velocity>(out var velocities);
+                var velocities = entityGroup.GetComponentSpan<Velocity>();
             });
         }
 
@@ -83,11 +83,11 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityGroupArray(specification);
+            var entityGroup = new EntityPackedArray(specification);
 
             //act
-            using (var lockPositions = entityGroup.WriteComponent<Position>(out var positions))
-            using (var lockVelocities = entityGroup.WriteComponent<Velocity>(out var velocities))
+            var positions = entityGroup.GetComponentSpan<Position>();
+            var velocities = entityGroup.GetComponentSpan<Velocity>();
             {
                 for (var i = 0; i < entityGroup.Length; i++)
                 {
@@ -101,13 +101,13 @@ namespace Atma.Entities
             }
 
             //assert
-            using (var lockPositions = entityGroup.ReadComponent<Position>(out var positions1))
-            using (var lockVelocities = entityGroup.ReadComponent<Velocity>(out var velocities1))
+            var positions1 = entityGroup.GetComponentSpan<Position>();
+            var velocities1 = entityGroup.GetComponentSpan<Velocity>();
             {
                 for (var i = 0; i < entityGroup.Length; i++)
                 {
-                    ref readonly var p = ref positions1[i];
-                    ref readonly var v = ref velocities1[i];
+                    ref var p = ref positions1[i];
+                    ref var v = ref velocities1[i];
                     p.X.ShouldBe(i);
                     p.Y.ShouldBe(i + 1);
                     v.VX.ShouldBe(i + 2);
@@ -124,11 +124,11 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityGroupArray(specification);
+            var entityGroup = new EntityPackedArray(specification);
 
             //act
-            using (var lockPositions = entityGroup.WriteComponent<Position>(out var positions))
-            using (var lockVelocities = entityGroup.WriteComponent<Velocity>(out var velocities))
+            var positions = entityGroup.GetComponentSpan<Position>();
+            var velocities = entityGroup.GetComponentSpan<Velocity>();
             {
                 ref var p = ref positions[1];
                 ref var v = ref velocities[1];
@@ -141,11 +141,11 @@ namespace Atma.Entities
             entityGroup.Move(1, 0);
 
             //assert
-            using (var lockPositions = entityGroup.ReadComponent<Position>(out var positions1))
-            using (var lockVelocities = entityGroup.ReadComponent<Velocity>(out var velocities1))
+            var positions1 = entityGroup.GetComponentSpan<Position>();
+            var velocities1 = entityGroup.GetComponentSpan<Velocity>();
             {
-                ref readonly var p = ref positions1[0];
-                ref readonly var v = ref velocities1[0];
+                ref var p = ref positions1[0];
+                ref var v = ref velocities1[0];
                 p.X.ShouldBe(10);
                 p.Y.ShouldBe(20);
                 v.VX.ShouldBe(30);
