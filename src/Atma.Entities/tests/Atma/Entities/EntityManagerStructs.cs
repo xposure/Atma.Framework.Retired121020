@@ -78,7 +78,7 @@ namespace Atma.Entities
             return $"*";
         }
     }
-    
+
     public struct ShouldFilterStruct
     {
         public Write<Valid> valid;
@@ -112,7 +112,7 @@ namespace Atma.Entities
         }
     }
 
-    [AnyComponent(typeof(Valid2), typeof(Valid3))]
+    // [AnyComponent(typeof(Valid2), typeof(Valid3))]
     public struct GroupConditional
     {
         public readonly Valid valid;
@@ -121,7 +121,7 @@ namespace Atma.Entities
     }
 
 
-    [IgnoreComponent(typeof(Valid3))]
+    //[IgnoreComponent(typeof(Valid3))]
     public struct GroupIgnore
     {
         public readonly Valid valid;

@@ -107,17 +107,7 @@
             em.EntityCount.ShouldBe(2);
         }
 
-        private static EntityManager GetEntityManager()
-        {
-            var componentList = new ComponentList();
-            componentList.AddComponent<Valid>();
-            componentList.AddComponent<Valid2>();
-            componentList.AddComponent<Valid3>();
-            componentList.AddComponent<Valid4>();
-            componentList.AddComponent<Valid5>();
-            componentList.AddComponent<Valid6>();
-            return new EntityManager(componentList);
-        }
+
     }
 
     // public unsafe struct ValidPtr
