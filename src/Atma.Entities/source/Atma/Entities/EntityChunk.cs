@@ -3,20 +3,22 @@ namespace Atma.Entities
     using System;
     using static Atma.Debug;
 
-    public interface IEntityChunk : IDisposable
-    {
-        int Count { get; }
-        int Free { get; }
+    // public interface IEntityChunk : IDisposable
+    // {
+    //     int Count { get; }
+    //     int Free { get; }
 
-        EntitySpec Specification { get; }
+    //     EntitySpec Specification { get; }
 
-        int Create();
-        void Delete(int index);
-    }
+    //     int Create();
+    //     void Delete(int index);
+    // }
 
-    public class EntityChunk : UnmanagedDispose, IEntityChunk
+    public class EntityChunk : UnmanagedDispose//, IEntityChunk
     {
         private int _entityCount = 0;
+
+        private uint[] _entities;
         private EntityPackedArray _packedArray;
 
         public int Count => _entityCount;
@@ -28,26 +30,44 @@ namespace Atma.Entities
         {
             Specification = specifcation;
             _packedArray = new EntityPackedArray(specifcation);
+            _entities = new uint[_packedArray.Length];
         }
 
-        public int Create()
+        public uint GetEntity(int index)
+        {
+            Assert(index >= 0 && index < _entityCount);
+            return _entities[index];
+        }
+
+        public int Create(uint entity)
         {
             Assert(Free > 0);
 
-            return _entityCount++;
+            var index = _entityCount++;
+            _entities[index] = entity;
+            return index;
         }
 
-        public void Delete(int index)
+        public int Delete(int index)
         {
             Assert(index >= 0 && index < _entityCount);
-            if (index < _entityCount - 1)
-                _packedArray.Move(_entityCount - 1, index);
-
             _entityCount--;
+
+            var movedIndex = -1;
+            if (index < _entityCount) //removing the last element, no need to patch
+            {
+                movedIndex = index;
+                _packedArray.Move(_entityCount, index);
+                _entities[index] = _entities[_entityCount];
+            }
+
+            _entities[_entityCount] = 0;
+            return movedIndex;
         }
 
         protected override void OnManagedDispose()
         {
+            _entities = null;
             _packedArray = null;
         }
 
@@ -56,9 +76,10 @@ namespace Atma.Entities
             _packedArray.Dispose();
         }
 
-        public static void MoveTo(EntityChunk srcChunk, int srcIndex, EntityChunk dstChunk, int dstIndex)
-        {
-            EntityPackedArray.CopyTo(srcChunk._packedArray, srcIndex, dstChunk._packedArray, dstIndex);
-        }
+        // public static void MoveTo(EntityChunk srcChunk, int srcIndex, EntityChunk dstChunk, int dstIndex)
+        // {
+        //     dstChunk._entities[dstIndex] = srcChunk._entities[srcIndex];
+        //     EntityPackedArray.CopyTo(srcChunk._packedArray, srcIndex, dstChunk._packedArray, dstIndex);
+        // }
     }
 }

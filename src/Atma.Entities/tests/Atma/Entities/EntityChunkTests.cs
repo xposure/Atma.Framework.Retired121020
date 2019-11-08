@@ -41,10 +41,11 @@ namespace Atma.Entities
 
             //act
             var free = entityChunk.Free;
-            var index = entityChunk.Create();
+            var index = entityChunk.Create(1);
 
             //assert
             index.ShouldBe(0);
+            entityChunk.GetEntity(index).ShouldBe(1u);
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
         }
@@ -61,12 +62,14 @@ namespace Atma.Entities
 
             //act
             var free = entityChunk.Free;
-            var index = entityChunk.Create();
-            entityChunk.Delete(index);
+            var index0 = entityChunk.Create(1);
+            var index1 = entityChunk.Create(2);
+            entityChunk.Delete(index0);
 
             //assert
-            entityChunk.Count.ShouldBe(0);
-            entityChunk.Free.ShouldBe(free);
+            entityChunk.Count.ShouldBe(1);
+            entityChunk.Free.ShouldBe(free - 1);
+            entityChunk.GetEntity(0).ShouldBe(2u);
         }
 
         public void ShouldCopyToOtherChunk()
@@ -81,10 +84,9 @@ namespace Atma.Entities
             var chunk1 = new EntityChunk(specification);
 
 
-
             //act
             var free = chunk0.Free;
-            var index = chunk0.Create();
+            var index = chunk0.Create(1);
 
             //assert
             index.ShouldBe(0);

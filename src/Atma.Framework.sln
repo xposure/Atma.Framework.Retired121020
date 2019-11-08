@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atma.Entities", "Atma.Entit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atma.Entities.Tests", "Atma.Entities\tests\Atma.Entities.Tests.csproj", "{7255F33F-89E8-44E4-9C03-EC7D15D90A2D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atma.Sandbox", "Atma.Sandbox\Atma.Sandbox.csproj", "{1B228123-5D89-4EF3-A2E3-C30D927A7D40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -166,6 +168,18 @@ Global
 		{7255F33F-89E8-44E4-9C03-EC7D15D90A2D}.Release|x64.Build.0 = Release|Any CPU
 		{7255F33F-89E8-44E4-9C03-EC7D15D90A2D}.Release|x86.ActiveCfg = Release|Any CPU
 		{7255F33F-89E8-44E4-9C03-EC7D15D90A2D}.Release|x86.Build.0 = Release|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Debug|x64.Build.0 = Debug|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Debug|x86.Build.0 = Debug|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Release|x64.ActiveCfg = Release|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Release|x64.Build.0 = Release|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Release|x86.ActiveCfg = Release|Any CPU
+		{1B228123-5D89-4EF3-A2E3-C30D927A7D40}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{465D5919-BE4B-4D76-ADD5-9CDCF5B63C7D} = {362259E4-0996-47FC-953B-91A6509533FA}

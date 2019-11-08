@@ -49,6 +49,10 @@
             (id1 & 0xffffff).ShouldBe(2u);
             (id2 & 0xffffff).ShouldBe(3u);
             (id3 & 0xffffff).ShouldBe(4u);
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(4);
+            em.EntityCount.ShouldBe(4);
+
         }
 
         public void ShouldShouldDeleteEntity()
@@ -66,21 +70,241 @@
             em.Has(id0).ShouldBe(false);
         }
 
-        // public void ShouldAssignEntity()
-        // {
-        //     //arrange
-        //     using var em = new EntityManager2();
-        //     var spec = new EntitySpec(ComponentType<Position>.Type);
+        public void ShouldShiftAllEntitiesOnDelete()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(ComponentType<Position>.Type);
 
-        //     //act
-        //     var id0 = em.Create(spec);
-        //     em.Assign<Velocity>(id0, new Velocity(10, 20));
+            //act
+            var id0 = em.Create(spec);
+            em.Replace<Position>(id0, new Position(10, 20));
+            var id1 = em.Create(spec);
+            em.Replace<Position>(id1, new Position(11, 21));
+            var id2 = em.Create(spec);
+            em.Replace<Position>(id2, new Position(12, 22));
 
-        //     //assert
-        //     em.Has<Velocity>(id0).ShouldBe(true);
+            em.Remove(id0);
 
-        // }
+            //assert
+            var p1 = em.Get<Position>(id1);
+            p1.X.ShouldBe(11);
+            p1.Y.ShouldBe(21);
 
+            var p2 = em.Get<Position>(id2);
+            p2.X.ShouldBe(12);
+            p2.Y.ShouldBe(22);
+
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(2);
+            em.EntityCount.ShouldBe(2);
+        }
+
+        public void ShouldAssignEntity()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(ComponentType<Position>.Type);
+
+            //act
+            var id0 = em.Create(spec);
+            em.Assign<Velocity>(id0, new Velocity(10, 20));
+
+            //assert
+            em.Has<Velocity>(id0).ShouldBe(true);
+            em.Get<Velocity>(id0).VX.ShouldBe(10);
+            em.Get<Velocity>(id0).VY.ShouldBe(20);
+
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(1);
+        }
+
+        public void ShouldReplaceEntity()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(ComponentType<Position>.Type);
+
+            //act
+            var id0 = em.Create(spec);
+            em.Replace<Position>(id0, new Position(10, 20));
+
+            //assert
+            em.Has<Position>(id0).ShouldBe(true);
+            em.Get<Position>(id0).X.ShouldBe(10);
+            em.Get<Position>(id0).Y.ShouldBe(20);
+
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(1);
+        }
+
+
+        public void ShouldUpdateEntity()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(
+                ComponentType<Position>.Type
+            );
+
+            //act
+            var id0 = em.Create(spec);
+            var id1 = em.Create(spec);
+            em.Update(id0, new Velocity(20, 10));
+
+
+            //assert
+            var v0 = em.Get<Velocity>(id0);
+            v0.VX.ShouldBe(20);
+            v0.VY.ShouldBe(10);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(2);
+        }
+
+        public void ShouldMoveEntity()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var srcSpec = new EntitySpec(ComponentType<Position>.Type);
+            var dstSpec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+
+            //act
+            var id0 = em.Create(srcSpec);
+            em.Replace(id0, new Position(20, 10));
+
+            var id1 = em.Create(srcSpec);
+            em.Replace(id1, new Position(10, 20));
+
+            em.Move(id0, dstSpec);
+
+            //assert
+            var p0 = em.Get<Position>(id0);
+            p0.X.ShouldBe(20);
+            p0.Y.ShouldBe(10);
+
+            var p1 = em.Get<Position>(id1);
+            p1.X.ShouldBe(10);
+            p1.Y.ShouldBe(20);
+
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(2);
+        }
+
+
+        public void ShouldRemoveEntity()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(ComponentType<Position>.Type);
+
+            //act
+            var id0 = em.Create(spec);
+            em.Remove(id0);
+
+            //assert
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityCount.ShouldBe(0);
+        }
+
+        public void ShouldRemoveComponent()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            );
+
+            //act
+            var id0 = em.Create(spec);
+            em.Remove<Position>(id0);
+
+            //assert
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(1);
+        }
+
+        public void ShouldRemoveEntityWithNoComponents()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(
+                ComponentType<Position>.Type
+            );
+
+            //act
+            var id0 = em.Create(spec);
+            em.Remove<Position>(id0);
+
+            //assert
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityCount.ShouldBe(0);
+        }
+
+        public void ShouldResetEntity()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            );
+
+            //act
+            var id0 = em.Create(spec);
+            em.Replace(id0, new Position(10, 20));
+            em.Replace(id0, new Velocity(20, 10));
+            em.Reset(id0);
+
+            //assert
+            var p = em.Get<Position>(id0);
+            var v = em.Get<Velocity>(id0);
+            p.X.ShouldBe(0);
+            p.Y.ShouldBe(0);
+            v.VX.ShouldBe(0);
+            v.VY.ShouldBe(0);
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(1);
+        }
+
+        public void ShouldResetEntityComponent()
+        {
+            //arrange
+            using var em = new EntityManager2();
+            var spec = new EntitySpec(
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            );
+
+            //act
+            var id0 = em.Create(spec);
+            em.Replace(id0, new Position(10, 20));
+            em.Replace(id0, new Velocity(20, 10));
+            em.Reset<Velocity>(id0);
+
+            //assert
+            var p = em.Get<Position>(id0);
+            var v = em.Get<Velocity>(id0);
+            p.X.ShouldBe(10);
+            p.Y.ShouldBe(20);
+            v.VX.ShouldBe(0);
+            v.VY.ShouldBe(0);
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(1);
+        }
 
         // public void ShouldCreateValidArchetype()
         // {

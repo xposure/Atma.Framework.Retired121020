@@ -32,6 +32,8 @@
         bool Has(uint entity);
         bool Has<T>(uint entity) where T : unmanaged;
 
+        ref T Get<T>(uint entity) where T : unmanaged;
+
         void Remove(uint entity);
         void Remove<T>(uint entity) where T : unmanaged;
 
@@ -39,6 +41,9 @@
         void Reset<T>(uint entity) where T : unmanaged;
 
         void Move(uint entity, EntitySpec spec);
+
+        int EntityCount { get; }
+        int SpecCount { get; }
     }
 
     public sealed partial class EntityManager2 : UnmanagedDispose, IEntityManager2
@@ -63,6 +68,11 @@
 
         //     // _entityPool.Take(); //we take the first entity because we use ID as INVALID;
         // }
+
+        public int EntityCount { get => _entityArrays.Sum(x => x.EntityCount); }
+        public int SpecCount { get => _knownSpecs.Count; }
+        public IReadOnlyList<EntityChunkArray> EntityArrays => _entityArrays;
+
         private EntityPool2 _entityPool = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
         private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
@@ -70,7 +80,7 @@
         public EntityManager2()
         {
             //take the first one to reserve 0 as invalid
-            _entityPool.Take(0, 0, 0);
+            _entityPool.Take();
         }
 
         private int GetOrCreateSpec(EntitySpec spec)
@@ -106,8 +116,12 @@
         public uint Create(EntitySpec spec)
         {
             var specIndex = GetOrCreateSpec(spec);
-            var index = _entityArrays[specIndex].Create(out var chunkIndex);
-            return _entityPool.Take(specIndex, chunkIndex, index);
+            var entity = _entityPool.Take();
+            ref var e = ref _entityPool[entity];
+
+            var index = _entityArrays[specIndex].Create(entity, out var chunkIndex);
+            e = new Entity2(entity, specIndex, chunkIndex, index);
+            return entity;
         }
 
         public void Assign<T>(uint entity, in T t)
@@ -115,23 +129,37 @@
         {
             Assert(!Has<T>(entity));
 
-            ref readonly var e = ref _entityPool.Get(entity);
-            var spec = _knownSpecs[e.SpecIndex];
-
+            ref var entityInfo = ref _entityPool[entity];
+            var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
 
             //we need to move the entity to the new spec
-            Span<ComponentType> componentTypes = stackalloc ComponentType[spec.ComponentTypes.Length + 1];
-            spec.ComponentTypes.CopyTo(componentTypes);
+            Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
+            srcSpec.ComponentTypes.CopyTo(componentTypes);
 
             var newComponentType = ComponentType<T>.Type;
-            componentTypes[spec.ComponentTypes.Length] = newComponentType;
+            componentTypes[srcSpec.ComponentTypes.Length] = newComponentType;
 
             var specId = ComponentType.CalculateId(componentTypes);
-            var specIndex = GetOrCreateSpec(componentTypes);
-            var newSpec = _knownSpecs[specIndex];
+            var dstSpecIndex = GetOrCreateSpec(componentTypes);
+            //var dstSpec = _knownSpecs[specIndex];
 
-            Move(entity, spec);
-            Replace<T>(entity, t);
+            Move(ref entityInfo, dstSpecIndex);
+            //Move(entity, dstSpec);
+            Replace<T>(ref entityInfo, t);
+        }
+
+        public ref T Get<T>(uint entity)
+            where T : unmanaged
+        {
+            Assert(Has<T>(entity));
+
+            ref readonly var e = ref _entityPool[entity];
+
+            var array = _entityArrays[e.SpecIndex];
+            var chunk = array.AllChunks[e.ChunkIndex];
+            var span = chunk.PackedArray.GetComponentSpan<T>();
+
+            return ref span[e.Index];
         }
 
         public bool Has(uint entity)
@@ -142,55 +170,145 @@
         public bool Has<T>(uint entity)
             where T : unmanaged
         {
-            // Assert(Has(entity));
-            // var componentType = ComponentType<T>.Type;
-            throw new NotImplementedException();
+            ref var e = ref _entityPool[entity];
+            return Has<T>(ref e);
+        }
 
+        private bool Has<T>(ref Entity2 entityInfo)
+            where T : unmanaged
+        {
+            var spec = _entityArrays[entityInfo.SpecIndex].Specification;
+            return spec.Has(ComponentType<T>.Type);
         }
 
         public void Remove(uint entity)
         {
+            ref var e = ref _entityPool[entity];
+            Remove(ref e);
             _entityPool.Return(entity);
+        }
+
+        private void Remove(ref Entity2 e)
+        {
+            var array = _entityArrays[e.SpecIndex];
+
+            //we are moving the last element to the element deleted
+            //we need to patch the array, but the array doesn't store ids            
+            var movedIndex = array.Delete(e.ChunkIndex, e.Index);
+            if (movedIndex > -1)
+            {
+                var chunk = array.AllChunks[e.ChunkIndex];
+                var movedId = chunk.GetEntity(movedIndex);
+                ref var movedEntity = ref _entityPool[movedId];
+                movedEntity = new Entity2(movedId, movedEntity.SpecIndex, movedEntity.ChunkIndex, movedIndex);
+            }
         }
 
         public void Remove<T>(uint entity)
             where T : unmanaged
         {
-            throw new NotImplementedException();
+            Assert(Has<T>(entity));
+
+            var oldComponentType = ComponentType<T>.Type;
+            var oldComponentId = oldComponentType.ID;
+            ref var entityInfo = ref _entityPool[entity];
+            var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
+
+            var srcComponentCount = srcSpec.ComponentTypes.Length - 1;
+            if (srcComponentCount == 0)
+                //TODO: Should we throw an exception instead?
+                Remove(entity); //if there are no more components, delete the entity
+            else
+            {
+                //we need to move the entity to the new spec
+                var copyIndex = 0;
+                Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length - 1];
+                for (var i = 0; i < srcSpec.ComponentTypes.Length; i++)
+                    if (srcSpec.ComponentTypes[i].ID != oldComponentId)
+                        componentTypes[copyIndex++] = srcSpec.ComponentTypes[i];
+
+                var specId = ComponentType.CalculateId(componentTypes);
+                var dstSpecIndex = GetOrCreateSpec(componentTypes);
+
+                Move(ref entityInfo, dstSpecIndex);
+            }
         }
 
         public void Replace<T>(uint entity, in T t)
             where T : unmanaged
         {
-            Assert(Has<T>(entity));
-            ref readonly var e = ref _entityPool.Get(entity);
-            var array = _entityArrays[e.SpecIndex];
-            //var chunk = array.AllChunks
+            ref var e = ref _entityPool[entity];
+            Replace<T>(ref e, t);
+        }
 
-            //using var writelock
-            throw new NotImplementedException();
+        public void Replace<T>(ref Entity2 entity, in T t)
+          where T : unmanaged
+        {
+            Assert(Has<T>(ref entity));
+            var array = _entityArrays[entity.SpecIndex];
+            var chunk = array.AllChunks[entity.ChunkIndex];
+            var span = chunk.PackedArray.GetComponentSpan<T>();
+            span[entity.Index] = t;
         }
 
         public void Reset(uint entity)
         {
-            throw new NotImplementedException();
+            ref var e = ref _entityPool[entity];
+            var array = _entityArrays[e.SpecIndex];
+            var chunk = array.AllChunks[e.ChunkIndex];
+            chunk.PackedArray.Reset(e.Index);
         }
 
         public void Reset<T>(uint entity)
             where T : unmanaged
         {
-            throw new NotImplementedException();
+            ref var e = ref _entityPool[entity];
+            var array = _entityArrays[e.SpecIndex];
+            var chunk = array.AllChunks[e.ChunkIndex];
+            chunk.PackedArray.Reset<T>(e.Index);
         }
 
         public void Update<T>(uint entity, in T t)
             where T : unmanaged
         {
-            throw new NotImplementedException();
+            ref var e = ref _entityPool[entity];
+            var spec = _entityArrays[e.SpecIndex].Specification;
+            var componentType = ComponentType<T>.Type;
+            if (spec.Has(componentType))
+                Replace<T>(ref e, t);
+            else
+                Assign<T>(entity, t);
         }
 
-        public void Move(uint enitty, EntitySpec spec)
+        public void Move(uint entity, EntitySpec spec)
         {
+            ref var e = ref _entityPool[entity];
+            var specIndex = GetOrCreateSpec(spec);
+            Move(ref e, specIndex);
+        }
 
+        private void Move(ref Entity2 entityInfo, int dstSpecIndex)
+        {
+            var src = _entityArrays[entityInfo.SpecIndex];
+            var dst = _entityArrays[dstSpecIndex];
+
+
+            //we want to create the data at the dst first
+            var srcIndex = entityInfo.Index;
+            var dstIndex = dst.Create(entityInfo.ID, out var dstChunkIndex);
+            var srcChunkIndex = entityInfo.ChunkIndex;
+
+            var srcChunk = src.AllChunks[srcChunkIndex];
+            var dstChunk = dst.AllChunks[dstChunkIndex];
+
+            EntityPackedArray.CopyTo(srcChunk.PackedArray, srcIndex, dstChunk.PackedArray, dstIndex);
+
+            //this internal function will swap the entity at the end of the array
+            //without returning the id to the pool
+            Remove(ref entityInfo);
+
+            //then we want to remap the entity to its new location
+            entityInfo = new Entity2(entityInfo.ID, dstSpecIndex, dstChunkIndex, dstIndex);
         }
 
         // public IEntityView View<T>() where T : unmanaged
@@ -207,6 +325,15 @@
         //     archetype = _archetypes[e.ArchetypeIndex];
         //     chunk = archetype.Chunks[e.ChunkIndex];
         //     index = e.Index;
+        // }
+        // public IEnumerable<EntityChunkArray> EntityArrays(Func<EntitySpec, bool> filter)
+        // {
+        //     for (var i = 0; i < _entityArrays.Count; i++)
+        //     {
+        //         var array = _entityArrays[i];
+        //         if (filter(array.Specification))
+        //             yield return array;
+        //     }
         // }
 
 

@@ -90,10 +90,8 @@ namespace Atma.Entities
             //assert
             var span1 = data1.AsSpan<Position>();
             ref var p1 = ref span1[1];
-            p0.X.ShouldBe(10);
-            p0.Y.ShouldBe(20);
-            p0.X.ShouldBe(p1.X);
-            p0.Y.ShouldBe(p1.Y);
+            p1.X.ShouldBe(10);
+            p1.Y.ShouldBe(20);
         }
 
         public void ShouldReset()

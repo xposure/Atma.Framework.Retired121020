@@ -31,7 +31,7 @@ namespace Atma.Common
             AddPage();
         }
 
-        private ref Entity2 this[uint entity]
+        public ref Entity2 this[uint entity]
         {
             get
             {
@@ -47,7 +47,8 @@ namespace Atma.Common
                 return ref _entityMap[page][index];
             }
         }
-        public ref readonly Entity2 Get(uint entity) => ref this[entity];
+
+        //public ref Entity2 Get(uint entity) => ref this[entity];
 
         public bool IsValid(uint id)
         {
@@ -79,7 +80,7 @@ namespace Atma.Common
             _free++;
         }
 
-        public uint Take(int specIndex, int chunkIndex, int index)
+        public uint Take()
         {
             if (_freeIds.Length == 0)
                 AddPage();
@@ -91,7 +92,7 @@ namespace Atma.Common
             var version = _version++;
             id |= version << 24;
 
-            this[id] = new Entity2(id, specIndex, chunkIndex, index);
+            //this[id] = new Entity2(id, specIndex, chunkIndex, index);
 
             return id;
         }

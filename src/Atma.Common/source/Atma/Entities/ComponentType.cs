@@ -82,7 +82,7 @@
             return index;
         }
 
-        public static bool HasAll(Span<ComponentType> a, Span<ComponentType> b/*, bool debug = false*/)
+        public static bool HasAll(Span<ComponentType> components, Span<ComponentType> match/*, bool debug = false*/)
         {
             //all the debug code is left over for future need
             //there was an issue where Entity type was always list in the array
@@ -94,10 +94,10 @@
             var i0 = 0;
             var i1 = 0;
 
-            while (i0 < a.Length && i1 < b.Length)
+            while (i0 < components.Length && i1 < match.Length)
             {
-                var aType = a[i0];
-                var bType = b[i1];
+                var aType = components[i0];
+                var bType = match[i1];
                 if (aType.ID == entity)
                 {
                     throw new Exception("You can not create an archetype with Entity, this is assumed.");
@@ -130,12 +130,12 @@
             //entity should never be in aType, but if its the last element of bType
             //we need to check and advance i1 pointer to move past it since its assumed
             //to always exist
-            if (i1 < b.Length && b[i1].ID == entity)
+            if (i1 < match.Length && match[i1].ID == entity)
                 i1++;
 
             //if(debug) Console.WriteLine($"bSeek {i1}, len: {b.Length}");
 
-            return i1 == b.Length;
+            return i1 == match.Length;
         }
 
 

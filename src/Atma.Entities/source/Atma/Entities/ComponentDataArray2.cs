@@ -43,6 +43,21 @@
             //return new ComponentDataArrayWriteLock(_lock);
         }
 
+
+        public T* AsPointer<T>()
+            where T : unmanaged
+        {
+            var componentType = ComponentType<T>.Type;
+            if (componentType.ID != _componentType.ID)
+                throw new Exception("Invalid type.");
+
+            // if (!_lock.TryEnterWriteLock(0))
+            //     throw new Exception("Could not take write lock on component data!");
+
+            return (T*)_memoryHandle.Address;
+            //return new ComponentDataArrayWriteLock(_lock);
+        }
+
         // public ComponentDataArrayReadLock AsReadOnlySpan<T>(out ReadOnlySpan<T> span)
         //   where T : unmanaged
         // {
@@ -84,6 +99,10 @@
             var dst = addr + dstIndex * ElementSize;
 
             _componentHelper.Copy(src, dst);
+
+#if DEBUG
+            _componentHelper.Reset(src);
+#endif
             //_lock.ExitWriteLock();
         }
 
@@ -98,6 +117,10 @@
             var dst = dstAddr + dstIndex * srcArray.ElementSize;
 
             srcArray._componentHelper.Copy(src, dst);
+
+#if DEBUG
+            srcArray._componentHelper.Reset(src);
+#endif
         }
 
         protected override void OnUnmanagedDispose()

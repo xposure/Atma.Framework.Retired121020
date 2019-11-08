@@ -30,6 +30,11 @@ namespace Atma.Entities
             return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
         }
 
+        public bool HasAll(Span<ComponentType> componentTypes)
+        {
+            return ComponentType.HasAny(ComponentTypes, componentTypes);
+        }
+
         public bool HasAny(EntitySpec other)
         {
             return ComponentType.HasAny(ComponentTypes, other.ComponentTypes);

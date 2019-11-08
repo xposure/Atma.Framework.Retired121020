@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using Atma.Entities;
     using Shouldly;
+    using System.Diagnostics;
 
     class Program
     {
@@ -12,6 +13,30 @@
         {
             public float x;
             public float y;
+        }
+
+        private struct Position
+        {
+            public int X;
+            public int Y;
+
+            public Position(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
+
+        private struct Velocity
+        {
+            public int VX;
+            public int VY;
+
+            public Velocity(int vx, int vy)
+            {
+                VX = vx;
+                VY = vy;
+            }
         }
 
         static void Main(string[] args)
@@ -22,51 +47,64 @@
             // var type = em.CreateArchetype(typeof(Test));
             // var e = em.CreateEntity(type);
 
-            SpecShouldFindMatches();
+            for (var y = 0; y < 3; y++)
+            {
+                var sw = Stopwatch.StartNew();
+                var em = new EntityManager2();
+                var spec = new EntitySpec(
+                    ComponentType<Position>.Type
+                );
 
-            Console.WriteLine("Hello World!");
+                for (var i = 0; i < 50000; i++)
+                    em.Create(spec);
+
+
+                var counter = 0;
+                for (var x = 0; x < 10000; x++)
+                {
+                    em.ForEach((uint entity, ref Position p) =>
+                    {
+                        counter++;
+                        p.X = 10;
+                        p.Y = 10;
+                    });
+                }
+
+                Console.WriteLine(counter);
+                Console.WriteLine(sw.Elapsed.ToString());
+            }
         }
 
 
-        public static void SpecShouldFindMatches()
+        public static void ShouldMoveEntity()
         {
-            var specs = new[]
-            {
-                new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid6>.Type, ComponentType<Valid5>.Type),
-                new EntitySpec(ComponentType<Valid4>.Type,ComponentType<Valid2>.Type,ComponentType<Valid3>.Type, ComponentType<Valid5>.Type),
-                new EntitySpec(ComponentType<Valid6>.Type, ComponentType<Valid3>.Type, ComponentType<Valid>.Type, ComponentType<Valid4>.Type)
-            };
+            //arrange
+            using var em = new EntityManager2();
+            var srcSpec = new EntitySpec(ComponentType<Position>.Type);
+            var dstSpec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
-            Span<ComponentType> componentTypes0 = stackalloc ComponentType[8];
-            var c0 = specs[0].FindMatches(specs[1], componentTypes0);
-            var m0 = new List<ComponentType>(componentTypes0.Slice(0, c0).ToArray());
-            var componentTypes1 = new ComponentType[8];
-            //var c1 = specs[1].FindMatches(specs[2], componentTypes1.AsSpan());
-            var m1 = new List<ComponentType>(componentTypes1);// new List<ComponentType>(componentTypes1.AsSpan().Slice(c1).ToArray()).ToList();
-            var componentTypes2 = new ComponentType[8];
-            //var c2 = specs[2].FindMatches(specs[0], componentTypes2.AsSpan());
-            var m2 = new List<ComponentType>(componentTypes2);// new List<ComponentType>(componentTypes2.AsSpan().Slice(c2).ToArray()).ToList();
+            //act
+            var id0 = em.Create(srcSpec);
+            em.Replace(id0, new Position(20, 10));
 
-            var valid2 = ComponentType<Valid2>.Type.ID;
-            m0.Any(x => x.ID == ComponentType<Valid2>.Type.ID).ShouldBe(true);
-            //`m0.ShouldContain(x => x.ID == (() => valid2)());
-            // m0.ShouldContain(x => x.ID == ComponentType<Valid5>.Type.ID);
-            // m0.ShouldNotContain(x => x.ID == ComponentType<Valid>.Type.ID);
-            // m0.ShouldNotContain(x => x.ID == ComponentType<Valid3>.Type.ID);
-            // m0.ShouldNotContain(x => x.ID == ComponentType<Valid6>.Type.ID);
+            var id1 = em.Create(srcSpec);
+            em.Replace(id1, new Position(10, 20));
 
-            // m1.ShouldContain(x => x.ID == ComponentType<Valid4>.Type.ID);
-            // m1.ShouldContain(x => x.ID == ComponentType<Valid3>.Type.ID);
-            // m1.ShouldNotContain(x => x.ID == ComponentType<Valid>.Type.ID);
-            // m1.ShouldNotContain(x => x.ID == ComponentType<Valid6>.Type.ID);
-            // m1.ShouldNotContain(x => x.ID == ComponentType<Valid2>.Type.ID);
+            em.Move(id0, dstSpec);
 
-            // m2.ShouldContain(x => x.ID == ComponentType<Valid6>.Type.ID);
-            // m2.ShouldContain(x => x.ID == ComponentType<Valid>.Type.ID);
-            // m2.ShouldNotContain(x => x.ID == ComponentType<Valid3>.Type.ID);
-            // m2.ShouldNotContain(x => x.ID == ComponentType<Valid4>.Type.ID);
-            // m2.ShouldNotContain(x => x.ID == ComponentType<Valid2>.Type.ID);
+            //assert
+            var p0 = em.Get<Position>(id0);
+            p0.X.ShouldBe(20);
+            p0.Y.ShouldBe(10);
 
+            var p1 = em.Get<Position>(id1);
+            p0.X.ShouldBe(10);
+            p0.Y.ShouldBe(20);
+
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.EntityCount.ShouldBe(2);
         }
 
         private static EntityManager GetEntityManager()

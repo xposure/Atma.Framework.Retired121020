@@ -10,24 +10,24 @@
 
     using static Atma.Debug;
 
-    public interface IEntityArray
-    {
-        int EntityCount { get; }
-        int Capacity { get; }
-        int Free { get; }
-        int ChunkCount { get; }
-        IReadOnlyList<EntityChunk> AllChunks { get; }
-        IEnumerable<EntityChunk> ActiveChunks { get; }
+    // public interface IEntityArray
+    // {
+    //     int EntityCount { get; }
+    //     int Capacity { get; }
+    //     int Free { get; }
+    //     int ChunkCount { get; }
+    //     IReadOnlyList<EntityChunk> AllChunks { get; }
+    //     IEnumerable<EntityChunk> ActiveChunks { get; }
 
-        EntitySpec Specification { get; }
+    //     EntitySpec Specification { get; }
 
-        int Create(out int chunkIndex);
-        void Delete(int chunkIndex, int index);
-        //void MoveTo()
-        //bool HasComponent(in ComponentType componentType);
-    }
+    //     int Create(out int chunkIndex);
+    //     void Delete(int chunkIndex, int index);
+    //     //void MoveTo()
+    //     //bool HasComponent(in ComponentType componentType);
+    // }
 
-    public sealed class EntityChunkArray : UnmanagedDispose, IEntityArray //IEquatable<EntityArchetype>
+    public sealed class EntityChunkArray : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
     {
         public int EntityCount => _entityCount;
         public int Capacity => _chunks.Count * Entity.ENTITY_MAX;
@@ -55,11 +55,11 @@
             Specification = specification;
         }
 
-        public int Create(out int chunkIndex)
+        public int Create(uint entity, out int chunkIndex)
         {
             _entityCount++;
             var chunk = GetOrCreateFreeChunk(out chunkIndex);
-            return chunk.Create();
+            return chunk.Create(entity);
         }
 
         private EntityChunk GetOrCreateFreeChunk(out int chunkIndex)
@@ -73,13 +73,14 @@
             return chunk;
         }
 
-        public void Delete(int chunkIndex, int index)
+        public int Delete(int chunkIndex, int index)
         {
             Assert(chunkIndex >= 0 && chunkIndex < _chunks.Count);
 
-            var chunk = _chunks[chunkIndex];
-            chunk.Delete(index);
             _entityCount--;
+
+            var chunk = _chunks[chunkIndex];
+            return chunk.Delete(index);
         }
 
         protected override void OnUnmanagedDispose()
@@ -94,16 +95,16 @@
             _chunks = null;
         }
 
-        public static void MoveTo(EntityChunkArray src, int srcChunkIndex, int srcIndex, EntityChunkArray dst, out int dstChunkIndex, out int dstIndex)
-        {
-            dstIndex = dst.Create(out dstChunkIndex);
-            var srcChunk = src._chunks[srcChunkIndex];
-            var dstChunk = dst._chunks[dstChunkIndex];
+        // public static void MoveTo(uint entity, EntityChunkArray src, int srcChunkIndex, int srcIndex, EntityChunkArray dst, out int dstChunkIndex, out int dstIndex)
+        // {
+        //     dstIndex = dst.Create(entity, out dstChunkIndex);
+        //     var srcChunk = src._chunks[srcChunkIndex];
+        //     var dstChunk = dst._chunks[dstChunkIndex];
 
-            EntityChunk.MoveTo(srcChunk, srcIndex, dstChunk, dstIndex);
+        //     EntityChunk.MoveTo(srcChunk, srcIndex, dstChunk, dstIndex);
 
-            src.Delete(srcChunkIndex, srcIndex);
-        }
+        //     src.Delete(srcChunkIndex, srcIndex);
+        // }
 
 
     }

@@ -1,6 +1,7 @@
 namespace Atma.Entities
 {
     using System;
+    using System.Collections.Generic;
     using Atma.Memory;
 
     using static Atma.Debug;
@@ -18,7 +19,10 @@ namespace Atma.Entities
         int Length { get; }
 
         void Move(int src, int dst);
+        void Reset(int dst);
+        void Reset<T>(int dst) where T : unmanaged;
         Span<T> GetComponentSpan<T>() where T : unmanaged;
+        //IReadOnlyList<ComponentDataArray2> Arrays { get; }
         //RWLock Lock(LockType lockType);
 
         //ReadLock ReadComponent<T>(out ReadOnlySpan<T> span) where T : unmanaged;
@@ -97,6 +101,24 @@ namespace Atma.Entities
                 _componentData[i].Move(src, dst);
         }
 
+        public void Reset(int dst)
+        {
+            Assert(dst >= 0 && dst < Length);
+
+            for (var i = 0; i < _componentData.Length; i++)
+                _componentData[i].Reset(dst);
+        }
+
+        public void Reset<T>(int dst)
+            where T : unmanaged
+        {
+            Assert(dst >= 0 && dst < Length);
+            var index = GetComponentIndex<T>();
+
+            Assert(index > -1);
+            _componentData[index].Reset(dst);
+        }
+
         public Span<T> GetComponentSpan<T>()
             where T : unmanaged
         {
@@ -105,6 +127,16 @@ namespace Atma.Entities
 
             var componentDataArray = _componentData[index];
             return componentDataArray.AsSpan<T>();
+        }
+
+        public unsafe T* GetComponentPointer<T>()
+                   where T : unmanaged
+        {
+            var index = GetComponentIndex<T>();
+            Assert(index > -1);
+
+            var componentDataArray = _componentData[index];
+            return componentDataArray.AsPointer<T>();
         }
 
         // public ReadLock ReadComponent<T>(out ReadOnlySpan<T> span)
