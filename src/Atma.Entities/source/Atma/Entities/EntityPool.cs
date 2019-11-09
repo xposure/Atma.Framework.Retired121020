@@ -5,13 +5,13 @@ namespace Atma.Common
     using static Atma.Debug;
     using System.Collections.Generic;
 
-    public class EntityPool2 : IEntityPool2
+    public class EntityPool2 //: IEntityPool2
     {
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
         public const int ENTITIES_MASK = ENTITIES_PER_POOL - 1;
 
-        private List<NativeArray<Entity2>> _entityMap;
+        private List<NativeArray<Entity>> _entityMap;
 
         private NativeStack<uint> _freeIds = new NativeStack<uint>(Allocator.Persistent, ENTITIES_PER_POOL);
 
@@ -27,11 +27,11 @@ namespace Atma.Common
 
         public EntityPool2()
         {
-            _entityMap = new List<NativeArray<Entity2>>();
+            _entityMap = new List<NativeArray<Entity>>();
             AddPage();
         }
 
-        public ref Entity2 this[uint entity]
+        public ref Entity this[uint entity]
         {
             get
             {
@@ -58,7 +58,7 @@ namespace Atma.Common
 
         private void AddPage()
         {
-            var arr = new NativeArray<Entity2>(Allocator.Persistent, ENTITIES_PER_POOL);
+            var arr = new NativeArray<Entity>(Allocator.Persistent, ENTITIES_PER_POOL);
 
             _freeIds.EnsureCapacity(ENTITIES_PER_POOL);
             var newMax = (uint)_entityMap.Count * (uint)ENTITIES_PER_POOL + (uint)ENTITIES_PER_POOL;
@@ -75,7 +75,7 @@ namespace Atma.Common
             Assert(e.ID > 0);
             Assert(e.ID == id);
 
-            e = new Entity2(0, 0, 0, 0);
+            e = new Entity(0, 0, 0, 0);
             _freeIds.Push(id);
             _free++;
         }

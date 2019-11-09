@@ -120,7 +120,7 @@
             ref var e = ref _entityPool[entity];
 
             var index = _entityArrays[specIndex].Create(entity, out var chunkIndex);
-            e = new Entity2(entity, specIndex, chunkIndex, index);
+            e = new Entity(entity, specIndex, chunkIndex, index);
             return entity;
         }
 
@@ -174,7 +174,7 @@
             return Has<T>(ref e);
         }
 
-        private bool Has<T>(ref Entity2 entityInfo)
+        private bool Has<T>(ref Entity entityInfo)
             where T : unmanaged
         {
             var spec = _entityArrays[entityInfo.SpecIndex].Specification;
@@ -188,7 +188,7 @@
             _entityPool.Return(entity);
         }
 
-        private void Remove(ref Entity2 e)
+        private void Remove(ref Entity e)
         {
             var array = _entityArrays[e.SpecIndex];
 
@@ -200,7 +200,7 @@
                 var chunk = array.AllChunks[e.ChunkIndex];
                 var movedId = chunk.GetEntity(movedIndex);
                 ref var movedEntity = ref _entityPool[movedId];
-                movedEntity = new Entity2(movedId, movedEntity.SpecIndex, movedEntity.ChunkIndex, movedIndex);
+                movedEntity = new Entity(movedId, movedEntity.SpecIndex, movedEntity.ChunkIndex, movedIndex);
             }
         }
 
@@ -241,7 +241,7 @@
             Replace<T>(ref e, t);
         }
 
-        public void Replace<T>(ref Entity2 entity, in T t)
+        public void Replace<T>(ref Entity entity, in T t)
           where T : unmanaged
         {
             Assert(Has<T>(ref entity));
@@ -287,7 +287,7 @@
             Move(ref e, specIndex);
         }
 
-        private void Move(ref Entity2 entityInfo, int dstSpecIndex)
+        private void Move(ref Entity entityInfo, int dstSpecIndex)
         {
             var src = _entityArrays[entityInfo.SpecIndex];
             var dst = _entityArrays[dstSpecIndex];
@@ -308,7 +308,7 @@
             Remove(ref entityInfo);
 
             //then we want to remap the entity to its new location
-            entityInfo = new Entity2(entityInfo.ID, dstSpecIndex, dstChunkIndex, dstIndex);
+            entityInfo = new Entity(entityInfo.ID, dstSpecIndex, dstChunkIndex, dstIndex);
         }
 
         // public IEntityView View<T>() where T : unmanaged
