@@ -14,38 +14,6 @@
 
     // }
 
-    // public interface IEntityView2<T> : IEntityView
-    // {
-    //     void ForEach(T t, int length);
-    // }
-
-    // public interface IEntityManager2
-    // {
-    //     //IEntityView View<T>() where T : unmanaged;
-
-    //     uint Create(EntitySpec spec);
-
-    //     void Assign<T>(uint entity, in T t) where T : unmanaged;
-    //     void Replace<T>(uint entity, in T t) where T : unmanaged;
-    //     void Update<T>(uint entity, in T t) where T : unmanaged;
-
-    //     bool Has(uint entity);
-    //     bool Has<T>(uint entity) where T : unmanaged;
-
-    //     ref T Get<T>(uint entity) where T : unmanaged;
-
-    //     void Remove(uint entity);
-    //     void Remove<T>(uint entity) where T : unmanaged;
-
-    //     void Reset(uint entity);
-    //     void Reset<T>(uint entity) where T : unmanaged;
-
-    //     void Move(uint entity, EntitySpec spec);
-
-    //     int EntityCount { get; }
-    //     int SpecCount { get; }
-    // }
-
     public sealed partial class EntityManager : UnmanagedDispose//, IEntityManager2
     {
         // //private DynamicMemoryPool _persistentMemory = new DynamicMemoryPool();

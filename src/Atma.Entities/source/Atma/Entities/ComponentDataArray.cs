@@ -5,7 +5,7 @@
 
     using System;
 
-    public unsafe class ComponentDataArray : UnmanagedDispose, IComponentDataArray2
+    public sealed unsafe class ComponentDataArray : UnmanagedDispose//, IComponentDataArray2
     {
         public int ElementSize { get; }
 

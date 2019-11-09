@@ -5,7 +5,7 @@ namespace Atma.Common
     using static Atma.Debug;
     using System.Collections.Generic;
 
-    public class EntityPool2 //: IEntityPool2
+    public sealed class EntityPool2
     {
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;

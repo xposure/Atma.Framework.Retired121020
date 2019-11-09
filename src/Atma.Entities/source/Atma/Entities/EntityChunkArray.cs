@@ -10,23 +10,6 @@
 
     using static Atma.Debug;
 
-    // public interface IEntityArray
-    // {
-    //     int EntityCount { get; }
-    //     int Capacity { get; }
-    //     int Free { get; }
-    //     int ChunkCount { get; }
-    //     IReadOnlyList<EntityChunk> AllChunks { get; }
-    //     IEnumerable<EntityChunk> ActiveChunks { get; }
-
-    //     EntitySpec Specification { get; }
-
-    //     int Create(out int chunkIndex);
-    //     void Delete(int chunkIndex, int index);
-    //     //void MoveTo()
-    //     //bool HasComponent(in ComponentType componentType);
-    // }
-
     public sealed class EntityChunkArray : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
     {
         public int EntityCount => _entityCount;

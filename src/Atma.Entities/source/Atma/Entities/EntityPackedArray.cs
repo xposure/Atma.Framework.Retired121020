@@ -6,30 +6,8 @@ namespace Atma.Entities
 
     using static Atma.Debug;
 
-    public interface IEntityPackedArray : IDisposable
-    {
-        //ref readonly Entity Create();
-        //int Create();
-        //void Delete(int index);
 
-        //int Free { get; }
-        //int Count { get; }
-
-        EntitySpec Specification { get; }
-        int Length { get; }
-
-        void Move(int src, int dst);
-        void Reset(int dst);
-        void Reset<T>(int dst) where T : unmanaged;
-        Span<T> GetComponentSpan<T>() where T : unmanaged;
-        //IReadOnlyList<ComponentDataArray2> Arrays { get; }
-        //RWLock Lock(LockType lockType);
-
-        //ReadLock ReadComponent<T>(out ReadOnlySpan<T> span) where T : unmanaged;
-        //WriteLock WriteComponent<T>(out Span<T> span) where T : unmanaged;
-    }
-
-    public unsafe sealed class EntityPackedArray : UnmanagedDispose, IEntityPackedArray
+    public unsafe sealed class EntityPackedArray : UnmanagedDispose
     {
         private ComponentDataArray[] _componentData;
         private IAllocator _allocator;
