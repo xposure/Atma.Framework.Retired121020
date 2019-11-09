@@ -36,11 +36,11 @@ namespace Atma.Memory
 
             //act
             var handle1 = it.Take<int>(1);
-            var addr1 = new IntPtr(handle1.Address);
+            var addr1 = handle1.Address;
             it.Free(ref handle1);
 
             var handle2 = it.Take<int>(1);
-            var addr2 = new IntPtr(handle2.Address);
+            var addr2 = handle2.Address;
             it.Free(ref handle2);
 
             //assert
@@ -55,11 +55,11 @@ namespace Atma.Memory
 
             //act
             var handle1 = it.Take<int>(1);
-            var addr1 = new IntPtr(handle1.Address);
+            var addr1 = handle1.Address;
             it.Free(ref handle1);
 
             var handle2 = it.Take<int>(1);
-            var addr2 = new IntPtr(handle2.Address);
+            var addr2 = handle2.Address;
             it.Free(ref handle2);
 
             //assert
@@ -74,10 +74,10 @@ namespace Atma.Memory
 
             //act
             var handle1 = it.Take<int>(1);
-            var addr1 = new IntPtr(handle1.Address);
+            var addr1 = handle1.Address;
 
             var handle2 = it.Take<int>(1);
-            var addr2 = new IntPtr(handle2.Address);
+            var addr2 = handle2.Address;
             Should.Throw<Exception>(() => it.Free(ref handle1));
 
             //assert

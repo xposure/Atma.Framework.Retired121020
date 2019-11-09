@@ -7,6 +7,7 @@ namespace Atma.Common
 
     public sealed class EntityPool2
     {
+        private StackAllocator _memory = new StackAllocator(8192);
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
         public const int ENTITIES_MASK = ENTITIES_PER_POOL - 1;
@@ -58,7 +59,7 @@ namespace Atma.Common
 
         private void AddPage()
         {
-            var arr = new NativeArray<Entity>(Allocator.Persistent, ENTITIES_PER_POOL);
+            var arr = new NativeArray<Entity>(_memory, ENTITIES_PER_POOL);
 
             _freeIds.EnsureCapacity(ENTITIES_PER_POOL);
             var newMax = (uint)_entityMap.Count * (uint)ENTITIES_PER_POOL + (uint)ENTITIES_PER_POOL;

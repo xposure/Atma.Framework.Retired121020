@@ -8,13 +8,12 @@ namespace Atma.Memory
     public unsafe class StackAllocator : IAllocator
     {
         private UnmanagedMemory _memory;
-        private IntPtr _front, _back;
+        private IntPtr _dataPtr;
         private uint _allocationIndex = 0;
         private uint _free;
         private bool _thrash;
         private uint _thrashValue = 0x55aa5aa5;
         public uint FreeSize => _free;
-
 
         //TODO: Should we really clear to zero by default?
         //the EntityChunk should be managing out of bounds indexing and moving of data
@@ -22,12 +21,11 @@ namespace Atma.Memory
         {
             _memory = new UnmanagedMemory(size);
             _free = _memory.Size;
-            _front = _memory.Begin;
-            _back = _memory.End;
+            _dataPtr = _memory.Begin;
             _thrash = thrash;
 
             if (clearToZero)
-                Unsafe.ClearAlign16((void*)_front, _memory.ActualSize);
+                Unsafe.ClearAlign16((void*)_dataPtr, _memory.ActualSize);
         }
 
         public void Dispose()
@@ -37,31 +35,36 @@ namespace Atma.Memory
         }
 
         public unsafe AllocationHandle Take(int size)
-        //    where T : unmanaged
         {
-            //var size = SizeOf<T>.Size;
             Assert(size > 0);
 
             size = Unsafe.Align16(size);
             Assert(_free >= size);
 
             var index = _allocationIndex++;
-            var addr = _front.ToPointer();
-            _front = IntPtr.Add(_front, size);
+            var addr = _dataPtr.ToPointer();
+            _dataPtr = IntPtr.Add(_dataPtr, size);
             _free -= (uint)size;
 
             //safe to do the uint cast since we are Assert > 0
-            return new AllocationHandle(addr, index, (uint)size);
+            return new AllocationHandle(_dataPtr, index, (uint)size);
         }
 
         public unsafe void Free(ref AllocationHandle handle)
         {
             _allocationIndex--;
             Assert(handle.Id == _allocationIndex);
-            _front = IntPtr.Subtract(_front, (int)handle.Length);
+            _dataPtr = IntPtr.Subtract(_dataPtr, (int)handle.Flags);
 
             if (_thrash)
-                Unsafe.ClearAlign16(handle.Address, (int)handle.Length, _thrashValue);
+                Unsafe.ClearAlign16((void*)handle.Address, (int)handle.Flags, _thrashValue);
+        }
+
+        public AllocationHandle Transfer(ref AllocationHandle handle)
+        {
+            var copy = handle;
+            handle = new AllocationHandle(IntPtr.Zero, 0, 0);
+            return copy;
         }
     }
 }

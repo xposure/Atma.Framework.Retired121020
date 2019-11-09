@@ -8,14 +8,13 @@
     public unsafe ref struct NativeSlice<T>
         where T : unmanaged
     {
-
         private readonly T* _rawAddress;
         public readonly int Length;
 
         public T* RawPointer => _rawAddress;
         public T* EndPointer => _rawAddress + Length;
 
-        internal NativeSlice(AllocationHandleOld handle, int start, int length)
+        internal NativeSlice(in AllocationHandle handle, int start, int length)
         {
             _rawAddress = (T*)handle.Address + start;
             Length = length;
@@ -61,7 +60,8 @@
         /// </summary>
         public void Sort(Comparison<T> comparison)
         {
-            Span.Sort(comparison);
+            var span = AsSpan();
+            span.Sort(comparison);
         }
 
         /// <summary>
@@ -69,10 +69,11 @@
         /// </summary>
         public void Sort(IComparer<T> comparer)
         {
-            Span.Sort(comparer);
+            var span = AsSpan();
+            span.Sort(comparer);
         }
 
-        public Span<T> Span => new Span<T>(RawPointer, Length);
+        public Span<T> AsSpan() => new Span<T>(RawPointer, Length);
 
         public override string ToString()
         {

@@ -39,7 +39,7 @@
             // if (!_lock.TryEnterWriteLock(0))
             //     throw new Exception("Could not take write lock on component data!");
 
-            return new Span<T>(_memoryHandle.Address, Length);
+            return new Span<T>((void*)_memoryHandle.Address, Length);
             //return new ComponentDataArrayWriteLock(_lock);
         }
 

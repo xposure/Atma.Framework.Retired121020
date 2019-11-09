@@ -71,9 +71,20 @@
 
             ref var h = ref _handles[handle.Id];
             Assert(handle.Address == h.Address);
+            Assert(handle.Flags == h.Flags);
 
             Marshal.FreeHGlobal(h.Address);
             h = new AllocationHandle(IntPtr.Zero, 0, 0);
+        }
+
+        public AllocationHandle Transfer(ref AllocationHandle handle)
+        {
+            Assert(handle.IsValid);
+            ref var h = ref _handles[handle.Id];
+            h = new AllocationHandle(IntPtr.Zero, 0, handle.Flags + 1);
+
+            handle = AllocationHandle.Null;
+            return h;
         }
     }
 }

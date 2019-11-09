@@ -13,10 +13,12 @@ namespace Atma.Memory
     {
         AllocationHandle Take(int size);
         void Free(ref AllocationHandle handle);
+        AllocationHandle Transfer(ref AllocationHandle handle);
     }
 
     public unsafe readonly struct AllocationHandle //: IDisposable
     {
+        public static AllocationHandle Null => new AllocationHandle(IntPtr.Zero, 0, 0);
         public readonly IntPtr Address;
         public readonly uint Id;
         public readonly uint Flags;

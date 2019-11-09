@@ -8,36 +8,35 @@
     public unsafe struct NativeArray<T> : IDisposable
         where T : unmanaged
     {
-        private int _length;
-        private AllocationHandleOld _handle;
+        internal AllocationHandle Handle;
+        internal IAllocator Allocator;
 
-        public int Length => _length;
+        public readonly int Length;
 
         public int ElementSize => SizeOf<T>.Size;
+        public bool IsCreated => Length > 0;
 
-        public bool IsCreated => _length > 0;
+        public T* RawPointer => (T*)Handle.Address;
+        public T* EndPointer => (T*)Handle.Address + Length;
 
-        public T* RawPointer => (T*)_handle.Address;
-        public T* EndPointer => (T*)_handle.Address + _length;
+        public IntPtr RawIntPtr => Handle.Address;
+        public IntPtr EndIntPtr => new IntPtr((T*)Handle.Address + Length);
 
-        public IntPtr RawIntPtr => new IntPtr(_handle.Address);
-        public IntPtr EndIntPtr => new IntPtr((T*)_handle.Address + _length);
-
-        public NativeArray(Allocator allocator, int length = 8)
+        public NativeArray(IAllocator allocator, int length)
         {
+            Allocator = allocator;
             var sizeOfElement = SizeOf<T>.Size;
 
             if (length > 0)
             {
-                _handle = MemoryManager.Take(allocator, sizeOfElement * length);
-                _length = length;
+                Handle = allocator.Take(sizeOfElement * length);
+                Length = length;
             }
             else
             {
-                _handle = default;
-                _length = 0;
+                Handle = default;
+                Length = 0;
             }
-
         }
 
         /// <summary>
@@ -48,22 +47,10 @@
         {
             get
             {
-                Assert(_handle.IsValid);
-                Assert(index >= 0 && index < _length);
+                Assert(Handle.IsValid);
+                Assert(index >= 0 && index < Length);
                 return ref RawPointer[index];
             }
-        }
-
-        internal AllocationHandleOld TakeOwnership()
-        {
-            Assert(IsCreated);
-
-            var handle = _handle.Clone();
-
-            _length = 0;
-            _handle = default;
-
-            return handle;
         }
 
         /// <summary>
@@ -71,9 +58,14 @@
         /// </summary>
         public void Clear()
         {
-            Assert(_handle.IsValid);
-            Unsafe.ClearAlign16(RawPointer, ElementSize * _length);
-            _length = 0;
+            Assert(Handle.IsValid);
+            var length = Length;
+
+            var ptr = (T*)RawIntPtr;
+            while (length-- > 0)
+                *ptr = default;
+
+            //Unsafe.ClearAlign16(RawPointer, ElementSize * Length);
         }
 
         /// <summary>
@@ -81,7 +73,7 @@
         /// </summary>
         public void Sort(Comparison<T> comparison)
         {
-            Assert(_handle.IsValid);
+            Assert(Handle.IsValid);
             Span.Sort(comparison);
         }
 
@@ -90,16 +82,15 @@
         /// </summary>
         public void Sort(IComparer<T> comparer)
         {
-            Assert(_handle.IsValid);
+            Assert(Handle.IsValid);
             Span.Sort(comparer);
         }
 
         public void Dispose()
         {
             //Assert(_handle.IsValid);
-            if (_handle.IsValid)
-                MemoryManager.Free(ref _handle);
-            _length = 0;
+            if (Handle.IsValid)
+                Allocator.Free(ref Handle);
         }
 
         public void CopyTo(ref NativeArray<T> other)
@@ -108,30 +99,31 @@
             var src = this.RawPointer;
             var dst = other.RawPointer;
 
-            for (var i = 0; i < len; i++)
+            while (len-- > 0)
+                //for (var i = 0; i < len; i++)
                 *dst++ = *src++;
         }
 
         public static implicit operator NativeSlice<T>(NativeArray<T> arr) => arr.Slice();
-        public NativeSlice<T> Slice() => Slice(0, _length);
+        public NativeSlice<T> Slice() => Slice(0, Length);
 
-        public NativeSlice<T> Slice(int start) => Slice(start, _length - start);
+        public NativeSlice<T> Slice(int start) => Slice(start, Length - start);
 
         public NativeSlice<T> Slice(int start, int length)
         {
-            Assert(_handle.IsValid);
+            Assert(Handle.IsValid);
             Assert(start >= 0);
             Assert(length > 0);
-            Assert(start + length <= _length);
-            return new NativeSlice<T>(_handle, start, length);
+            Assert(start + length <= Length);
+            return new NativeSlice<T>(Handle, start, length);
         }
 
         public Span<T> Span
         {
             get
             {
-                Assert(_handle.IsValid);
-                return new Span<T>(RawPointer, _length);
+                Assert(Handle.IsValid);
+                return new Span<T>(RawPointer, Length);
             }
         }
 
