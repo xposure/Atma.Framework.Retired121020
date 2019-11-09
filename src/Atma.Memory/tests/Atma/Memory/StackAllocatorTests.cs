@@ -17,17 +17,6 @@ namespace Atma.Memory
             handle1.Id.ShouldBe((uint)0);
         }
 
-        public void SouldAllocateFromBack()
-        {
-            //arrange
-            using IAllocator it = new StackAllocator(1024);
-
-            //act
-            var handle1 = it.Take<int>(1);
-
-            //assert
-            handle1.Id.ShouldBe(uint.MaxValue);
-        }
 
         public void GetsSameAddressFront()
         {

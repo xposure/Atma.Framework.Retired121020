@@ -16,7 +16,15 @@ namespace Atma
 
         static SizeOf()
         {
-            Size = Marshal.SizeOf(typeof(T));
+            try
+            {
+                Size = Marshal.SizeOf(typeof(T));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                Console.WriteLine(typeof(T));
+            }
         }
 
     }

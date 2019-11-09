@@ -5,15 +5,16 @@
 
     using static Atma.Debug;
 
+    internal struct NativeListData
+    {
+        public int Length;
+        public int MaxLength;
+        public AllocationHandle Handle;
+    }
+
     public unsafe struct NativeList<T> : IDisposable
         where T : unmanaged
     {
-        private struct NativeListData
-        {
-            public int Length;
-            public int MaxLength;
-            public AllocationHandle Handle;
-        }
 
         internal IAllocator Allocator;
 
@@ -253,8 +254,9 @@
         public void Dispose()
         {
             Assert(Handle.IsValid);
-            Allocator.Free(ref _listInfo->Handle);
+            var copy = _listInfo->Handle;
             Allocator.Free(ref Handle);
+            Allocator.Free(ref copy);
 
             Length = 0;
             MaxLength = 0;
