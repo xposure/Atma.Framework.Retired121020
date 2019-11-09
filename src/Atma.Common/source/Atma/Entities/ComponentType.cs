@@ -90,7 +90,7 @@
             //debug.......
             //oh and it only happened when I had my sample PlayerSystem enabled
 
-            var entity = typeof(Entity).GetHashCode();
+            //var entity = typeof(Entity).GetHashCode();
             var i0 = 0;
             var i1 = 0;
 
@@ -98,18 +98,19 @@
             {
                 var aType = components[i0];
                 var bType = match[i1];
-                if (aType.ID == entity)
-                {
-                    throw new Exception("You can not create an archetype with Entity, this is assumed.");
-                    //i0++;
-                    //if (debug) Console.WriteLine($"aType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
-                }
-                else if (bType.ID == entity)
-                {
-                    i1++;
-                    //if (debug) Console.WriteLine($"bType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
-                }
-                else if (aType.ID > bType.ID)
+                // if (aType.ID == entity)
+                // {
+                //     throw new Exception("You can not create an spec with Entity, this is assumed.");
+                //     //i0++;
+                //     //if (debug) Console.WriteLine($"aType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                // }
+                // else if (bType.ID == entity)
+                // {
+                //     i1++;
+                //     //if (debug) Console.WriteLine($"bType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
+                // }
+                // else 
+                if (aType.ID > bType.ID)
                 {
                     //if (debug) Console.WriteLine($"aType was > bType, exiting ... {aType.ClrType.Name}:{bType.ClrType.Name}");
                     return false; // i1++;
@@ -127,11 +128,11 @@
                 }
             }
 
-            //entity should never be in aType, but if its the last element of bType
-            //we need to check and advance i1 pointer to move past it since its assumed
-            //to always exist
-            if (i1 < match.Length && match[i1].ID == entity)
-                i1++;
+            // //entity should never be in aType, but if its the last element of bType
+            // //we need to check and advance i1 pointer to move past it since its assumed
+            // //to always exist
+            // if (i1 < match.Length && match[i1].ID == entity)
+            //     i1++;
 
             //if(debug) Console.WriteLine($"bSeek {i1}, len: {b.Length}");
 

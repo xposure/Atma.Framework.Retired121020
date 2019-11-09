@@ -1,10 +1,8 @@
 ﻿namespace Atma.Entities
 {
-    using System;
-
     using static Atma.Debug;
 
-    public struct Entity2 //: IEquatable<Entity2>, IEquatable<int>
+    public struct Entity //: IEquatable<Entity2>, IEquatable<int>
     {
         //we have 32 bits to play with here
         public const int SPEC_BITS = 12;
@@ -41,7 +39,7 @@
             }
         }
 
-        public Entity2(uint id, int specIndex, int chunkIndex, int index)
+        public Entity(uint id, int specIndex, int chunkIndex, int index)
         {
             Assert(specIndex < SPEC_MAX);
             Assert(chunkIndex < CHUNK_MAX);
