@@ -1,6 +1,7 @@
 namespace Atma.Memory
 {
     using System;
+    using System.Diagnostics;
 
     public enum AllocatorBounds
     {
@@ -10,21 +11,31 @@ namespace Atma.Memory
 
     public interface IAllocator : IDisposable
     {
-        AllocationHandle Take(int size, AllocatorBounds bounds = AllocatorBounds.Front);
+        AllocationHandle Take(int size);
         void Free(ref AllocationHandle handle);
     }
 
-    public unsafe struct AllocationHandle //: IDisposable
+    public unsafe readonly struct AllocationHandle //: IDisposable
     {
-        public readonly void* Address;
+        public readonly IntPtr Address;
         public readonly uint Id;
-        public readonly uint Length;
+        public readonly uint Flags;
 
-        public AllocationHandle(void* address, uint id, uint length)
+        public bool IsValid => Address != IntPtr.Zero;
+
+        // #if DEBUG
+        //         public readonly string StackTrace;
+        // #endif
+
+        public AllocationHandle(IntPtr address, uint id, uint flags)
         {
+            // #if DEBUG
+            //StackTrace = Environment.StackTrace;
+            // #endif
+
             Address = address;
             Id = id;
-            Length = length;
+            Flags = flags;
         }
     }
 }

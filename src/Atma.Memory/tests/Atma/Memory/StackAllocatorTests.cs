@@ -23,7 +23,7 @@ namespace Atma.Memory
             using IAllocator it = new StackAllocator(1024);
 
             //act
-            var handle1 = it.Take<int>(1, AllocatorBounds.Back);
+            var handle1 = it.Take<int>(1);
 
             //assert
             handle1.Id.ShouldBe(uint.MaxValue);
@@ -54,11 +54,11 @@ namespace Atma.Memory
             using IAllocator it = new StackAllocator(1024);
 
             //act
-            var handle1 = it.Take<int>(1, AllocatorBounds.Back);
+            var handle1 = it.Take<int>(1);
             var addr1 = new IntPtr(handle1.Address);
             it.Free(ref handle1);
 
-            var handle2 = it.Take<int>(1, AllocatorBounds.Back);
+            var handle2 = it.Take<int>(1);
             var addr2 = new IntPtr(handle2.Address);
             it.Free(ref handle2);
 
