@@ -7,19 +7,19 @@ namespace Atma.Memory
     using static Atma.Debug;
 
     [StructLayout(LayoutKind.Sequential, Size = 32)]
-    public unsafe struct HeapAllocation2
+    public unsafe struct HeapAllocation
     {
         public const int HeapSize = 32;
         public const uint MagicChecksum = 0x55aaa55a;
 
         public uint MagicSignature;         //4
         public uint Blocks;                 //4
-        public HeapAllocation2* Previous;   //4/8
-        public HeapAllocation2* Next;       //4/8
+        public HeapAllocation* Previous;   //4/8
+        public HeapAllocation* Next;       //4/8
         public uint Flags;                  //4
         public uint Checksum;               //4
 
-        public HeapAllocation2(int size)
+        public HeapAllocation(int size)
         {
             Blocks = (((uint)(size + (HeapSize - 1))) >> 5) - 1;
             Flags = 0;
@@ -28,7 +28,7 @@ namespace Atma.Memory
             Previous = null;
             Next = null;
         }
-        public static void ConsumeForward(HeapAllocation2* root)
+        public static void ConsumeForward(HeapAllocation* root)
         {
             var ptr = root->Next;
             while (ptr != null)
@@ -55,7 +55,7 @@ namespace Atma.Memory
             //Assert(ptr->MagicSignature == MagicChecksum);
         }
 
-        public static void Split(HeapAllocation2* ptr, uint blocks)
+        public static void Split(HeapAllocation* ptr, uint blocks)
         {
             //var blocks = (size + (HeapSize - 1)) >> 5;
             Assert(blocks > 0); //make sure we are taking at least one block
@@ -82,7 +82,7 @@ namespace Atma.Memory
             ptr->Blocks = blocks;
         }
 
-        public static HeapAllocation2* FindFreeBackwards(HeapAllocation2* ptr)
+        public static HeapAllocation* FindFreeBackwards(HeapAllocation* ptr)
         {
             while (ptr->Previous != null)
             {
@@ -97,7 +97,7 @@ namespace Atma.Memory
             return ptr;
         }
 
-        public static void Free(HeapAllocation2* root)
+        public static void Free(HeapAllocation* root)
         {
             Assert(!root->IsFree);
             Assert(root->MagicSignature == MagicChecksum);
@@ -108,7 +108,7 @@ namespace Atma.Memory
 
         }
 
-        public static uint CountUsedBlocks(HeapAllocation2* root, out int allocations)
+        public static uint CountUsedBlocks(HeapAllocation* root, out int allocations)
         {
             allocations = 0;
 
@@ -128,7 +128,7 @@ namespace Atma.Memory
             return blocks;
         }
 
-        public static uint CountFreeBlocks(HeapAllocation2* root)
+        public static uint CountFreeBlocks(HeapAllocation* root)
         {
             var ptr = root;
 
@@ -255,27 +255,27 @@ namespace Atma.Memory
 
             private int _largestFreeBlock = -1;
 
-            private HeapAllocation2* _heap;
+            private HeapAllocation* _heap;
 
             public HeapPage(IAllocator allocator, int size)
             {
                 _allocator = allocator;
                 _handle = allocator.Take((int)size);
                 Size = size;
-                _heap = (HeapAllocation2*)_handle.Address;
-                *_heap = new HeapAllocation2(size);
+                _heap = (HeapAllocation*)_handle.Address;
+                *_heap = new HeapAllocation(size);
             }
 
             public void Free(IntPtr handle)
             {
                 _largestFreeBlock = -1;
-                var ptr = (HeapAllocation2*)handle;
-                HeapAllocation2.Free(ptr - 1);
+                var ptr = (HeapAllocation*)handle;
+                HeapAllocation.Free(ptr - 1);
             }
 
             public bool TryTake(out IntPtr handle, uint size)
             {
-                var blocks = (size + (HeapAllocation2.HeapSize - 1)) >> 5;
+                var blocks = (size + (HeapAllocation.HeapSize - 1)) >> 5;
                 Assert(blocks > 0);
 
                 if (_largestFreeBlock > -1 && blocks > _largestFreeBlock)
@@ -295,7 +295,7 @@ namespace Atma.Memory
                         //TODO: we could remember this block and look for a better one if we wanted to
                         if (freeBlocks >= blocks)
                         {
-                            HeapAllocation2.Split(ptr, blocks);
+                            HeapAllocation.Split(ptr, blocks);
                             handle = new IntPtr((void*)(ptr + 1));
                             _largestFreeBlock = -1;
                             return true;

@@ -12,22 +12,22 @@ namespace Atma.Memory
         {
             //arrange
             var blocks = 256;
-            var size = blocks * HeapAllocation2.HeapSize;
-            var memory = stackalloc HeapAllocation2[blocks];
-            var span = new Span<HeapAllocation2>(memory, blocks);
-            *memory = new HeapAllocation2(size);
+            var size = blocks * HeapAllocation.HeapSize;
+            var memory = stackalloc HeapAllocation[blocks];
+            var span = new Span<HeapAllocation>(memory, blocks);
+            *memory = new HeapAllocation(size);
             //memory->Blocks = (uint)blocks - 1; //offset the first heap block
 
 
             //act
-            HeapAllocation2.Split(memory, 1);
+            HeapAllocation.Split(memory, 1);
 
             //assert
             span[0].Flags.ShouldBe(1u);
             span[0].Blocks.ShouldBe(1u);
-            span[0].SizeInBytes.ShouldBe(span[0].Blocks * HeapAllocation2.HeapSize);
-            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)blocks - 3u);
-            HeapAllocation2.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)3u);
+            span[0].SizeInBytes.ShouldBe(span[0].Blocks * HeapAllocation.HeapSize);
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 3u);
+            HeapAllocation.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)3u);
             allocations.ShouldBe(1);
             span[2].Blocks.ShouldBe((uint)blocks - 3u);
 
@@ -42,20 +42,20 @@ namespace Atma.Memory
         {
             //arrange
             var blocks = 256;
-            var size = blocks * HeapAllocation2.HeapSize;
-            var memory = stackalloc HeapAllocation2[blocks];
-            var span = new Span<HeapAllocation2>(memory, blocks);
-            *memory = new HeapAllocation2(size);
+            var size = blocks * HeapAllocation.HeapSize;
+            var memory = stackalloc HeapAllocation[blocks];
+            var span = new Span<HeapAllocation>(memory, blocks);
+            *memory = new HeapAllocation(size);
 
             //act
-            HeapAllocation2.Split(memory, 1);
-            HeapAllocation2.Free(memory);
+            HeapAllocation.Split(memory, 1);
+            HeapAllocation.Free(memory);
 
             //assert
             span[0].Blocks.ShouldBe((uint)blocks - 1);
-            span[0].SizeInBytes.ShouldBe((uint)(blocks - 1) * HeapAllocation2.HeapSize);
-            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)blocks - 1u);
-            HeapAllocation2.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)1u);
+            span[0].SizeInBytes.ShouldBe((uint)(blocks - 1) * HeapAllocation.HeapSize);
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 1u);
+            HeapAllocation.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)1u);
             allocations.ShouldBe(0);
             span[2].Blocks.ShouldBe(0u);
             Assert(span[0].Previous == null);
@@ -71,17 +71,17 @@ namespace Atma.Memory
         {
             //arrange
             var blocks = 256;
-            var size = blocks * HeapAllocation2.HeapSize;
-            var memory = stackalloc HeapAllocation2[blocks];
-            var span = new Span<HeapAllocation2>(memory, blocks);
-            *memory = new HeapAllocation2(size);
+            var size = blocks * HeapAllocation.HeapSize;
+            var memory = stackalloc HeapAllocation[blocks];
+            var span = new Span<HeapAllocation>(memory, blocks);
+            *memory = new HeapAllocation(size);
 
             //act
-            HeapAllocation2.Split(memory, 1); //255
-            HeapAllocation2.Split(&memory[2], 1); //252
-            HeapAllocation2.Split(&memory[4], 1); //249
+            HeapAllocation.Split(memory, 1); //255
+            HeapAllocation.Split(&memory[2], 1); //252
+            HeapAllocation.Split(&memory[4], 1); //249
 
-            HeapAllocation2.Free(&memory[2]);
+            HeapAllocation.Free(&memory[2]);
 
             //assert
             span[0].Blocks.ShouldBe(1u);
@@ -89,13 +89,13 @@ namespace Atma.Memory
             span[4].Blocks.ShouldBe(1u);
             span[6].Blocks.ShouldBe((uint)blocks - 7);
 
-            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[2].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation2.HeapSize);
+            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[2].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation.HeapSize);
 
-            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)blocks - 6u);
-            HeapAllocation2.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)6u);
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 6u);
+            HeapAllocation.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)6u);
             allocations.ShouldBe(2);
 
             Assert(span[0].Previous == null);
@@ -114,7 +114,7 @@ namespace Atma.Memory
             span[6].Flags.ShouldBe(0u);
 
             //act2
-            HeapAllocation2.Free(&memory[0]);
+            HeapAllocation.Free(&memory[0]);
 
             //assert2
             span[0].Blocks.ShouldBe(3u);
@@ -122,13 +122,13 @@ namespace Atma.Memory
             span[4].Blocks.ShouldBe(1u);
             span[6].Blocks.ShouldBe((uint)blocks - 7);
 
-            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize * 3);
+            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize * 3);
             span[2].SizeInBytes.ShouldBe(0u);
-            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation2.HeapSize);
+            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation.HeapSize);
 
-            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)blocks - 4u);
-            HeapAllocation2.CountUsedBlocks(memory, out allocations).ShouldBe((uint)4u);
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 4u);
+            HeapAllocation.CountUsedBlocks(memory, out allocations).ShouldBe((uint)4u);
             allocations.ShouldBe(1);
 
             Assert(span[0].Previous == null);
@@ -148,7 +148,7 @@ namespace Atma.Memory
 
 
             //act3
-            HeapAllocation2.Free(&memory[4]);
+            HeapAllocation.Free(&memory[4]);
 
             //assert3
             span[0].Blocks.ShouldBe((uint)(blocks - 1));
@@ -156,13 +156,13 @@ namespace Atma.Memory
             span[4].Blocks.ShouldBe(0u);
             span[6].Blocks.ShouldBe(0u);
 
-            span[0].SizeInBytes.ShouldBe((uint)(HeapAllocation2.HeapSize * (blocks - 1)));
+            span[0].SizeInBytes.ShouldBe((uint)(HeapAllocation.HeapSize * (blocks - 1)));
             span[2].SizeInBytes.ShouldBe(0u);
             span[4].SizeInBytes.ShouldBe(0u);
             span[6].SizeInBytes.ShouldBe(0u);
 
-            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)(blocks - 1u));
-            HeapAllocation2.CountUsedBlocks(memory, out allocations).ShouldBe(1u);
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)(blocks - 1u));
+            HeapAllocation.CountUsedBlocks(memory, out allocations).ShouldBe(1u);
             allocations.ShouldBe(0);
 
             Assert(span[0].Previous == null);

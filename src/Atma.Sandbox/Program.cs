@@ -80,28 +80,28 @@
         {
             //arrange
             var blocks = 256;
-            var size = blocks * HeapAllocation2.HeapSize;
-            var memory = stackalloc HeapAllocation2[blocks];
-            var span = new Span<HeapAllocation2>(memory, blocks);
+            var size = blocks * HeapAllocation.HeapSize;
+            var memory = stackalloc HeapAllocation[blocks];
+            var span = new Span<HeapAllocation>(memory, blocks);
             memory->Blocks = (uint)blocks - 1; //offset the first heap block
 
             //act
-            HeapAllocation2.Split(memory, HeapAllocation2.HeapSize); //255
-            HeapAllocation2.Split(&memory[2], HeapAllocation2.HeapSize); //252
-            HeapAllocation2.Split(&memory[4], HeapAllocation2.HeapSize); //249
+            HeapAllocation.Split(memory, HeapAllocation.HeapSize); //255
+            HeapAllocation.Split(&memory[2], HeapAllocation.HeapSize); //252
+            HeapAllocation.Split(&memory[4], HeapAllocation.HeapSize); //249
 
-            HeapAllocation2.Free(memory);
+            HeapAllocation.Free(memory);
 
             //assert
             span[0].Blocks.ShouldBe(1u);
             span[2].Blocks.ShouldBe(1u);
             span[4].Blocks.ShouldBe(1u);
-            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[2].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
-            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation2.HeapSize);
-            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)blocks - 6u);
-            HeapAllocation2.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)6u);
+            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[2].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation.HeapSize);
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 6u);
+            HeapAllocation.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)6u);
             allocations.ShouldBe(2);
 
             Assert(span[0].Previous == null);

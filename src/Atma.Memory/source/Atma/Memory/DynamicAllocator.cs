@@ -81,6 +81,8 @@
             var intPtr = Marshal.AllocHGlobal(size);
             _handles[id] = new DynamicMemoryHandle(intPtr, id, 0, (uint)size);
 
+            ++_blocks;
+
             return new AllocationHandle(intPtr, id, 0);
         }
 
@@ -91,6 +93,7 @@
             _size -= _handles[handle.Id].Size;
             _handles[handle.Id] = new DynamicMemoryHandle(IntPtr.Zero, 0, 0, 0);
             handle = new AllocationHandle(IntPtr.Zero, 0, 0);
+            --_blocks;
         }
 
         private void AssertValid(ref AllocationHandle handle)
