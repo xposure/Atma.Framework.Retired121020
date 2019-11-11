@@ -1,11 +1,18 @@
 ﻿namespace Atma.Memory
 {
     using System;
-    using System.Collections.Generic;
+    internal struct NativeStackData
+    {
+        public int Length;
+        public int MaxLength;
+        public AllocationHandle Handle;
+    }
 
     public unsafe struct NativeStack<T> : IDisposable
         where T : unmanaged
     {
+
+
         internal IAllocator Allocator;
 
         //since this is resizable, we either have to force people to remember they
@@ -14,7 +21,7 @@
         //internal AllocationHandle Handle;
 
         //TODO: We are using a double alloc for NativeList to support it being passed around without ref        
-        private NativeListData* _listInfo;
+        private NativeStackData* _listInfo;
         internal AllocationHandle Handle;
 
         public int Length { get => _listInfo->Length; private set => _listInfo->Length = value; }
@@ -33,9 +40,9 @@
             var sizeOfElement = SizeOf<T>.Size;
 
             Assert.GreatherThan(length, 0);
-            Handle = Allocator.Take<NativeListData>(1);
+            Handle = Allocator.Take<NativeStackData>(1);
 
-            _listInfo = (NativeListData*)Handle.Address;
+            _listInfo = (NativeStackData*)Handle.Address;
             _listInfo->Handle = Allocator.Take<T>(length);
 
             Length = 0;
@@ -177,8 +184,8 @@
             Allocator.Free(ref Handle);
             Allocator.Free(ref copy);
 
-            Length = 0;
-            MaxLength = 0;
+            //Length = 0;
+            //MaxLength = 0;
         }
 
         //public static implicit operator NativeSlice<T>(NativeList<T> arr) => arr.Slice();

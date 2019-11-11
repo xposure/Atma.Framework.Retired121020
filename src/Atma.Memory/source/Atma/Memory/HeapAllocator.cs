@@ -158,7 +158,7 @@ namespace Atma.Memory
             }
 
             private IAllocator _allocator;
-            private PagedObjectPool<HeapPagePointer> _allocations = new PagedObjectPool<HeapPagePointer>();
+            private PagedObjectPool<HeapPagePointer> _allocations;// = new PagedObjectPool<HeapPagePointer>();
             private List<HeapPage> _pages = new List<HeapPage>();
             private uint _heapIndex;
             private uint _version;
@@ -169,7 +169,7 @@ namespace Atma.Memory
             public HeapPageAllocator(IAllocator allocator, int heapIndex)
             {
                 Assert(heapIndex >= 0 && heapIndex < 16);
-
+                _allocations = new PagedObjectPool<HeapPagePointer>(allocator);
                 _allocator = allocator;
                 _desiredSizes = ((int)Math.Pow(2, _heapIndex) * 16384);
                 _heapIndex = (uint)heapIndex;

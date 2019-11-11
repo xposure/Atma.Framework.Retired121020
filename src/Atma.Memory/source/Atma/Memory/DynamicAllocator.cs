@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using Atma.Common;
-    using static Atma.Debug;
+    //using static Atma.Debug;
 
     public unsafe sealed class DynamicAllocator : UnmanagedDispose, IAllocator
     {
@@ -63,7 +63,7 @@
 
         public AllocationHandle Take(int size)
         {
-            Assert(size > 0);
+            Assert.GreatherThan(size, 0);
 
             var id = (uint)_dynamicMemoryTracker.Take();
             if (id > _handles.Length)
@@ -95,10 +95,10 @@
 
         private void AssertValid(ref AllocationHandle handle)
         {
-            Assert(handle.Id >= 0 && handle.Id < _handles.Length);
+            Assert.Range(handle.Id, 0, (uint)_handles.Length);
             ref var h = ref _handles[handle.Id];
-            Assert(handle.Address == h.Address);
-            Assert(handle.Flags == h.Version);
+            Assert.EqualTo(handle.Address, h.Address);
+            Assert.EqualTo(handle.Flags, h.Version);
         }
 
         public AllocationHandle Transfer(ref AllocationHandle handle)

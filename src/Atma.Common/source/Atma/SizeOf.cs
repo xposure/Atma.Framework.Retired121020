@@ -18,12 +18,14 @@ namespace Atma
         {
             try
             {
-                Size = Marshal.SizeOf(typeof(T));
+                Size = Marshal.SizeOf<T>();
+                //Size = Marshal.SizeOf(typeof(T));
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
                 Console.WriteLine(typeof(T));
+                Size = -1;
             }
         }
 

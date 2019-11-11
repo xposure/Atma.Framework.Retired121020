@@ -25,7 +25,8 @@ namespace Atma.Memory
         [Fact]
         public void AllocatesDynamicTypes()
         {
-            using var buffer = new NativeBuffer(Allocator.Temp);
+            using var memory = new DynamicAllocator();
+            using var buffer = new NativeBuffer(memory);
             var d0 = buffer.Add(new Data() { x = 10 });
             buffer.Length.ShouldBe(4);
 

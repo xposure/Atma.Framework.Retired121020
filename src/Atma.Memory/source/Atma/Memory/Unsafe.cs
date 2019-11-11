@@ -30,17 +30,6 @@
             return new IntPtr(Align16((int)value));
         }
 
-        public static HeapMemory Allocate(int size)
-        {
-            return null;
-        }
-
-        public static HeapMemory Allocate<T>(int length)
-            where T : unmanaged
-        {
-            return Allocate(SizeOf<T>.Size * length);
-        }
-
         public static void ClearAlign16(void* rawPointer, int sizeInBytes, int value = THRASH)
         {
             Assert(IsAligned16(rawPointer));

@@ -130,7 +130,6 @@ namespace Atma
             var firstPar = lineOfCode.IndexOf('(');
             var lastComma = lineOfCode.LastIndexOf(',');
 
-
             if (firstPar > -1 && lastComma > -1)
             {
                 sb.Append(lineOfCode.Substring(firstPar + 1, lastComma - firstPar - 1).Trim());
@@ -191,6 +190,13 @@ namespace Atma
         }
 
         public static void Range(int actual, int inclusiveMin, int exclusiveMax)
+        {
+            if (!(actual >= inclusiveMin) || !(actual < exclusiveMax))
+                throw ContractException.GenerateException(actual, inclusiveMin, exclusiveMax);
+
+        }
+
+        public static void Range(uint actual, uint inclusiveMin, uint exclusiveMax)
         {
             if (!(actual >= inclusiveMin) || !(actual < exclusiveMax))
                 throw ContractException.GenerateException(actual, inclusiveMin, exclusiveMax);

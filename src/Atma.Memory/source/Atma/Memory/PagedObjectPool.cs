@@ -12,7 +12,7 @@ namespace Atma.Memory
 
         private List<NativeArray<T>> _objectMap;
 
-        private NativeStack<uint> _freeIds = new NativeStack<uint>(Allocator.Persistent, OBJECTS_PER_POOL);
+        private NativeStack<uint> _freeIds;// = new NativeStack<uint>(Allocator.Persistent, OBJECTS_PER_POOL);
 
         private int _free;
         private int _capacity;
@@ -24,10 +24,11 @@ namespace Atma.Memory
 
         public int Free => _free;
 
-        public PagedObjectPool()
+        public PagedObjectPool(IAllocator allocator)
         {
-            _memory = new DynamicAllocator();
+            _memory = allocator;
             _objectMap = new List<NativeArray<T>>();
+            _freeIds = new NativeStack<uint>(_memory, OBJECTS_PER_POOL);
             AddPage();
         }
 

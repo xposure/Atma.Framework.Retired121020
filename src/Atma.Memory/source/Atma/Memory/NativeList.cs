@@ -2,8 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-
-
     internal struct NativeListData
     {
         public int Length;
@@ -14,6 +12,8 @@
     public unsafe struct NativeList<T> : IDisposable
         where T : unmanaged
     {
+
+
 
         internal IAllocator Allocator;
 
@@ -259,8 +259,8 @@
             Allocator.Free(ref Handle);
             Allocator.Free(ref copy);
 
-            Length = 0;
-            MaxLength = 0;
+            //Length = 0;
+            //MaxLength = 0;
         }
 
         public static implicit operator NativeSlice<T>(NativeList<T> arr) => arr.Slice();

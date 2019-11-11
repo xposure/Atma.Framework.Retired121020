@@ -2,31 +2,52 @@
 {
     using System;
 
-    using static Atma.Debug;
+    //using static Atma.Debug;
+    internal struct NativeBufferData
+    {
+        public int Length;
+        public int MaxLength;
+        public AllocationHandle Handle;
+    }
 
     public unsafe struct NativeBuffer : IDisposable
     {
-        private int _length, _maxLength;
-        private AllocationHandleOld _handle;
 
-        public int Length => _length;
 
-        public int MaxLength => _maxLength;
+        internal IAllocator Allocator;
 
+        //since this is resizable, we either have to force people to remember they
+        //must pass this around by "ref", or we should double alloc
+        //one for a persisent location of the handle info and one for the data
+        //internal AllocationHandle Handle;
+
+        //TODO: We are using a double alloc for NativeList to support it being passed around without ref        
+        private NativeBufferData* _listInfo;
+        internal AllocationHandle Handle;
+
+        public int Length { get => _listInfo->Length; private set => _listInfo->Length = value; }
+        public int MaxLength { get => _listInfo->MaxLength; private set => _listInfo->MaxLength = value; }
+
+        public bool IsCreated => _listInfo->MaxLength > 0;
         //public int ElementSize => SizeOf<T>.Size;
 
-        public bool IsCreated => _maxLength > 0;
+        public byte* RawPointer => (byte*)_listInfo->Handle.Address;
+        public byte* EndPointer => (byte*)_listInfo->Handle.Address + _listInfo->Length;
+        public byte* MaxPointer => (byte*)_listInfo->Handle.Address + _listInfo->MaxLength;
 
-        public byte* RawPointer => (byte*)_handle.Address;
-        public byte* EndPointer => (byte*)_handle.Address + _length;
-        public byte* MaxPointer => (byte*)_handle.Address + _maxLength;
-
-        public NativeBuffer(Allocator allocator, int length = 256)
+        public NativeBuffer(IAllocator allocator, int length = 256)
         {
-            Assert(length > 0);
-            _handle = MemoryManager.Take(allocator, length);
-            _length = 0;
-            _maxLength = length;
+            Allocator = allocator;
+            //var sizeOfElement = SizeOf<T>.Size;
+
+            Assert.GreatherThan(length, 0);
+            Handle = Allocator.Take<NativeBufferData>(1);
+
+            _listInfo = (NativeBufferData*)Handle.Address;
+            _listInfo->Handle = Allocator.Take(length);
+
+            Length = 0;
+            MaxLength = length;
 
         }
 
@@ -35,9 +56,9 @@
         /// </summary>
         public void Clear()
         {
-            Assert(_handle.IsValid);
-            Unsafe.ClearAlign16(RawPointer, _maxLength);
-            _length = 0;
+            Assert.EqualTo(Handle.IsValid, true);
+            Unsafe.ClearAlign16(RawPointer, MaxLength);
+            Length = 0;
         }
 
         /// <summary>
@@ -45,8 +66,8 @@
         /// </summary>
         public void Reset()
         {
-            Assert(_handle.IsValid);
-            _length = 0;
+            Assert.EqualTo(Handle.IsValid, true);
+            Length = 0;
         }
 
         /// <summary>
@@ -55,15 +76,15 @@
         public T* Add<T>(in T item)
             where T : unmanaged
         {
-            Assert(_handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var sizeInBytes = SizeOf<T>.Size;
 
             EnsureCapacity(sizeInBytes);
 
-            var len = _length;
+            var len = Length;
             var location = (T*)EndPointer;
             *location = item;
-            _length += sizeInBytes;
+            Length += sizeInBytes;
             return location;
         }
 
@@ -73,39 +94,42 @@
         /// </summary>
         public void EnsureCapacity(int additionalItemCount = 1)
         {
-            Assert(_handle.IsValid);
-            var neededLength = _length + additionalItemCount;
-            if (neededLength < _maxLength)
+            Assert.EqualTo(Handle.IsValid, true);
+            var neededLength = Length + additionalItemCount;
+            if (neededLength < MaxLength)
                 return;
 
-            while (neededLength > _maxLength)
-                _maxLength = Math.Max(_maxLength * 3, 48) / 2;
+            while (neededLength > MaxLength)
+                MaxLength = Math.Max(MaxLength * 3, 48) / 2;
 
-            Resize(_maxLength);
+            Resize(MaxLength);
         }
 
         private void Resize(int newSize)
         {
-            _maxLength = newSize;
+            MaxLength = newSize;
             //copy data, get new handle, etc
-            var newHandle = MemoryManager.Take(_handle.Allocator, _maxLength);
-            if (_handle.IsValid)
+            var newHandle = Allocator.Take(MaxLength);
+            if (Handle.IsValid)
             {
                 var src = RawPointer;
-                var dst = newHandle.Address;
-                Unsafe.CopyAlign16(src, dst, _length);
-                MemoryManager.Free(ref _handle);
+                var dst = (byte*)newHandle.Address;
+                Unsafe.CopyAlign16(src, dst, Length);
+                Allocator.Free(ref _listInfo->Handle);
             }
-            _handle = newHandle;
+            _listInfo->Handle = newHandle;
         }
 
 
         public void Dispose()
         {
-            Assert(_handle.IsValid);
-            MemoryManager.Free(ref _handle);
-            _length = 0;
-            _maxLength = 0;
+            Assert.EqualTo(Handle.IsValid, true);
+            var copy = _listInfo->Handle;
+            Allocator.Free(ref Handle);
+            Allocator.Free(ref copy);
+
+            Length = 0;
+            MaxLength = 0;
         }
 
         //public NativeSlice<T> Slice<T>() where T : unmanaged => Slice<T>(0, _length);
@@ -117,7 +141,7 @@
         //{
 
         //    length *= SizeOf<T>.Size;
-        //    Assert(_handle.IsValid);
+        //.EqualTo H Assert(_handle.IsValid, true);
         //    Assert(start >= 0);
         //    Assert(length > 0);
         //    Assert(start + length <= _length);

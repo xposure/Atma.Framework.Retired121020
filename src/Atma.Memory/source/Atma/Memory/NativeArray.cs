@@ -3,8 +3,6 @@
     using System;
     using System.Collections.Generic;
 
-    using static Atma.Debug;
-
     public unsafe struct NativeArray<T> : IDisposable
         where T : unmanaged
     {
@@ -47,8 +45,8 @@
         {
             get
             {
-                Assert(Handle.IsValid);
-                Assert(index >= 0 && index < Length);
+                Assert.EqualTo(Handle.IsValid, true);
+                Assert.Range(index, 0, Length);
                 return ref RawPointer[index];
             }
         }
@@ -58,7 +56,7 @@
         /// </summary>
         public void Clear()
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var length = Length;
 
             var ptr = (T*)RawIntPtr;
@@ -73,7 +71,7 @@
         /// </summary>
         public void Sort(Comparison<T> comparison)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             Span.Sort(comparison);
         }
 
@@ -82,7 +80,7 @@
         /// </summary>
         public void Sort(IComparer<T> comparer)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             Span.Sort(comparer);
         }
 
@@ -111,10 +109,10 @@
 
         public NativeSlice<T> Slice(int start, int length)
         {
-            Assert(Handle.IsValid);
-            Assert(start >= 0);
-            Assert(length > 0);
-            Assert(start + length <= Length);
+            Assert.EqualTo(Handle.IsValid, true);
+            Assert.GreatherThanEqualTo(start, 0);
+            Assert.GreatherThanEqualTo(length, 0);
+            Assert.LessThanEqualTo(start + length, Length);
             return new NativeSlice<T>(Handle, start, length);
         }
 
@@ -122,7 +120,7 @@
         {
             get
             {
-                Assert(Handle.IsValid);
+                Assert.EqualTo(Handle.IsValid, true);
                 return new Span<T>(RawPointer, Length);
             }
         }
