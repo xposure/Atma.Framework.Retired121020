@@ -3,35 +3,43 @@
     using System;
     using System.Collections.Generic;
 
-    using static Atma.Debug;
-
     public unsafe struct NativeStack<T> : IDisposable
         where T : unmanaged
     {
-        private int _length, _maxLength;
-        private AllocationHandleOld _handle;
+        internal IAllocator Allocator;
 
-        public int Length => _length;
+        //since this is resizable, we either have to force people to remember they
+        //must pass this around by "ref", or we should double alloc
+        //one for a persisent location of the handle info and one for the data
+        //internal AllocationHandle Handle;
 
-        public int MaxLength => _maxLength;
+        //TODO: We are using a double alloc for NativeList to support it being passed around without ref        
+        private NativeListData* _listInfo;
+        internal AllocationHandle Handle;
 
+        public int Length { get => _listInfo->Length; private set => _listInfo->Length = value; }
+        public int MaxLength { get => _listInfo->MaxLength; private set => _listInfo->MaxLength = value; }
+
+        public bool IsCreated => _listInfo->MaxLength > 0;
         public int ElementSize => SizeOf<T>.Size;
 
-        public bool IsCreated => _maxLength > 0;
+        public T* RawPointer => (T*)_listInfo->Handle.Address;
+        public T* EndPointer => (T*)_listInfo->Handle.Address + _listInfo->Length;
+        public T* MaxPointer => (T*)_listInfo->Handle.Address + _listInfo->MaxLength;
 
-        public T* RawPointer => (T*)_handle.Address;
-        public T* EndPointer => (T*)_handle.Address + _length;
-        public T* MaxPointer => (T*)_handle.Address + _maxLength;
-
-        public NativeStack(Allocator allocator, int length = 8)
+        public NativeStack(IAllocator allocator, int length = 8)
         {
+            Allocator = allocator;
             var sizeOfElement = SizeOf<T>.Size;
 
-            Assert(length > 0);
-            _handle = MemoryManager.Take(allocator, sizeOfElement * length);
-            _length = 0;
-            _maxLength = length;
+            Assert.GreatherThan(length, 0);
+            Handle = Allocator.Take<NativeListData>(1);
 
+            _listInfo = (NativeListData*)Handle.Address;
+            _listInfo->Handle = Allocator.Take<T>(length);
+
+            Length = 0;
+            MaxLength = length;
         }
 
         /// <summary>
@@ -42,8 +50,8 @@
         {
             get
             {
-                Assert(_handle.IsValid);
-                Assert(index >= 0 && index < _length);
+                Assert.EqualTo(Handle.IsValid, true);
+                Assert.Range(index, 0, Length);
                 return ref RawPointer[index];
             }
         }
@@ -53,9 +61,9 @@
         /// </summary>
         public void Clear()
         {
-            Assert(_handle.IsValid);
-            Unsafe.ClearAlign16(RawPointer, ElementSize * _maxLength);
-            _length = 0;
+            Assert.EqualTo(Handle.IsValid, true);
+            Unsafe.ClearAlign16(RawPointer, ElementSize * MaxLength);
+            Length = 0;
         }
 
         /// <summary>
@@ -63,8 +71,8 @@
         /// </summary>
         public void Reset()
         {
-            Assert(_handle.IsValid);
-            _length = 0;
+            Assert.EqualTo(Handle.IsValid, true);
+            Length = 0;
         }
 
         /// <summary>
@@ -72,13 +80,13 @@
         /// </summary>
         public void Push(in T item)
         {
-            Assert(_handle.IsValid);
-            if (_length == _maxLength)
+            Assert.EqualTo(Handle.IsValid, true);
+            if (Length == MaxLength)
             {
-                _maxLength = Math.Max(_maxLength * 3, 16) / 2;
-                Resize(_maxLength);
+                MaxLength = Math.Max(MaxLength * 3, 16) / 2;
+                Resize(MaxLength);
             }
-            RawPointer[_length++] = item;
+            RawPointer[Length++] = item;
         }
 
         /// <summary>
@@ -87,17 +95,17 @@
         /// <param name="item">Item.</param>
         public T Pop()
         {
-            Assert(_handle.IsValid);
-            Assert(_length > 0);
-            return RawPointer[--_length];
+            Assert.EqualTo(Handle.IsValid, true);
+            Assert.GreatherThan(Length, 0);
+            return RawPointer[--Length];
         }
 
 
         public T Peek()
         {
-            Assert(_handle.IsValid);
-            Assert(_length > 0);
-            return RawPointer[_length];
+            Assert.EqualTo(Handle.IsValid, true);
+            Assert.GreatherThan(Length, 0);
+            return RawPointer[Length];
         }
 
         /// <summary>
@@ -105,32 +113,32 @@
         /// </summary>
         public void EnsureCapacity(int additionalItemCount = 1)
         {
-            Assert(_handle.IsValid);
-            var neededLength = _length + additionalItemCount;
-            if (neededLength < _maxLength)
+            Assert.EqualTo(Handle.IsValid, true);
+            var neededLength = Length + additionalItemCount;
+            if (neededLength < MaxLength)
                 return;
 
-            while (neededLength > _maxLength)
-                _maxLength = Math.Max(_maxLength * 3, 48) / 2;
+            while (neededLength > MaxLength)
+                MaxLength = Math.Max(MaxLength * 3, 48) / 2;
 
-            Resize(_maxLength);
+            Resize(MaxLength);
         }
 
         private void Resize(int newSize)
         {
-            _maxLength = newSize;
+            MaxLength = newSize;
             //copy data, get new handle, etc
-            var newHandle = MemoryManager.Take(_handle.Allocator, ElementSize * _maxLength);
-            if (_handle.IsValid)
+            var newHandle = Allocator.Take(ElementSize * MaxLength);
+            if (Handle.IsValid)
             {
                 var src = RawPointer;
                 var dst = (T*)newHandle.Address;
-                for (var i = 0; i < _length; i++)
+                for (var i = 0; i < Length; i++)
                     dst[i] = src[i];
 
-                MemoryManager.Free(ref _handle);
+                Allocator.Free(ref _listInfo->Handle);
             }
-            _handle = newHandle;
+            _listInfo->Handle = newHandle;
         }
 
         ///// <summary>
@@ -139,7 +147,7 @@
         ///// <param name="array">Array.</param>
         //public void AddRange(IEnumerable<T> array)
         //{
-        //    Assert(_handle.IsValid);
+        //.EqualTo H Assert(_handle.IsValid, true);
         //    foreach (var item in array)
         //        Add(item);
         //}
@@ -149,7 +157,7 @@
         ///// </summary>
         //public void Sort(Comparison<T> comparison)
         //{
-        //    Assert(_handle.IsValid);
+        //.EqualTo H Assert(_handle.IsValid, true);
         //    Span.Sort(comparison);
         //}
 
@@ -158,16 +166,19 @@
         ///// </summary>
         //public void Sort(IComparer<T> comparer)
         //{
-        //    Assert(_handle.IsValid);
+        //.EqualTo H Assert(_handle.IsValid, true);
         //    Span.Sort(comparer);
         //}
 
         public void Dispose()
         {
-            Assert(_handle.IsValid);
-            MemoryManager.Free(ref _handle);
-            _length = 0;
-            _maxLength = 0;
+            Assert.EqualTo(Handle.IsValid, true);
+            var copy = _listInfo->Handle;
+            Allocator.Free(ref Handle);
+            Allocator.Free(ref copy);
+
+            Length = 0;
+            MaxLength = 0;
         }
 
         //public static implicit operator NativeSlice<T>(NativeList<T> arr) => arr.Slice();
@@ -177,7 +188,7 @@
 
         //public NativeSlice<T> Slice(int start, int length)
         //{
-        //    Assert(_handle.IsValid);
+        //.EqualTo H Assert(_handle.IsValid, true);
         //    Assert(start >= 0);
         //    Assert(length > 0);
         //    Assert(start + length <= _length);
@@ -188,7 +199,7 @@
         //{
         //    get
         //    {
-        //        Assert(_handle.IsValid);
+        //.EqualTo H     Assert(_handle.IsValid, true);
         //        return new Span<T>(RawPointer, _length);
         //    }
         //}
