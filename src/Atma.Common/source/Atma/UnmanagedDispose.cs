@@ -1,6 +1,36 @@
 namespace Atma
 {
     using System;
+    using System.Collections.Generic;
+
+    public static class DisposeExtensions
+    {
+        public static void DisposeAll<T>(this T[] it)
+            where T : IDisposable
+        {
+            if (it != null)
+            {
+                for (var i = 0; i < it.Length; i++)
+                {
+                    it[i].Dispose();
+                    it[i] = default;
+                }
+            }
+        }
+
+        public static void DisposeAll<T>(this List<T> it)
+           where T : IDisposable
+        {
+            if (it != null)
+            {
+                for (var i = 0; i < it.Count; i++)
+                {
+                    it[i].Dispose();
+                    it[i] = default;
+                }
+            }
+        }
+    }
 
     public class UnmanagedDispose : IDisposable
     {

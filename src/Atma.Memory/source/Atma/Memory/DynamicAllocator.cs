@@ -8,6 +8,24 @@
 
     public unsafe sealed class DynamicAllocator : UnmanagedDispose, IAllocator
     {
+        private struct DynamicMemoryHandle
+        {
+            public readonly IntPtr Address;
+            public readonly uint Id;
+            public uint Version;
+            public readonly uint Size;
+
+            public DynamicMemoryHandle(IntPtr address, uint id, uint version, uint size)
+            {
+                Address = address;
+                Id = id;
+                Version = version;
+                Size = size;
+            }
+
+            public bool IsValid => Address != IntPtr.Zero;
+
+        }
         private int _blocks;
         public int Blocks => _blocks;
 
@@ -15,7 +33,7 @@
         public uint Size => _size;
 
         private ObjectPoolInt _dynamicMemoryTracker = new ObjectPoolInt(1024);
-        private AllocationHandle[] _handles = new AllocationHandle[1024];
+        private DynamicMemoryHandle[] _handles = new DynamicMemoryHandle[1024];
 
 #if DEBUG
         private bool _enableStackTrace = false;
@@ -37,7 +55,7 @@
                 {
                     Console.WriteLine("Allocation was not released, consider enabling stack tracing.");
                     Marshal.FreeHGlobal(_handles[i].Address);
-                    _handles[i] = new AllocationHandle(IntPtr.Zero, 0, 0);
+                    _handles[i] = new DynamicMemoryHandle(IntPtr.Zero, 0, 0, 0);
                     //_dynamicMemoryTracker.Return(i);
                 }
             }
@@ -50,7 +68,7 @@
             var id = (uint)_dynamicMemoryTracker.Take();
             if (id > _handles.Length)
             {
-                var newHandles = new AllocationHandle[_handles.Length * 3 / 2];
+                var newHandles = new DynamicMemoryHandle[_handles.Length * 3 / 2];
                 Array.Copy(_handles, newHandles, _handles.Length);
                 _handles = newHandles;
             }
@@ -58,33 +76,38 @@
             if (!Unsafe.IsAligned16(size))
                 size = Unsafe.Align16(size + 15); // some room for alignment
 
-            var intPtr = Marshal.AllocHGlobal(size);
-            ref var handle = ref _handles[id];
+            _size += (uint)size;
 
-            handle = new AllocationHandle(intPtr, id, 0);
-            return handle;
+            var intPtr = Marshal.AllocHGlobal(size);
+            _handles[id] = new DynamicMemoryHandle(intPtr, id, 0, (uint)size);
+
+            return new AllocationHandle(intPtr, id, 0);
         }
 
         public void Free(ref AllocationHandle handle)
         {
-            Assert(handle.Id >= 0 && handle.Id < _handles.Length);
+            AssertValid(ref handle);
+            Marshal.FreeHGlobal(handle.Address);
+            _size -= _handles[handle.Id].Size;
+            _handles[handle.Id] = new DynamicMemoryHandle(IntPtr.Zero, 0, 0, 0);
+            handle = new AllocationHandle(IntPtr.Zero, 0, 0);
+        }
 
+        private void AssertValid(ref AllocationHandle handle)
+        {
+            Assert(handle.Id >= 0 && handle.Id < _handles.Length);
             ref var h = ref _handles[handle.Id];
             Assert(handle.Address == h.Address);
-            Assert(handle.Flags == h.Flags);
-
-            Marshal.FreeHGlobal(h.Address);
-            h = new AllocationHandle(IntPtr.Zero, 0, 0);
+            Assert(handle.Flags == h.Version);
         }
 
         public AllocationHandle Transfer(ref AllocationHandle handle)
         {
-            Assert(handle.IsValid);
+            AssertValid(ref handle);
             ref var h = ref _handles[handle.Id];
-            h = new AllocationHandle(IntPtr.Zero, 0, handle.Flags + 1);
-
+            h.Version++;
             handle = AllocationHandle.Null;
-            return h;
+            return new AllocationHandle(h.Address, h.Id, h.Version);
         }
     }
 }

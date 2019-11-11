@@ -4,8 +4,10 @@
     using System.Linq;
     using System.Collections.Generic;
     using Atma.Entities;
+    using Atma.Memory;
     using Shouldly;
     using System.Diagnostics;
+    using static Atma.Debug;
 
     class Program
     {
@@ -42,6 +44,9 @@
             // var type = em.CreateArchetype(typeof(Test));
             // var e = em.CreateEntity(type);
 
+            HeppAlocationShouldFillGap();
+            return;
+
             for (var y = 0; y < 3; y++)
             {
                 var sw = Stopwatch.StartNew();
@@ -71,37 +76,50 @@
         }
 
 
-        public static void ShouldMoveEntity()
+        public static unsafe void HeppAlocationShouldFillGap()
         {
             //arrange
-            using var em = new EntityManager();
-            var srcSpec = new EntitySpec(ComponentType<Position>.Type);
-            var dstSpec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+            var blocks = 256;
+            var size = blocks * HeapAllocation2.HeapSize;
+            var memory = stackalloc HeapAllocation2[blocks];
+            var span = new Span<HeapAllocation2>(memory, blocks);
+            memory->Blocks = (uint)blocks - 1; //offset the first heap block
 
             //act
-            var id0 = em.Create(srcSpec);
-            em.Replace(id0, new Position(20, 10));
+            HeapAllocation2.Split(memory, HeapAllocation2.HeapSize); //255
+            HeapAllocation2.Split(&memory[2], HeapAllocation2.HeapSize); //252
+            HeapAllocation2.Split(&memory[4], HeapAllocation2.HeapSize); //249
 
-            var id1 = em.Create(srcSpec);
-            em.Replace(id1, new Position(10, 20));
-
-            em.Move(id0, dstSpec);
+            HeapAllocation2.Free(memory);
 
             //assert
-            var p0 = em.Get<Position>(id0);
-            p0.X.ShouldBe(20);
-            p0.Y.ShouldBe(10);
+            span[0].Blocks.ShouldBe(1u);
+            span[2].Blocks.ShouldBe(1u);
+            span[4].Blocks.ShouldBe(1u);
+            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
+            span[2].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
+            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation2.HeapSize);
+            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation2.HeapSize);
+            HeapAllocation2.CountFreeBlocks(memory).ShouldBe((uint)blocks - 6u);
+            HeapAllocation2.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)6u);
+            allocations.ShouldBe(2);
 
-            var p1 = em.Get<Position>(id1);
-            p0.X.ShouldBe(10);
-            p0.Y.ShouldBe(20);
+            Assert(span[0].Previous == null);
+            Assert(span[2].Previous == &memory[0]);
+            Assert(span[4].Previous == &memory[2]);
+            Assert(span[6].Previous == &memory[4]);
 
-            em.EntityArrays.Count.ShouldBe(2);
-            em.EntityArrays[0].EntityCount.ShouldBe(1);
-            em.EntityArrays[1].EntityCount.ShouldBe(1);
-            em.EntityCount.ShouldBe(2);
+            Assert(span[0].Next == &memory[2]);
+            Assert(span[2].Next == &memory[4]);
+            Assert(span[4].Next == &memory[6]);
+            Assert(span[6].Next == null);
+
+            Assert(span[0].Flags == 1);
+            Assert(span[2].Flags == 0);
+            Assert(span[4].Flags == 1);
+            Assert(span[4].Flags == 0);
+            //Assert(span[2].Previous == null);
         }
-
 
     }
 
