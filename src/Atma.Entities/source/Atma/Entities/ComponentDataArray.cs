@@ -1,8 +1,6 @@
 ﻿namespace Atma.Entities
 {
     using Atma.Memory;
-    using static Atma.Debug;
-
     using System;
 
     public sealed unsafe class ComponentDataArray : UnmanagedDispose//, IComponentDataArray2
@@ -36,13 +34,9 @@
             if (componentType.ID != _componentType.ID)
                 throw new Exception("Invalid type.");
 
-            // if (!_lock.TryEnterWriteLock(0))
-            //     throw new Exception("Could not take write lock on component data!");
 
             return new Span<T>((void*)_memoryHandle.Address, Length);
-            //return new ComponentDataArrayWriteLock(_lock);
         }
-
 
         public T* AsPointer<T>()
             where T : unmanaged
@@ -51,38 +45,18 @@
             if (componentType.ID != _componentType.ID)
                 throw new Exception("Invalid type.");
 
-            // if (!_lock.TryEnterWriteLock(0))
-            //     throw new Exception("Could not take write lock on component data!");
 
             return (T*)_memoryHandle.Address;
-            //return new ComponentDataArrayWriteLock(_lock);
         }
-
-        // public ComponentDataArrayReadLock AsReadOnlySpan<T>(out ReadOnlySpan<T> span)
-        //   where T : unmanaged
-        // {
-        //     var componentType = ComponentType<T>.Type;
-        //     if (componentType.ID != _componentType.ID)
-        //         throw new Exception("Invalid type.");
-
-        //     if (!_lock.TryEnterReadLock(0))
-        //         throw new Exception("Could not take write lock on component data!");
-
-        //     span = new Span<T>(_memoryHandle.Address, Length);
-        //     return new ComponentDataArrayReadLock(_lock);
-        // }
 
         public void Reset(int index)
         {
-            Assert(index >= 0 && index < Length);
-            // if (!_lock.TryEnterWriteLock(0))
-            //     throw new Exception("Could not take write lock on component data!");
+            Assert.Range(index, 0, Length);
 
             var addr = (byte*)_memoryHandle.Address;
             var dst = addr + index * ElementSize;
 
             _componentHelper.Reset(dst);
-            //_lock.ExitWriteLock();
         }
 
         public void Move(int srcIndex, int dstIndex)
@@ -90,9 +64,8 @@
             if (srcIndex == dstIndex)
                 return;
 
-            Assert(srcIndex >= 0 && srcIndex < Length && dstIndex >= 0 && dstIndex < Length);
-            // if (!_lock.TryEnterWriteLock(0))
-            //     throw new Exception("Could not take write lock on component data!");
+            Assert.Range(srcIndex, 0, Length);
+            Assert.Range(dstIndex, 0, Length);
 
             var addr = (byte*)_memoryHandle.Address;
             var src = addr + srcIndex * ElementSize;
@@ -103,13 +76,13 @@
 #if DEBUG
             _componentHelper.Reset(src);
 #endif
-            //_lock.ExitWriteLock();
         }
 
         public static void CopyTo(ComponentDataArray srcArray, int srcIndex, ComponentDataArray dstArray, int dstIndex)
         {
-            Assert(srcArray._componentType.ID == dstArray._componentType.ID);
-            Assert(srcIndex >= 0 && srcIndex < srcArray.Length && dstIndex >= 0 && dstIndex < dstArray.Length);
+            Assert.EqualTo(srcArray._componentType.ID, dstArray._componentType.ID);
+            Assert.Range(srcIndex, 0, srcArray.Length);
+            Assert.Range(dstIndex, 0, dstArray.Length);
 
             var srcAddr = (byte*)srcArray._memoryHandle.Address;
             var dstAddr = (byte*)dstArray._memoryHandle.Address;
