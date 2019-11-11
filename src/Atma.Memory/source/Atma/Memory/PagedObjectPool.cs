@@ -42,12 +42,8 @@ namespace Atma.Memory
                 var index = id & OBJECTS_MASK;
                 var page = id >> OBJECT_BITS;
 
-                Assert.GreatherThanEqualTo(page, 0);
-                Assert.LessThan(page, _objectMap.Count);
-                Assert.GreatherThanEqualTo(index, 0);
-                Assert.LessThan(index, _objectMap[page].Length);
-                //Assert(page >= 0 && page < _objectMap.Count, $"{page} was out of range[{0}-{_objectMap.Count}]");
-                //Assert(index >= 0 && index < _objectMap[page].Length, $"{index} was out of range[{0}-{_objectMap[page].Length}]");
+                Assert.Range(page, 0, _objectMap.Count);
+                Assert.Range(index, 0, _objectMap[page].Length);
 
                 return ref _objectMap[page][index];
             }

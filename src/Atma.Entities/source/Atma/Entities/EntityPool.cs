@@ -2,19 +2,18 @@ namespace Atma.Common
 {
     using Atma.Entities;
     using Atma.Memory;
-    using static Atma.Debug;
     using System.Collections.Generic;
 
     public sealed class EntityPool2
     {
-        private IAllocator _memory;
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
         public const int ENTITIES_MASK = ENTITIES_PER_POOL - 1;
 
+        private IAllocator _memory;
         private List<NativeArray<Entity>> _entityMap;
 
-        private NativeStack<uint> _freeIds;// = new NativeStack<uint>(Allocator.Persistent, ENTITIES_PER_POOL);
+        private NativeStack<uint> _freeIds;
 
         private int _free;
         private int _capacity;
@@ -44,14 +43,12 @@ namespace Atma.Common
                 var index = id & ENTITIES_MASK;
                 var page = id >> ENTITIES_BITS;
 
-                Assert(page >= 0 && page < _entityMap.Count, $"{page} was out of range[{0}-{_entityMap.Count}]");
-                Assert(index >= 0 && index < _entityMap[page].Length, $"{index} was out of range[{0}-{_entityMap[page].Length}]");
+                Assert.Range(page, 0, _entityMap.Count);
+                Assert.Range(index, 0, _entityMap[page].Length);
 
                 return ref _entityMap[page][index];
             }
         }
-
-        //public ref Entity2 Get(uint entity) => ref this[entity];
 
         public bool IsValid(uint id)
         {
@@ -75,8 +72,8 @@ namespace Atma.Common
         public void Return(uint id)
         {
             ref var e = ref this[id];
-            Assert(e.ID > 0);
-            Assert(e.ID == id);
+            Assert.GreatherThan(e.ID, 0);
+            Assert.EqualTo(e.ID, id);
 
             e = new Entity(0, 0, 0, 0);
             _freeIds.Push(id);
@@ -91,25 +88,11 @@ namespace Atma.Common
             _free--;
 
             var id = _freeIds.Pop();
-            Assert(id <= 0xffffff);
+            Assert.LessThanEqualTo(id, 0xffffff);
             var version = _version++;
             id |= version << 24;
 
-            //this[id] = new Entity2(id, specIndex, chunkIndex, index);
-
             return id;
         }
-
-        // public void Take(NativeSlice<int> items)
-        // {
-        //     while (_free < items.Length)
-        //         AddPage();
-
-        //     for (var i = 0; i < items.Length; i++)
-        //     {
-        //         _free--;
-        //         items[i] = _freeIds.Pop();
-        //     }
-        // }
     }
 }
