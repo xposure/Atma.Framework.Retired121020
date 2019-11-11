@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
 
-    using static Atma.Debug;
 
     internal struct NativeListData
     {
@@ -42,9 +41,11 @@
             Allocator = allocator;
             var sizeOfElement = SizeOf<T>.Size;
 
-            Assert(length > 0);
+            Assert.GreatherThan(length, 0);
             Handle = Allocator.Take<NativeListData>(1);
+
             _listInfo = (NativeListData*)Handle.Address;
+            _listInfo->Handle = Allocator.Take<T>(length);
 
             Length = 0;
             MaxLength = length;
@@ -69,8 +70,8 @@
         {
             get
             {
-                Assert(Handle.IsValid);
-                Assert(index >= 0 && index < Length);
+                Assert.EqualTo(Handle.IsValid, true);
+                Assert.Range(index, 0, Length);
                 return ref RawPointer[index];
             }
         }
@@ -80,7 +81,7 @@
         /// </summary>
         public void Clear()
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var dst = (T*)Handle.Address;
             var len = Length;
             while (len-- > 0)
@@ -95,7 +96,7 @@
         /// </summary>
         public void Reset()
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             Length = 0;
         }
 
@@ -104,7 +105,7 @@
         /// </summary>
         public void Add(in T item)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var len = Length;
             var maxLen = MaxLength;
             if (len == maxLen)
@@ -122,7 +123,7 @@
         /// <param name="item">Item.</param>
         public void Remove(in T item)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var comp = EqualityComparer<T>.Default;
             var len = Length;
             for (var i = 0; i < len; ++i)
@@ -140,8 +141,8 @@
         /// </summary>
         public void RemoveAt(int index)
         {
-            Assert(Handle.IsValid);
-            Assert(index < Length, "Index out of range!");
+            Assert.EqualTo(Handle.IsValid, true);
+            Assert.LessThan(index, Length);
 
             var len = --Length;
             for (var i = index; i < len; i++)
@@ -155,8 +156,8 @@
         /// <param name="index">Index.</param>
         public void RemoveAtWithSwap(int index)
         {
-            Assert(Handle.IsValid);
-            Assert(index < Length, "Index out of range!");
+            Assert.EqualTo(Handle.IsValid, true);
+            Assert.LessThan(index, Length);
 
             var len = Length--;
             RawPointer[index] = RawPointer[len];
@@ -170,7 +171,7 @@
         /// <param name="item">Item.</param>
         public bool Contains(in T item)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var comp = EqualityComparer<T>.Default;
             var len = Length;
             for (var i = 0; i < len; ++i)
@@ -187,7 +188,7 @@
         /// </summary>
         public void EnsureCapacity(int additionalItemCount = 1)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var len = Length;
             var maxLen = MaxLength;
             var neededLength = len + additionalItemCount;
@@ -214,7 +215,7 @@
                 for (var i = 0; i < len; i++)
                     dst[i] = src[i];
 
-                Allocator.Free(ref Handle);
+                Allocator.Free(ref _listInfo->Handle);
             }
 
             _listInfo->Handle = newHandle;
@@ -226,7 +227,7 @@
         /// <param name="array">Array.</param>
         public void AddRange(IEnumerable<T> array)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             foreach (var item in array)
                 Add(item);
         }
@@ -236,7 +237,7 @@
         /// </summary>
         public void Sort(Comparison<T> comparison)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var span = AsSpan();
             span.Sort(comparison);
         }
@@ -246,14 +247,14 @@
         /// </summary>
         public void Sort(IComparer<T> comparer)
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var span = AsSpan();
             span.Sort(comparer);
         }
 
         public void Dispose()
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             var copy = _listInfo->Handle;
             Allocator.Free(ref Handle);
             Allocator.Free(ref copy);
@@ -270,16 +271,16 @@
 
         public NativeSlice<T> Slice(int start, int length)
         {
-            Assert(Handle.IsValid);
-            Assert(start >= 0);
-            Assert(length >= 0);
-            Assert(start + length <= Length);
+            Assert.EqualTo(Handle.IsValid, true);
+            Assert.GreatherThanEqualTo(start, 0);
+            Assert.GreatherThanEqualTo(length, 0);
+            Assert.LessThanEqualTo(start + length, Length);
             return new NativeSlice<T>(Handle, start, length);
         }
 
         public Span<T> AsSpan()
         {
-            Assert(Handle.IsValid);
+            Assert.EqualTo(Handle.IsValid, true);
             return new Span<T>(RawPointer, Length);
         }
 

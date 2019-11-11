@@ -18,6 +18,15 @@ namespace Atma.Memory
         public uint Flags;                  //4
         public uint Checksum;               //4
 
+        public HeapAllocation2(int size)
+        {
+            Blocks = ((uint)(size + (HeapSize - 1))) >> 5;
+            Flags = 0;
+            Checksum = 0;
+            MagicSignature = 0x5aa555aa;
+            Previous = null;
+            Next = null;
+        }
         public static void ConsumeForward(HeapAllocation2* root)
         {
             var ptr = root->Next;
@@ -244,7 +253,7 @@ namespace Atma.Memory
                 _handle = allocator.Take((int)size);
                 Size = size;
 
-                _heap = (HeapAllocation2*)_handle.Address;
+                *(_heap = (HeapAllocation2*)_handle.Address) = new HeapAllocation2(size);
             }
 
             public void Free(IntPtr handle)

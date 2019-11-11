@@ -96,6 +96,59 @@ namespace Atma
             return new ContractException(sb.ToString(), stackTrace);
         }
 
+        public static ContractException GenerateException<T>(T actual, T expected0, T expected1)
+        {
+            var thisClassName = typeof(ContractException).Name;
+
+            var stackTrace = new StackTrace(true);
+            var i = 0;
+            var frame = stackTrace.GetFrame(i);
+            var shouldMethod = "";
+            while (namespacesToOmit.Any(x => frame.GetMethod().DeclaringType.FullName.StartsWith(x)))
+            {
+                shouldMethod = frame.GetMethod().Name;
+                frame = stackTrace.GetFrame(++i);
+            }
+            var lineNumber = frame.GetFileLineNumber() - 1;
+            var fileName = frame.GetFileName();
+
+            var lineOfCode = string.Empty;
+            var fi = new FileInfo(fileName);
+            if (fi.Exists)
+            {
+                var lines = File.ReadAllLines(fileName);
+                if (lines.Length > lineNumber)
+                    lineOfCode = lines[lineNumber].Trim().TrimEnd(';');
+            }
+
+            var sb = new StringBuilder();
+            if (!string.IsNullOrEmpty(lineOfCode))
+            {
+                sb.AppendLine(lineOfCode);
+            }
+
+            var firstPar = lineOfCode.IndexOf('(');
+            var lastComma = lineOfCode.LastIndexOf(',');
+
+
+            if (firstPar > -1 && lastComma > -1)
+            {
+                sb.Append(lineOfCode.Substring(firstPar + 1, lastComma - firstPar - 1).Trim());
+                sb.Append(' ');
+            }
+
+            sb.AppendLine(FromPascal(shouldMethod));
+            sb.Append(VariableToString(expected0));
+            sb.Append(" TO ");
+            sb.Append(VariableToString(expected1));
+
+            sb.AppendLine("  but was");
+            sb.AppendLine(VariableToString(actual));
+
+            stackTrace = new StackTrace(i, true);
+            return new ContractException(sb.ToString(), stackTrace);
+        }
+
         private static string VariableToString<T>(T value)
         {
             if (value is string)
@@ -135,6 +188,13 @@ namespace Atma
             var equality = EqualityComparer<T>.Default;
             if (equality.Equals(actual, expected))
                 throw ContractException.GenerateException(actual, expected);
+        }
+
+        public static void Range(int actual, int inclusiveMin, int exclusiveMax)
+        {
+            if (!(actual >= inclusiveMin) || !(actual < exclusiveMax))
+                throw ContractException.GenerateException(actual, inclusiveMin, exclusiveMax);
+
         }
     }
 }

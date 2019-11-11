@@ -15,7 +15,7 @@
         [Fact]
         public void ShouldAdd()
         {
-            using var m = new StackAllocator(1024);
+            using var m = new DynamicAllocator();
             using var x = new NativeList<Data>(m);
 
             x.Add(new Data() { x = 10, y = 11, b = 12 });
@@ -53,7 +53,7 @@
         [Fact]
         public void ShouldResize()
         {
-            using var m = new StackAllocator(1024);
+            using var m = new DynamicAllocator();
             using var x = new NativeList<Data>(m);
 
             var maxLength = x.MaxLength;

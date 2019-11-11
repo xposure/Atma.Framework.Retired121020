@@ -1,6 +1,5 @@
 namespace Atma.Memory
 {
-    using static Atma.Debug;
     using System.Collections.Generic;
 
     public sealed class PagedObjectPool<T>
@@ -42,8 +41,12 @@ namespace Atma.Memory
                 var index = id & OBJECTS_MASK;
                 var page = id >> OBJECT_BITS;
 
-                Assert(page >= 0 && page < _objectMap.Count, $"{page} was out of range[{0}-{_objectMap.Count}]");
-                Assert(index >= 0 && index < _objectMap[page].Length, $"{index} was out of range[{0}-{_objectMap[page].Length}]");
+                Assert.GreatherThanEqualTo(page, 0);
+                Assert.LessThan(page, _objectMap.Count);
+                Assert.GreatherThanEqualTo(index, 0);
+                Assert.LessThan(index, _objectMap[page].Length);
+                //Assert(page >= 0 && page < _objectMap.Count, $"{page} was out of range[{0}-{_objectMap.Count}]");
+                //Assert(index >= 0 && index < _objectMap[page].Length, $"{index} was out of range[{0}-{_objectMap[page].Length}]");
 
                 return ref _objectMap[page][index];
             }
@@ -78,7 +81,7 @@ namespace Atma.Memory
             _free--;
 
             var id = _freeIds.Pop();
-            Assert(id <= 0xffffff);
+            Assert.LessThanEqualTo(id, 0xffffff);
             var version = _version++;
             id |= version << 24;
             return id;
