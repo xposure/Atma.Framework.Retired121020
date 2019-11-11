@@ -1,8 +1,6 @@
 
 namespace Atma.Memory
 {
-    using static Atma.Debug;
-
     using System;
 
     public unsafe class StackAllocator : IAllocator
@@ -36,10 +34,10 @@ namespace Atma.Memory
 
         public unsafe AllocationHandle Take(int size)
         {
-            Assert(size > 0);
+            Assert.GreatherThan(size, 0);
 
             size = Unsafe.Align16(size);
-            Assert(_free >= size);
+            Assert.GreatherThanEqualTo(_free, size);
 
             var index = _allocationIndex++;
             var addr = _dataPtr.ToPointer();
@@ -53,7 +51,11 @@ namespace Atma.Memory
         public unsafe void Free(ref AllocationHandle handle)
         {
             _allocationIndex--;
-            Assert(handle.Id == _allocationIndex);
+
+            Assert.EqualTo(handle.Id, _allocationIndex);
+            //Contract.Assert(handle.Id == _allocationIndex);
+            //Contract.Requires(handle.Id == _allocationIndex);
+            //handle.Id.AssertShouldBe(_allocationIndex);
             _dataPtr = IntPtr.Subtract(_dataPtr, (int)handle.Flags);
 
             if (_thrash)

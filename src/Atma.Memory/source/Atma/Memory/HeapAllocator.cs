@@ -202,8 +202,8 @@ namespace Atma.Memory
                     var page = new HeapPage(_allocator, _desiredSizes);
                     _pages.Add(page);
 
-                    if (!page.TryTake(out var ptr, (uint)size))
-                        throw new Exception("Failed to take memory");
+                    Contract.EqualTo(page.TryTake(out var ptr, (uint)size), true);
+
                     heapPagePtr = new HeapPagePointer(id, ptr, 0, _version++);
                     return new AllocationHandle(ptr, id, _heapIndex);
                 }
