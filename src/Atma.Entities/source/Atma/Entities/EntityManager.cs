@@ -7,35 +7,8 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    using static Atma.Debug;
-
-    // public interface IEntityView2
-    // {
-
-    // }
-
     public sealed partial class EntityManager : UnmanagedDispose//, IEntityManager2
     {
-        // //private DynamicMemoryPool _persistentMemory = new DynamicMemoryPool();
-        // private List<EntityArchetype> _archetypes = new List<EntityArchetype>();
-        // private LookupList<EntityArchetype> _archetypeIDLookup = new LookupList<EntityArchetype>();
-        // //private LookupList<ComponentType> _componentTypes = new LookupList<ComponentType>();
-
-        // private ComponentList _componentList = new ComponentList();
-        // private ComponentViewList _componentViewList;
-        // private EntityPool _entityPool = new EntityPool();
-
-        // internal IReadOnlyList<EntityArchetype> Archetypes => _archetypes;
-        // internal ComponentList ComponentList => _componentList;
-
-        // public EntityManager2(ComponentList componentList)
-        // {
-        //     // _componentList = componentList;
-        //     // _componentViewList = new ComponentViewList(componentList);
-        //     // _archetypes.Add(new EntityArchetype(this, 0, 0));
-
-        //     // _entityPool.Take(); //we take the first entity because we use ID as INVALID;
-        // }
 
         public int EntityCount { get => _entityArrays.Sum(x => x.EntityCount); }
         public int SpecCount { get => _knownSpecs.Count; }
@@ -65,7 +38,7 @@
             {
                 //we are limited to this many unique specs per EM
                 specIndex = _knownSpecs.Count;
-                Assert(specIndex < Entity.SPEC_MAX);
+                Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
                 _entityArrays.Add(new EntityChunkArray(_heapAllocator, spec));
             }
@@ -81,7 +54,7 @@
                 var spec = new EntitySpec(specId, componentTypes.ToArray());
                 //we are limited to this many unique specs per EM
                 specIndex = _knownSpecs.Count;
-                Assert(specIndex < Entity.SPEC_MAX);
+                Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
                 _entityArrays.Add(new EntityChunkArray(_heapAllocator, spec));
             }
@@ -102,7 +75,7 @@
         public void Assign<T>(uint entity, in T t)
             where T : unmanaged
         {
-            Assert(!Has<T>(entity));
+            Assert.EqualTo(Has<T>(entity), false);
 
             ref var entityInfo = ref _entityPool[entity];
             var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
@@ -126,7 +99,7 @@
         public ref T Get<T>(uint entity)
             where T : unmanaged
         {
-            Assert(Has<T>(entity));
+            Assert.EqualTo(Has<T>(entity), true);
 
             ref readonly var e = ref _entityPool[entity];
 
@@ -182,7 +155,7 @@
         public void Remove<T>(uint entity)
             where T : unmanaged
         {
-            Assert(Has<T>(entity));
+            Assert.EqualTo(Has<T>(entity), true);
 
             var oldComponentType = ComponentType<T>.Type;
             var oldComponentId = oldComponentType.ID;
@@ -219,7 +192,7 @@
         public void Replace<T>(ref Entity entity, in T t)
           where T : unmanaged
         {
-            Assert(Has<T>(ref entity));
+            Assert.Equals(Has<T>(ref entity), true);
             var array = _entityArrays[entity.SpecIndex];
             var chunk = array.AllChunks[entity.ChunkIndex];
             var span = chunk.PackedArray.GetComponentSpan<T>();
@@ -267,7 +240,6 @@
             var src = _entityArrays[entityInfo.SpecIndex];
             var dst = _entityArrays[dstSpecIndex];
 
-
             //we want to create the data at the dst first
             var srcIndex = entityInfo.Index;
             var dstIndex = dst.Create(entityInfo.ID, out var dstChunkIndex);
@@ -291,32 +263,5 @@
             _dynamicMemory.Dispose();
             _heapAllocator.Dispose();
         }
-
-        // public IEntityView View<T>() where T : unmanaged
-        // {
-        //     throw new NotImplementedException();
-        // }
-
-
-        // internal void GetEntityStorage(int entity, out EntityArchetype archetype, out ArchetypeChunk chunk, out int index)
-        // {
-        //     ref var e = ref _entityPool[entity];
-        //     Assert(e.IsValid);
-
-        //     archetype = _archetypes[e.ArchetypeIndex];
-        //     chunk = archetype.Chunks[e.ChunkIndex];
-        //     index = e.Index;
-        // }
-        // public IEnumerable<EntityChunkArray> EntityArrays(Func<EntitySpec, bool> filter)
-        // {
-        //     for (var i = 0; i < _entityArrays.Count; i++)
-        //     {
-        //         var array = _entityArrays[i];
-        //         if (filter(array.Specification))
-        //             yield return array;
-        //     }
-        // }
-
-
     }
 }
