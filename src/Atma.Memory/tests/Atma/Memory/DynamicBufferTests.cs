@@ -1,4 +1,5 @@
 ﻿using Shouldly;
+using Xunit;
 
 namespace Atma.Memory
 {
@@ -21,6 +22,7 @@ namespace Atma.Memory
             public byte b;
         }
 
+        [Fact]
         public void AllocatesDynamicTypes()
         {
             using var buffer = new NativeBuffer(Allocator.Temp);

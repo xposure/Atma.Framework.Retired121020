@@ -3,6 +3,7 @@
     using System;
     using System.Runtime.InteropServices;
     using Shouldly;
+    using Xunit;
 
     public unsafe class UnsafeTests
     {
@@ -27,6 +28,7 @@
             }
         }
 
+        [Fact]
         public void Align16()
         {
             for (var i = 1; i < 16; i++)
@@ -39,14 +41,17 @@
             }
         }
 
+        [Fact]
         public void IsAligned()
         {
             for (var i = 0; i < 1024; i++)
                 Unsafe.IsAligned16((void*)new IntPtr(i)).ShouldBe((i % 16) == 0);
         }
 
+        [Fact]
         public void ShouldClear()
         {
+
             using var alloc = new Alloc(128);
             alloc.Size.ShouldBe(128);
             var ptr = (int*)alloc.AlignedPointer;

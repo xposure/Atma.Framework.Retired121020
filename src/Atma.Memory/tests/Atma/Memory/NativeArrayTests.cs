@@ -1,6 +1,7 @@
 ﻿namespace Atma.Memory
 {
     using Shouldly;
+    using Xunit;
 
     public class NativeArrayTests
     {
@@ -11,6 +12,7 @@
             public byte b;
         }
 
+        [Fact]
         public void ShouldAdd()
         {
             using var m = new StackAllocator(1024);
@@ -48,6 +50,7 @@
 
         }
 
+        [Fact]
         public void ShouldResize()
         {
             using var m = new StackAllocator(1024);

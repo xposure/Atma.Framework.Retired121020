@@ -1,11 +1,13 @@
 namespace Atma.Memory
 {
     using System;
+    using Xunit;
     using Shouldly;
     using static Atma.Debug;
 
     public class HeapAllocatorTests
     {
+        [Fact]
         public unsafe void HeapAllocationShouldAllocate()
         {
             //arrange
@@ -33,6 +35,7 @@ namespace Atma.Memory
             Assert(span[2].Previous == &memory[0]);
         }
 
+        [Fact]
         public unsafe void HeapAllocationShouldFree()
         {
             //arrange
@@ -61,6 +64,7 @@ namespace Atma.Memory
             //Assert(span[2].Previous == null);
         }
 
+        [Fact]
         public unsafe void HeppAlocationShouldFillGap()
         {
             //arrange
@@ -176,6 +180,7 @@ namespace Atma.Memory
 
         }
 
+        [Fact]
         public void HeapShouldAllocate()
         {
             //arrange

@@ -3,10 +3,12 @@
     using Shouldly;
     using System;
     using System.Runtime.InteropServices;
+    using Xunit;
     using static Atma.Debug;
 
     public unsafe class HeapMemoryTests
     {
+        [Fact]
         public void ShouldAllocAligned()
         {
             using (var alloc = new HeapMemory(256))
@@ -16,6 +18,7 @@
                 alloc.Size.ShouldBe(256 + 16);
         }
 
+        [Fact]
         public void ShouldClear()
         {
             using (var alloc = new HeapMemory(256))
@@ -28,6 +31,7 @@
             }
         }
 
+        [Fact]
         public void HeapShouldSplit()
         {
             //var bytes = stackalloc byte[512];
@@ -83,6 +87,7 @@
             }
         }
 
+        [Fact]
         public void HeapShouldFindFree()
         {
             //var bytes = stackalloc byte[512];
@@ -110,6 +115,7 @@
             }
         }
 
+        [Fact]
         public void HeapShouldFree()
         {
             //var bytes = stackalloc byte[512];

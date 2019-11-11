@@ -2,9 +2,11 @@ namespace Atma.Memory
 {
     using System;
     using Shouldly;
+    using Xunit;
 
     public class DynamicMemoryTests
     {
+        [Fact]
         public void ShoudAllocate()
         {
             //arrange
@@ -24,6 +26,7 @@ namespace Atma.Memory
             allocator.Size.ShouldBe(2048u);
         }
 
+        [Fact]
         public void ShouldFree()
         {
             //arrange

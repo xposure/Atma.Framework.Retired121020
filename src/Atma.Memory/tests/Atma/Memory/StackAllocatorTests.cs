@@ -2,9 +2,11 @@ namespace Atma.Memory
 {
     using System;
     using Shouldly;
+    using Xunit;
 
     public unsafe class StackAllocatorTests
     {
+        [Fact]
         public void ShouldAllocateFromFront()
         {
             //arrange
@@ -18,6 +20,7 @@ namespace Atma.Memory
         }
 
 
+        [Fact]
         public void GetsSameAddressFront()
         {
             //arrange
@@ -37,6 +40,7 @@ namespace Atma.Memory
             handle2.Id.ShouldBe(handle1.Id);
         }
 
+        [Fact]
         public void GetsSameAddressBack()
         {
             //arrange
@@ -56,6 +60,7 @@ namespace Atma.Memory
             handle2.Id.ShouldBe(handle1.Id);
         }
 
+        [Fact]
         public void ShouldThrowOnUnorderedFree()
         {
             //arrange
