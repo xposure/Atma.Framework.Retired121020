@@ -1,11 +1,7 @@
 namespace Atma.Entities
 {
     using System;
-    using System.Collections.Generic;
     using Atma.Memory;
-
-    using static Atma.Debug;
-
 
     public unsafe sealed class EntityPackedArray : UnmanagedDispose
     {
@@ -27,34 +23,6 @@ namespace Atma.Entities
                 _componentData[i] = new ComponentDataArray(_allocator, _componentTypes[i], Entity.ENTITY_MAX);
         }
 
-        // public ref readonly Entity Create()
-        // {
-        //     Assert(Free > 0);
-        //     _entityCount++;
-        //     var id = _entityPool.Take();
-        //     return ref _entityPool[id];
-        // }
-
-        // public int Create()
-        // {
-        //     Assert(Free > 0);
-        //     return _entityCount++;
-        // }
-
-        // public void Delete(int index)
-        // {
-        //     Assert(index >= 0 && index < _entityCount);
-        //     if (index < _entityCount - 1)
-        //     {
-        //         var src = _entityCount - 1;
-        //         var dst = index;
-        //         for (var i = 0; i < _componentData.Length; i++)
-        //             _componentData[i].Move(src, dst);
-        //     }
-
-        //     _entityCount--;
-        // }
-
         private int GetComponentIndex<T>() where T : unmanaged
             => GetComponentIndex(ComponentType<T>.Type);
 
@@ -73,7 +41,9 @@ namespace Atma.Entities
         {
             if (src == dst)
                 return;
-            Assert(src >= 0 && src < Length && dst >= 0 && dst < Length);
+
+            Assert.Range(src, 0, Length);
+            Assert.Range(dst, 0, Length);
 
             for (var i = 0; i < _componentData.Length; i++)
                 _componentData[i].Move(src, dst);
@@ -81,7 +51,7 @@ namespace Atma.Entities
 
         public void Reset(int dst)
         {
-            Assert(dst >= 0 && dst < Length);
+            Assert.Range(dst, 0, Length);
 
             for (var i = 0; i < _componentData.Length; i++)
                 _componentData[i].Reset(dst);
@@ -90,10 +60,10 @@ namespace Atma.Entities
         public void Reset<T>(int dst)
             where T : unmanaged
         {
-            Assert(dst >= 0 && dst < Length);
+            Assert.Range(dst, 0, Length);
             var index = GetComponentIndex<T>();
 
-            Assert(index > -1);
+            Assert.GreatherThan(index, -1);
             _componentData[index].Reset(dst);
         }
 
@@ -101,7 +71,7 @@ namespace Atma.Entities
             where T : unmanaged
         {
             var index = GetComponentIndex<T>();
-            Assert(index > -1);
+            Assert.GreatherThan(index, -1);
 
             var componentDataArray = _componentData[index];
             return componentDataArray.AsSpan<T>();
@@ -111,31 +81,11 @@ namespace Atma.Entities
                    where T : unmanaged
         {
             var index = GetComponentIndex<T>();
-            Assert(index > -1);
+            Assert.GreatherThan(index, -1);
 
             var componentDataArray = _componentData[index];
             return componentDataArray.AsPointer<T>();
         }
-
-        // public ReadLock ReadComponent<T>(out ReadOnlySpan<T> span)
-        //     where T : unmanaged
-        // {
-        //     var index = GetComponentIndex<T>();
-        //     Assert(index > -1);
-
-        //     var componentDataArray = _componentData[index];
-        //     return componentDataArray.AsReadOnlySpan(out span);
-        // }
-
-        // public WriteLock WriteComponent<T>(out Span<T> span)
-        //     where T : unmanaged
-        // {
-        //     var index = GetComponentIndex<T>();
-        //     Assert(index > -1);
-
-        //     var componentDataArray = _componentData[index];
-        //     return componentDataArray.AsSpan(out span);
-        // }
 
         protected override void OnManagedDispose()
         {
