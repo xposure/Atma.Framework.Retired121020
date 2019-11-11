@@ -1,15 +1,14 @@
 namespace Atma.Entities
 {
-    using System;
     using Atma.Memory;
-    using static Atma.Debug;
 
-    public sealed class EntityChunk : UnmanagedDispose//, IEntityChunk
+    public sealed class EntityChunk : UnmanagedDispose
     {
         private IAllocator _allocator;
-        private int _entityCount = 0;
-        private uint[] _entities;
+        private NativeArray<uint> _entities;
         private EntityPackedArray _packedArray;
+
+        private int _entityCount = 0;
 
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
@@ -21,18 +20,18 @@ namespace Atma.Entities
             _allocator = allocator;
             Specification = specifcation;
             _packedArray = new EntityPackedArray(_allocator, specifcation);
-            _entities = new uint[_packedArray.Length];
+            _entities = new NativeArray<uint>(_allocator, _packedArray.Length);
         }
 
         public uint GetEntity(int index)
         {
-            Assert(index >= 0 && index < _entityCount);
+            Assert.Range(index, 0, _entityCount);
             return _entities[index];
         }
 
         public int Create(uint entity)
         {
-            Assert(Free > 0);
+            Assert.GreatherThan(Free, 0);
 
             var index = _entityCount++;
             _entities[index] = entity;
@@ -41,7 +40,7 @@ namespace Atma.Entities
 
         public int Delete(int index)
         {
-            Assert(index >= 0 && index < _entityCount);
+            Assert.Range(index, 0, _entityCount);
             _entityCount--;
 
             var movedIndex = -1;
@@ -58,7 +57,7 @@ namespace Atma.Entities
 
         protected override void OnManagedDispose()
         {
-            _entities = null;
+            _entities.Dispose();
             _packedArray = null;
         }
 
@@ -66,11 +65,5 @@ namespace Atma.Entities
         {
             _packedArray.Dispose();
         }
-
-        // public static void MoveTo(EntityChunk srcChunk, int srcIndex, EntityChunk dstChunk, int dstIndex)
-        // {
-        //     dstChunk._entities[dstIndex] = srcChunk._entities[srcIndex];
-        //     EntityPackedArray.CopyTo(srcChunk._packedArray, srcIndex, dstChunk._packedArray, dstIndex);
-        // }
     }
 }
