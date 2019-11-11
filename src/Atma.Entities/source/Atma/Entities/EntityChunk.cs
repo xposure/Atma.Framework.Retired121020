@@ -1,12 +1,13 @@
 namespace Atma.Entities
 {
     using System;
+    using Atma.Memory;
     using static Atma.Debug;
 
     public sealed class EntityChunk : UnmanagedDispose//, IEntityChunk
     {
+        private IAllocator _allocator;
         private int _entityCount = 0;
-
         private uint[] _entities;
         private EntityPackedArray _packedArray;
 
@@ -15,10 +16,11 @@ namespace Atma.Entities
         public EntitySpec Specification { get; }
         public EntityPackedArray PackedArray => _packedArray;
 
-        public EntityChunk(EntitySpec specifcation)
+        public EntityChunk(IAllocator allocator, EntitySpec specifcation)
         {
+            _allocator = allocator;
             Specification = specifcation;
-            _packedArray = new EntityPackedArray(specifcation);
+            _packedArray = new EntityPackedArray(_allocator, specifcation);
             _entities = new uint[_packedArray.Length];
         }
 

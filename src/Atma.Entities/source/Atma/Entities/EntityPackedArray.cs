@@ -15,11 +15,11 @@ namespace Atma.Entities
         public EntitySpec Specification { get; }
         public int Length => Entity.ENTITY_MAX;
 
-        public EntityPackedArray(EntitySpec specification)
+        public EntityPackedArray(IAllocator allocator, EntitySpec specification)
         {
             Specification = specification;
 
-            _allocator = new StackAllocator((uint)(Specification.EntitySize * Entity.ENTITY_MAX));
+            _allocator = allocator;
 
             var _componentTypes = Specification.ComponentTypes;
             _componentData = new ComponentDataArray[_componentTypes.Length];

@@ -8,8 +8,8 @@
         Persistent
     }
 
-    public static class Allocators
-    {
-        public readonly static IAllocator Persistent = new StackAllocator(1024 * 1024 * 64);
-    }
+    // public static class Allocators
+    // {
+    //     public readonly static IAllocator Persistent = new StackAllocator(1024 * 1024 * 64);
+    // }
 }

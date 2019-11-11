@@ -12,6 +12,7 @@
 
     public sealed class EntityChunkArray : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
     {
+        private IAllocator _allocator;
         public int EntityCount => _entityCount;
         public int Capacity => _chunks.Count * Entity.ENTITY_MAX;
         public int Free => Capacity - _entityCount;
@@ -33,8 +34,9 @@
         private List<EntityChunk> _chunks = new List<EntityChunk>();
 
 
-        public EntityChunkArray(EntitySpec specification)
+        public EntityChunkArray(IAllocator allocator, EntitySpec specification)
         {
+            _allocator = allocator;
             Specification = specification;
         }
 
@@ -51,7 +53,7 @@
                 if (_chunks[chunkIndex].Free > 0)
                     return _chunks[chunkIndex];
 
-            var chunk = new EntityChunk(Specification);
+            var chunk = new EntityChunk(_allocator, Specification);
             _chunks.Add(chunk);
             return chunk;
         }

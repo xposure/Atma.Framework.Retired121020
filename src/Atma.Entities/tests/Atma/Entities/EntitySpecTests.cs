@@ -4,9 +4,11 @@ namespace Atma.Entities
     using System.Collections.Generic;
     using System.Linq;
     using Shouldly;
+    using Xunit;
 
     public class EntitySpecTests
     {
+        [Fact]
         public void ShouldGenerateSameHashcode()
         {
             var specs = new[]
@@ -28,6 +30,7 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void SpecComponentsShouldBeSorted()
         {
             var specs = new[]
@@ -51,6 +54,7 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void ShouldHaveAll()
         {
             var spec = new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid3>.Type, ComponentType<Valid4>.Type);
@@ -84,6 +88,7 @@ namespace Atma.Entities
             spec0.HasAll(spec1).ShouldBe(false);
         }
 
+        [Fact]
         public void ShouldHaveAny()
         {
             var spec = new EntitySpec(
@@ -117,6 +122,7 @@ namespace Atma.Entities
         }
 
 
+        [Fact]
         public void SpecShouldFindMatches()
         {
             var specs = new[]

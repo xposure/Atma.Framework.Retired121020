@@ -1,7 +1,9 @@
 namespace Atma.Entities
 {
     using System;
+    using Atma.Memory;
     using Shouldly;
+    using Xunit;
 
     public class EntityChunkTests
     {
@@ -29,15 +31,17 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void ShouldCreateEntity()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            var entityChunk = new EntityChunk(specification);
+            var entityChunk = new EntityChunk(memory, specification);
 
             //act
             var free = entityChunk.Free;
@@ -50,15 +54,17 @@ namespace Atma.Entities
             entityChunk.Free.ShouldBe(free - 1);
         }
 
+        [Fact]
         public void ShouldDeleteEntity()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            var entityChunk = new EntityChunk(specification);
+            var entityChunk = new EntityChunk(memory, specification);
 
             //act
             var free = entityChunk.Free;
@@ -72,16 +78,18 @@ namespace Atma.Entities
             entityChunk.GetEntity(0).ShouldBe(2u);
         }
 
+        [Fact]
         public void ShouldCopyToOtherChunk()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            var chunk0 = new EntityChunk(specification);
-            var chunk1 = new EntityChunk(specification);
+            var chunk0 = new EntityChunk(memory, specification);
+            var chunk1 = new EntityChunk(memory, specification);
 
 
             //act

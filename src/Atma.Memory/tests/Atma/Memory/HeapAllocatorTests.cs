@@ -15,7 +15,9 @@ namespace Atma.Memory
             var size = blocks * HeapAllocation2.HeapSize;
             var memory = stackalloc HeapAllocation2[blocks];
             var span = new Span<HeapAllocation2>(memory, blocks);
-            memory->Blocks = (uint)blocks - 1; //offset the first heap block
+            *memory = new HeapAllocation2(size);
+            //memory->Blocks = (uint)blocks - 1; //offset the first heap block
+
 
             //act
             HeapAllocation2.Split(memory, 1);
@@ -43,7 +45,7 @@ namespace Atma.Memory
             var size = blocks * HeapAllocation2.HeapSize;
             var memory = stackalloc HeapAllocation2[blocks];
             var span = new Span<HeapAllocation2>(memory, blocks);
-            memory->Blocks = (uint)blocks - 1; //offset the first heap block
+            *memory = new HeapAllocation2(size);
 
             //act
             HeapAllocation2.Split(memory, 1);
@@ -72,7 +74,7 @@ namespace Atma.Memory
             var size = blocks * HeapAllocation2.HeapSize;
             var memory = stackalloc HeapAllocation2[blocks];
             var span = new Span<HeapAllocation2>(memory, blocks);
-            memory->Blocks = (uint)blocks - 1; //offset the first heap block
+            *memory = new HeapAllocation2(size);
 
             //act
             HeapAllocation2.Split(memory, 1); //255

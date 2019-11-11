@@ -10,7 +10,8 @@ namespace Atma.Memory
         public void ShouldAllocateFromFront()
         {
             //arrange
-            using IAllocator it = new StackAllocator(1024);
+            using IAllocator memory = new DynamicAllocator();
+            using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
             var handle1 = it.Take<int>(1);
@@ -24,7 +25,8 @@ namespace Atma.Memory
         public void GetsSameAddressFront()
         {
             //arrange
-            using IAllocator it = new StackAllocator(1024);
+            using IAllocator memory = new DynamicAllocator();
+            using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
             var handle1 = it.Take<int>(1);
@@ -44,7 +46,8 @@ namespace Atma.Memory
         public void GetsSameAddressBack()
         {
             //arrange
-            using IAllocator it = new StackAllocator(1024);
+            using IAllocator memory = new DynamicAllocator();
+            using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
             var handle1 = it.Take<int>(1);
@@ -64,7 +67,8 @@ namespace Atma.Memory
         public void ShouldThrowOnUnorderedFree()
         {
             //arrange
-            using IAllocator it = new StackAllocator(1024);
+            using IAllocator memory = new DynamicAllocator();
+            using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
             var handle1 = it.Take<int>(1);

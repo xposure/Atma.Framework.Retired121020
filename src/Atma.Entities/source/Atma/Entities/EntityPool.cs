@@ -7,14 +7,14 @@ namespace Atma.Common
 
     public sealed class EntityPool2
     {
-        private StackAllocator _memory = new StackAllocator(8192);
+        private IAllocator _memory;
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
         public const int ENTITIES_MASK = ENTITIES_PER_POOL - 1;
 
         private List<NativeArray<Entity>> _entityMap;
 
-        private NativeStack<uint> _freeIds = new NativeStack<uint>(Allocator.Persistent, ENTITIES_PER_POOL);
+        private NativeStack<uint> _freeIds;// = new NativeStack<uint>(Allocator.Persistent, ENTITIES_PER_POOL);
 
         private int _free;
         private int _capacity;
@@ -26,8 +26,10 @@ namespace Atma.Common
 
         public int Free => _free;
 
-        public EntityPool2()
+        public EntityPool2(IAllocator allocator)
         {
+            _memory = allocator;
+            _freeIds = new NativeStack<uint>(_memory, ENTITIES_PER_POOL);
             _entityMap = new List<NativeArray<Entity>>();
             AddPage();
         }

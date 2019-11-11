@@ -41,12 +41,19 @@
         public int SpecCount { get => _knownSpecs.Count; }
         public IReadOnlyList<EntityChunkArray> EntityArrays => _entityArrays;
 
-        private EntityPool2 _entityPool = new EntityPool2();
+        private DynamicAllocator _dynamicMemory;
+        private HeapAllocator _heapAllocator;
+
+        private EntityPool2 _entityPool;// = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
         private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
 
         public EntityManager()
         {
+            _dynamicMemory = new DynamicAllocator();
+            _heapAllocator = new HeapAllocator(_dynamicMemory);
+
+            _entityPool = new EntityPool2(_heapAllocator);
             //take the first one to reserve 0 as invalid
             _entityPool.Take();
         }
@@ -60,7 +67,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert(specIndex < Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(spec));
+                _entityArrays.Add(new EntityChunkArray(_heapAllocator, spec));
             }
             return specIndex;
         }
@@ -76,7 +83,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert(specIndex < Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(spec));
+                _entityArrays.Add(new EntityChunkArray(_heapAllocator, spec));
             }
             return specIndex;
         }
@@ -277,6 +284,12 @@
 
             //then we want to remap the entity to its new location
             entityInfo = new Entity(entityInfo.ID, dstSpecIndex, dstChunkIndex, dstIndex);
+        }
+
+        protected override void OnUnmanagedDispose()
+        {
+            _dynamicMemory.Dispose();
+            _heapAllocator.Dispose();
         }
 
         // public IEntityView View<T>() where T : unmanaged

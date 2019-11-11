@@ -2,7 +2,9 @@ namespace Atma.Entities
 {
     using System;
     using Atma.Common;
+    using Atma.Memory;
     using Shouldly;
+    using Xunit;
 
     public class EntityGroupArrayTests
     {
@@ -30,15 +32,17 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void CanCreateEntityGroup()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityPackedArray(specification);
+            var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
@@ -56,14 +60,16 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void ShouldThrowOnWrongType()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            var entityGroup = new EntityPackedArray(specification);
+            var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             //assert
@@ -75,15 +81,17 @@ namespace Atma.Entities
 
 
         //test is probably pointless, its testing Span more than anything else
+        [Fact]
         public void ShouldReadAndWriteEntity()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityPackedArray(specification);
+            var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
@@ -116,15 +124,17 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void ShouldMoveEntity()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityPackedArray(specification);
+            var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();

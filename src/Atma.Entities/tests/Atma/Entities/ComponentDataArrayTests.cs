@@ -5,6 +5,7 @@ namespace Atma.Entities
     using System.Threading.Tasks;
     using Atma.Memory;
     using Shouldly;
+    using Xunit;
 
     public class ComponentArrayTests
     {
@@ -32,11 +33,12 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void ShouldGetIndex()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator = new DynamicAllocator();
             using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
@@ -48,11 +50,12 @@ namespace Atma.Entities
             p.Y.ShouldBe(0);
         }
 
+        [Fact]
         public void ShouldSetIndex()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator = new DynamicAllocator();
             using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
@@ -70,13 +73,14 @@ namespace Atma.Entities
             p0.Y.ShouldBe(p1.Y);
         }
 
+        [Fact]
         public void ShouldCopyToAnotherArray()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator0 = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator0 = new DynamicAllocator();
             using var data0 = new ComponentDataArray(allocator0, componentType, 32);
-            using IAllocator allocator1 = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator1 = new DynamicAllocator();
             using var data1 = new ComponentDataArray(allocator0, componentType, 32);
 
             //act
@@ -94,11 +98,12 @@ namespace Atma.Entities
             p1.Y.ShouldBe(20);
         }
 
+        [Fact]
         public void ShouldReset()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator = new DynamicAllocator();
             using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
@@ -122,11 +127,12 @@ namespace Atma.Entities
             }
         }
 
+        [Fact]
         public void ShouldThrowOnWrongType()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator = new DynamicAllocator();
             using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act
@@ -138,11 +144,12 @@ namespace Atma.Entities
             });
         }
 
+        [Fact]
         public void ShouldMoveData()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new StackAllocator(1024, clearToZero: true);
+            using IAllocator allocator = new DynamicAllocator();
             using var data = new ComponentDataArray(allocator, componentType, 32);
 
             //act

@@ -27,7 +27,7 @@
 
             if (length > 0)
             {
-                Handle = allocator.Take(sizeOfElement * length);
+                Handle = allocator.Take<T>(length);
                 Length = length;
             }
             else

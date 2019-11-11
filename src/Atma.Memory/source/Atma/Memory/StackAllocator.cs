@@ -5,7 +5,9 @@ namespace Atma.Memory
 
     public unsafe class StackAllocator : IAllocator
     {
-        private UnmanagedMemory _memory;
+        private IAllocator _allocator;
+        private AllocationHandle _handle;
+
         private IntPtr _dataPtr;
         private uint _allocationIndex = 0;
         private uint _free;
@@ -15,21 +17,19 @@ namespace Atma.Memory
 
         //TODO: Should we really clear to zero by default?
         //the EntityChunk should be managing out of bounds indexing and moving of data
-        public StackAllocator(uint size, bool thrash = false, bool clearToZero = true)
+        public StackAllocator(IAllocator allocator, int size, bool thrash = false)
         {
-            _memory = new UnmanagedMemory(size);
-            _free = _memory.Size;
-            _dataPtr = _memory.Begin;
+            _allocator = allocator;
+            _handle = allocator.Take(size);
+            _free = (uint)size;
+            _dataPtr = _handle.Address;
             _thrash = thrash;
-
-            if (clearToZero)
-                Unsafe.ClearAlign16((void*)_dataPtr, _memory.ActualSize);
         }
 
         public void Dispose()
         {
-            _memory?.Dispose();
-            _memory = null;
+            _allocator.Free(ref _handle);
+            _allocator = null;
         }
 
         public unsafe AllocationHandle Take(int size)

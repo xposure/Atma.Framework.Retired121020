@@ -1,7 +1,9 @@
 ﻿namespace Atma.Entities
 {
     using System;
+    using Atma.Memory;
     using Shouldly;
+    using Xunit;
 
     public class EntityArchetypeTests
     {
@@ -29,14 +31,16 @@
             }
         }
 
+        [Fact]
         public void ShouldCreateChunkArray()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            var chunkArray = new EntityChunkArray(specifcation);
+            var chunkArray = new EntityChunkArray(memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex);
@@ -49,14 +53,16 @@
         }
 
 
+        [Fact]
         public void ShouldDeleteAndMove()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            var chunkArray = new EntityChunkArray(specifcation);
+            var chunkArray = new EntityChunkArray(memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex0);
@@ -73,14 +79,16 @@
 
 
 
+        [Fact]
         public void ShouldExpand()
         {
             //arrange
+            using var memory = new DynamicAllocator();
             var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            var chunkArray = new EntityChunkArray(specifcation);
+            var chunkArray = new EntityChunkArray(memory, specifcation);
 
             //act
             for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)

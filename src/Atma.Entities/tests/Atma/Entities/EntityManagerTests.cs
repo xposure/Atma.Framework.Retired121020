@@ -5,6 +5,7 @@
 
     using System;
     using System.Linq;
+    using Xunit;
 
     public class EntityManagerTests
     {
@@ -32,6 +33,7 @@
             }
         }
 
+        [Fact]
         public void ShouldCreateEntityManager()
         {
             //arrange
@@ -55,6 +57,7 @@
 
         }
 
+        [Fact]
         public void ShouldShouldDeleteEntity()
         {
             //arrange
@@ -70,6 +73,7 @@
             em.Has(id0).ShouldBe(false);
         }
 
+        [Fact]
         public void ShouldShiftAllEntitiesOnDelete()
         {
             //arrange
@@ -100,6 +104,7 @@
             em.EntityCount.ShouldBe(2);
         }
 
+        [Fact]
         public void ShouldAssignEntity()
         {
             //arrange
@@ -121,6 +126,7 @@
             em.EntityCount.ShouldBe(1);
         }
 
+        [Fact]
         public void ShouldReplaceEntity()
         {
             //arrange
@@ -142,6 +148,7 @@
         }
 
 
+        [Fact]
         public void ShouldUpdateEntity()
         {
             //arrange
@@ -166,6 +173,7 @@
             em.EntityCount.ShouldBe(2);
         }
 
+        [Fact]
         public void ShouldMoveEntity()
         {
             //arrange
@@ -198,6 +206,7 @@
         }
 
 
+        [Fact]
         public void ShouldRemoveEntity()
         {
             //arrange
@@ -214,6 +223,7 @@
             em.EntityCount.ShouldBe(0);
         }
 
+        [Fact]
         public void ShouldRemoveComponent()
         {
             //arrange
@@ -234,6 +244,7 @@
             em.EntityCount.ShouldBe(1);
         }
 
+        [Fact]
         public void ShouldRemoveEntityWithNoComponents()
         {
             //arrange
@@ -252,6 +263,7 @@
             em.EntityCount.ShouldBe(0);
         }
 
+        [Fact]
         public void ShouldResetEntity()
         {
             //arrange
@@ -279,6 +291,7 @@
             em.EntityCount.ShouldBe(1);
         }
 
+        [Fact]
         public void ShouldResetEntityComponent()
         {
             //arrange
@@ -333,7 +346,6 @@
         //         var archetype = _manager.CreateArchetype(typeof(Valid), typeof(Valid));
         //     });
         // }
-
 
 
 
