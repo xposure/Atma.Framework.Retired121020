@@ -21,7 +21,7 @@ namespace Atma.Memory
         public void ShoudAllocate()
         {
             //arrange
-            var allocator = new DynamicAllocator(_logFactory);
+            using var allocator = new DynamicAllocator(_logFactory);
 
             //act
             var handle0 = allocator.Take(1024);
@@ -41,7 +41,7 @@ namespace Atma.Memory
         public void ShouldFree()
         {
             //arrange
-            var allocator = new DynamicAllocator(_logFactory);
+            using var allocator = new DynamicAllocator(_logFactory);
 
             //act
             var handle0 = allocator.Take(1024);
