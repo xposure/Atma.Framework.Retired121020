@@ -1,10 +1,8 @@
 ﻿namespace Atma.Memory
 {
     using System;
-    using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using Atma.Common;
-    //using static Atma.Debug;
 
     public unsafe sealed class DynamicAllocator : UnmanagedDispose, IAllocator
     {
@@ -34,7 +32,6 @@
 
         private ObjectPoolInt _dynamicMemoryTracker = new ObjectPoolInt(1024);
         private DynamicMemoryHandle[] _handles = new DynamicMemoryHandle[1024];
-
         private bool _enableStackTrace = false;
 
         public DynamicAllocator(bool enableStackTrace = false)

@@ -40,7 +40,7 @@
                 ComponentType<Position>.Type
             );
 
-            var chunkArray = new EntityChunkArray(memory, specifcation);
+            using var chunkArray = new EntityChunkArray(memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex);
@@ -62,7 +62,7 @@
                 ComponentType<Position>.Type
             );
 
-            var chunkArray = new EntityChunkArray(memory, specifcation);
+            using var chunkArray = new EntityChunkArray(memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex0);
@@ -88,7 +88,7 @@
                 ComponentType<Position>.Type
             );
 
-            var chunkArray = new EntityChunkArray(memory, specifcation);
+            using var chunkArray = new EntityChunkArray(memory, specifcation);
 
             //act
             for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)

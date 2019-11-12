@@ -41,7 +41,7 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityChunk = new EntityChunk(memory, specification);
+            using var entityChunk = new EntityChunk(memory, specification);
 
             //act
             var free = entityChunk.Free;
@@ -64,7 +64,7 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityChunk = new EntityChunk(memory, specification);
+            using var entityChunk = new EntityChunk(memory, specification);
 
             //act
             var free = entityChunk.Free;
@@ -88,8 +88,8 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var chunk0 = new EntityChunk(memory, specification);
-            var chunk1 = new EntityChunk(memory, specification);
+            using var chunk0 = new EntityChunk(memory, specification);
+            using var chunk1 = new EntityChunk(memory, specification);
 
 
             //act

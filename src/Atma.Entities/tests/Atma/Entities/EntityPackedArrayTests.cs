@@ -42,7 +42,7 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
@@ -69,7 +69,7 @@ namespace Atma.Entities
                 ComponentType<Position>.Type
             );
 
-            var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             //assert
@@ -91,7 +91,7 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
@@ -134,7 +134,7 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
