@@ -21,6 +21,8 @@ namespace Atma.Memory
         public uint Flags;                  //4
         public uint Checksum;               //4
 
+        public override string ToString() => $"{{ MSig: {MagicSignature:X8}, Blocks: {Blocks}, Prev: {new IntPtr(Previous)}, Next: {new IntPtr(Next)}, Flags: {Flags:X8}, CRC: {Checksum} }}";
+
         public HeapAllocation(int size)
         {
             Blocks = (((uint)(size + (HeapSize - 1))) >> 5) - 1;
@@ -32,9 +34,11 @@ namespace Atma.Memory
         }
         public static void ConsumeForward(HeapAllocation* root)
         {
+            //Console.WriteLine($"  ConsumeForward {*root}");
             var ptr = root->Next;
             while (ptr != null)
             {
+                //Console.WriteLine($"  Walked forward {*ptr}");
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                 if (!ptr->IsFree)
                     break;
@@ -43,9 +47,7 @@ namespace Atma.Memory
                 root->Blocks += ptr->Blocks;
                 var next = ptr->Next;
 
-#if DEBUG
                 *ptr = default;
-#endif
 
                 ptr = next;
                 root->Next = ptr;
@@ -86,6 +88,7 @@ namespace Atma.Memory
 
         public static HeapAllocation* FindFreeBackwards(HeapAllocation* ptr)
         {
+            //Console.WriteLine($"  FindFreeBackwards {*ptr}");
             while (ptr->Previous != null)
             {
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -93,6 +96,7 @@ namespace Atma.Memory
                     break;
 
                 ptr = ptr->Previous;
+                //Console.WriteLine($"    Walked back {*ptr}");
             }
 
             Assert.EqualTo(ptr->MagicSignature, MagicChecksum);

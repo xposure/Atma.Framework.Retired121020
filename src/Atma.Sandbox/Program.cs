@@ -38,6 +38,7 @@
 
         static void Main(string[] args)
         {
+            HeapAllocationShouldFillGap();
             // var cl = new ComponentList();
             // var em = new EntityManager(cl);
 
@@ -72,30 +73,39 @@
             // }
         }
 
-        public static unsafe void HeppAlocationShouldFillGap()
+        public static unsafe void HeapAllocationShouldFillGap()
         {
             //arrange
             var blocks = 256;
             var size = blocks * HeapAllocation.HeapSize;
             var memory = stackalloc HeapAllocation[blocks];
             var span = new Span<HeapAllocation>(memory, blocks);
-            memory->Blocks = (uint)blocks - 1; //offset the first heap block
+            *memory = new HeapAllocation(size);
 
             //act
-            HeapAllocation.Split(memory, HeapAllocation.HeapSize); //255
-            HeapAllocation.Split(&memory[2], HeapAllocation.HeapSize); //252
-            HeapAllocation.Split(&memory[4], HeapAllocation.HeapSize); //249
+            HeapAllocation.Split(memory, 1); //255
+            HeapAllocation.Split(&memory[2], 1); //252
+            HeapAllocation.Split(&memory[4], 1); //249
 
-            HeapAllocation.Free(memory);
+            HeapAllocation.Free(&memory[2]);
 
             //assert
+            Console.WriteLine("**assert**");
+            Console.WriteLine(span[0]);
+            Console.WriteLine(span[2]);
+            Console.WriteLine(span[4]);
+
             span[0].Blocks.ShouldBe(1u);
             span[2].Blocks.ShouldBe(1u);
+
             span[4].Blocks.ShouldBe(1u);
+            span[6].Blocks.ShouldBe((uint)blocks - 7);
+
             span[0].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
             span[2].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
             span[4].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
             span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation.HeapSize);
+
             HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 6u);
             HeapAllocation.CountUsedBlocks(memory, out var allocations).ShouldBe((uint)6u);
             allocations.ShouldBe(2);
@@ -110,11 +120,88 @@
             Assert(span[4].Next == &memory[6]);
             Assert(span[6].Next == null);
 
-            Assert(span[0].Flags == 1);
-            Assert(span[2].Flags == 0);
-            Assert(span[4].Flags == 1);
-            Assert(span[4].Flags == 0);
-            //Assert(span[2].Previous == null);
+            span[0].Flags.ShouldBe(1u);
+            span[2].Flags.ShouldBe(0u);
+            span[4].Flags.ShouldBe(1u);
+            span[6].Flags.ShouldBe(0u);
+
+            //act2
+            HeapAllocation.Free(&memory[0]);
+
+            //assert2
+            Console.WriteLine("**assert2**");
+            Console.WriteLine(span[0]);
+            Console.WriteLine(span[2]);
+            Console.WriteLine(span[4]);
+
+            span[0].Blocks.ShouldBe(3u);
+            span[2].Blocks.ShouldBe(0u);
+            span[4].Blocks.ShouldBe(1u);
+            span[6].Blocks.ShouldBe((uint)blocks - 7);
+
+            span[0].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize * 3);
+            span[2].SizeInBytes.ShouldBe(0u);
+            span[4].SizeInBytes.ShouldBe((uint)HeapAllocation.HeapSize);
+            span[6].SizeInBytes.ShouldBe((uint)(blocks - 7) * HeapAllocation.HeapSize);
+
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)blocks - 4u);
+            HeapAllocation.CountUsedBlocks(memory, out allocations).ShouldBe((uint)4u);
+            allocations.ShouldBe(1);
+
+            Assert(span[0].Previous == null);
+            Assert(span[2].Previous == null);
+            Assert(span[4].Previous == &memory[0]);
+            Assert(span[6].Previous == &memory[4]);
+
+            Assert(span[0].Next == &memory[4]);
+            Assert(span[2].Next == null);
+            Assert(span[4].Next == &memory[6]);
+            Assert(span[6].Next == null);
+
+            span[0].Flags.ShouldBe(0u);
+            span[2].Flags.ShouldBe(0u);
+            span[4].Flags.ShouldBe(1u);
+            span[6].Flags.ShouldBe(0u);
+
+
+            //act3
+            HeapAllocation.Free(&memory[4]);
+
+            //assert3
+            Console.WriteLine("**assert3**");
+            Console.WriteLine(span[0]);
+            Console.WriteLine(span[2]);
+            Console.WriteLine(span[4]);
+
+            span[0].Blocks.ShouldBe((uint)(blocks - 1));
+            span[2].Blocks.ShouldBe(0u);
+            span[4].Blocks.ShouldBe(0u);
+            span[6].Blocks.ShouldBe(0u);
+
+            span[0].SizeInBytes.ShouldBe((uint)(HeapAllocation.HeapSize * (blocks - 1)));
+            span[2].SizeInBytes.ShouldBe(0u);
+            span[4].SizeInBytes.ShouldBe(0u);
+            span[6].SizeInBytes.ShouldBe(0u);
+
+            HeapAllocation.CountFreeBlocks(memory).ShouldBe((uint)(blocks - 1u));
+            HeapAllocation.CountUsedBlocks(memory, out allocations).ShouldBe(1u);
+            allocations.ShouldBe(0);
+
+            Assert(span[0].Previous == null);
+            Assert(span[2].Previous == null);
+            Assert(span[4].Previous == null);
+            Assert(span[6].Previous == null);
+
+            Assert(span[0].Next == null);
+            Assert(span[2].Next == null);
+            Assert(span[4].Next == null);
+            Assert(span[6].Next == null);
+
+            span[0].Flags.ShouldBe(0u);
+            span[2].Flags.ShouldBe(0u);
+            span[4].Flags.ShouldBe(0u);
+            span[6].Flags.ShouldBe(0u);
+
         }
 
     }

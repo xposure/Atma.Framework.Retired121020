@@ -77,7 +77,7 @@ namespace Atma.Memory
         }
 
         [Fact]
-        public unsafe void HeppAlocationShouldFillGap()
+        public unsafe void HeapAllocationShouldFillGap()
         {
             //arrange
             var blocks = 256;

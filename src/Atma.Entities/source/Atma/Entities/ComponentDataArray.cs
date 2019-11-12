@@ -36,7 +36,7 @@
             where T : unmanaged
         {
             var componentType = ComponentType<T>.Type;
-            Assert.EqualTo(componentType.ID, _componentType.ID);
+            Contract.EqualTo(componentType.ID, _componentType.ID);
             return new Span<T>((void*)_memoryHandle.Address, Length);
         }
 

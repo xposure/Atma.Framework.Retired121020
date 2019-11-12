@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "sandbox",
-            "program": "${workspaceFolder}/Atma.Sandbox/bin/Debug/netcoreapp3.0/Atma.Sandbox.dll",
+            "program": "${workspaceFolder}/Atma.Sandbox/bin/Release/netcoreapp3.0/Atma.Sandbox.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Atma.Sandbox",
             "console": "internalConsole",
