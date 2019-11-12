@@ -15,6 +15,9 @@ namespace Atma.Entities
 
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
+
+        public NativeSlice<uint> Entities => _entities.Slice();
+
         public EntitySpec Specification { get; }
         public EntityPackedArray PackedArray => _packedArray;
 

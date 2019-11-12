@@ -36,7 +36,7 @@ namespace Atma.Entities.Benchmarks
 
     [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 2000, id: "QuickJob")]
     //[MediumRunJob]
-    public class Md5VsSha256
+    public class ForEachBench
     {
         public float dt = 0.016f;
         public float maxx = 1024;
@@ -105,7 +105,6 @@ namespace Atma.Entities.Benchmarks
                 ComponentType<Velocity>.Type
             };
 
-            var sw = Stopwatch.StartNew();
             var entityArrays = _entities.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -145,7 +144,6 @@ namespace Atma.Entities.Benchmarks
                     }
                 }
             }
-            sw.Stop();
         }
 
         [Benchmark]
@@ -190,11 +188,239 @@ namespace Atma.Entities.Benchmarks
         }
     }
 
+    [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 2000, id: "SIMDMaybe")]
+    //[MediumRunJob]
+    public class SIMDMaybe
+    {
+        public float dt = 0.016f;
+        public float maxx = 1024;
+        public float maxy = 1024;
+
+        private ILoggerFactory _logFactory;
+        private ILogger _logger;
+        private EntityManager _entities;
+
+        private IAllocator _memory;
+
+
+        [Params(100000)]
+        public int N;
+
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            _entities.Dispose();
+            _memory.Dispose();
+
+
+        }
+
+        [IterationSetup]
+        public void IterationSetup()
+        {
+            var r = new Random(123456789);
+            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            {
+                position = new Position(r.Next(0, 1024), r.Next(0, 1024));
+                velocity = new Velocity(r.Next(-500, 500), r.Next(-500, 500));
+            });
+        }
+
+        [IterationCleanup]
+        public void IterationCleanup()
+        {
+
+        }
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            _logFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+            });
+
+            _memory = new HeapAllocator(_logFactory);
+            _entities = new EntityManager(_logFactory, _memory);
+
+            var spec = EntitySpec.Create<Position, Velocity>();
+            for (var i = 0; i < N; i++)
+            {
+                //TODO: bulk insert API
+                var entity = _entities.Create(spec);
+            }
+        }
+
+        [Benchmark]
+        public void RawSinglePass()
+        {
+            Span<ComponentType> componentTypes = stackalloc ComponentType[] {
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            };
+
+            var entityArrays = _entities.EntityArrays;
+            for (var i = 0; i < entityArrays.Count; i++)
+            {
+                var array = entityArrays[i];
+                if (array.Specification.HasAll(componentTypes))
+                {
+                    var t0i = -1;
+                    var t1i = -1;
+
+                    for (var k = 0; k < array.AllChunks.Count; k++)
+                    {
+                        var chunk = array.AllChunks[k];
+                        var length = chunk.Count;
+                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
+                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
+
+                        var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        for (var j = 0; j < length; j++)
+                        {
+                            ref var position = ref t0[j];
+                            ref var velocity = ref t1[j];
+                            position.x += velocity.x * dt;
+                            position.y += velocity.y * dt;
+                            velocity.x -= velocity.x * dt;
+                            velocity.y -= velocity.y * dt;
+                        }
+                    }
+                }
+            }
+        }
+
+        [Benchmark]
+        public void ForEachNoEntitySinglePass()
+        {
+            _entities.ForEach((ref Position position, ref Velocity velocity) =>
+            {
+                position.x += velocity.x * dt;
+                position.y += velocity.y * dt;
+
+                velocity.x -= velocity.x * dt;
+                velocity.y -= velocity.y * dt;
+            });
+        }
+
+
+        [Benchmark]
+        public void ForEachSinglePass()
+        {
+            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            {
+                position.x += velocity.x * dt;
+                position.y += velocity.y * dt;
+
+                velocity.x -= velocity.x * dt;
+                velocity.y -= velocity.y * dt;
+            });
+        }
+
+
+        [Benchmark]
+        public void RawTwoPass()
+        {
+            Span<ComponentType> componentTypes = stackalloc ComponentType[] {
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            };
+
+            var entityArrays = _entities.EntityArrays;
+            for (var i = 0; i < entityArrays.Count; i++)
+            {
+                var array = entityArrays[i];
+                if (array.Specification.HasAll(componentTypes))
+                {
+                    var t0i = -1;
+                    var t1i = -1;
+
+                    for (var k = 0; k < array.AllChunks.Count; k++)
+                    {
+                        var chunk = array.AllChunks[k];
+                        var length = chunk.Count;
+                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
+                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
+
+                        var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        for (var j = 0; j < length; j++)
+                        {
+                            ref var position = ref t0[j];
+                            ref var velocity = ref t1[j];
+                            position.x += velocity.x * dt;
+                            position.y += velocity.y * dt;
+                        }
+                    }
+                }
+            }
+
+            for (var i = 0; i < entityArrays.Count; i++)
+            {
+                var array = entityArrays[i];
+                if (array.Specification.HasAll(componentTypes))
+                {
+                    var t1i = -1;
+
+                    for (var k = 0; k < array.AllChunks.Count; k++)
+                    {
+                        var chunk = array.AllChunks[k];
+                        var length = chunk.Count;
+                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
+
+                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        for (var j = 0; j < length; j++)
+                        {
+                            ref var velocity = ref t1[j];
+                            velocity.x -= velocity.x * dt;
+                            velocity.y -= velocity.y * dt;
+                        }
+                    }
+                }
+            }
+        }
+
+        [Benchmark]
+        public void ForEachNoEntityTwoPass()
+        {
+            _entities.ForEach((ref Position position, ref Velocity velocity) =>
+            {
+                position.x += velocity.x * dt;
+                position.y += velocity.y * dt;
+
+            });
+            _entities.ForEach((ref Velocity velocity) =>
+            {
+                velocity.x -= velocity.x * dt;
+                velocity.y -= velocity.y * dt;
+            });
+        }
+
+
+        [Benchmark]
+        public void ForEachTwoPass()
+        {
+            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            {
+                position.x += velocity.x * dt;
+                position.y += velocity.y * dt;
+            });
+
+            _entities.ForEach((uint entity, ref Velocity velocity) =>
+            {
+                velocity.x -= velocity.x * dt;
+                velocity.y -= velocity.y * dt;
+            });
+        }
+    }
+
+
     class Program
     {
         static void RunOnce(int iterations)
         {
-            var xyz = new Md5VsSha256();
+            var xyz = new ForEachBench();
             xyz.N = 100000;
             xyz.Setup();
             var sw = Stopwatch.StartNew();
@@ -208,7 +434,7 @@ namespace Atma.Entities.Benchmarks
         {
             //for (var i = 0; i < 15; i++)
             //    RunOnce(1000);
-            var summary = BenchmarkRunner.Run<Md5VsSha256>();
+            var summary = BenchmarkRunner.Run<SIMDMaybe>();
         }
     }
 }
