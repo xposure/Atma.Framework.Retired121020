@@ -50,9 +50,8 @@ namespace Atma.Memory
 
         public unsafe void Free(ref AllocationHandle handle)
         {
+            Assert.EqualTo(handle.Id, _allocationIndex - 1);
             _allocationIndex--;
-
-            Assert.EqualTo(handle.Id, _allocationIndex);
             //Contract.Assert(handle.Id == _allocationIndex);
             //Contract.Requires(handle.Id == _allocationIndex);
             //handle.Id.AssertShouldBe(_allocationIndex);
@@ -60,6 +59,8 @@ namespace Atma.Memory
 
             if (_thrash)
                 Unsafe.ClearAlign16((void*)handle.Address, (int)handle.Flags, _thrashValue);
+
+            handle = AllocationHandle.Null;
         }
 
         public AllocationHandle Transfer(ref AllocationHandle handle)

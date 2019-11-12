@@ -14,6 +14,8 @@
             public uint Version;
             public readonly uint Size;
 
+            public override string ToString() => $"{{ Address: {Address}, Id: {Id:X8}, Version: {Version:X8}, Size: {Size} }}";
+
             public DynamicMemoryHandle(IntPtr address, uint id, uint version, uint size)
             {
                 Address = address;
@@ -51,7 +53,7 @@
         {
             for (var i = 0; i < _handles.Length; i++)
             {
-                Assert.EqualTo(_handles[i].IsValid, true);
+                Assert.EqualTo(_handles[i].IsValid, false);
                 if (_handles[i].IsValid)
                 {
                     _logger.LogWarning($"{_handles[i]}\nAllocation was not released, consider enabling stack tracing.");
@@ -84,6 +86,7 @@
             _handles[id] = new DynamicMemoryHandle(intPtr, id, 0, (uint)size);
 
             ++_blocks;
+            _logger.LogDebug($"DynamicAlloc allocated { _handles[id]}");
 
             return new AllocationHandle(intPtr, id, 0);
         }
@@ -91,10 +94,11 @@
         public void Free(ref AllocationHandle handle)
         {
             AssertValid(ref handle);
+            _logger.LogDebug($"DynamicAlloc freeing {handle}");
             Marshal.FreeHGlobal(handle.Address);
             _size -= _handles[handle.Id].Size;
             _handles[handle.Id] = new DynamicMemoryHandle(IntPtr.Zero, 0, 0, 0);
-            handle = new AllocationHandle(IntPtr.Zero, 0, 0);
+            handle = AllocationHandle.Null;
             --_blocks;
         }
 

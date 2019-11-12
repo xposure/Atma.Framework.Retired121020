@@ -23,10 +23,15 @@ namespace Atma.Memory
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
-            var handle1 = it.Take<int>(1);
+            using var handle1 = it.TakeScoped<int>(1, _logFactory);
 
             //assert
             handle1.Id.ShouldBe((uint)0);
+
+            handle1.Free();
+            handle1.Address.ShouldBe(IntPtr.Zero);
+            handle1.Id.ShouldBe(0u);
+            handle1.Flags.ShouldBe(0u);
         }
 
 
@@ -38,13 +43,13 @@ namespace Atma.Memory
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
-            var handle1 = it.Take<int>(1);
+            using var handle1 = it.TakeScoped<int>(1, _logFactory);
             var addr1 = handle1.Address;
-            it.Free(ref handle1);
+            handle1.Free();
 
-            var handle2 = it.Take<int>(1);
+            using var handle2 = it.TakeScoped<int>(1, _logFactory);
             var addr2 = handle2.Address;
-            it.Free(ref handle2);
+            handle2.Free();
 
             //assert
             addr2.ShouldBe(addr1);
@@ -59,13 +64,13 @@ namespace Atma.Memory
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
-            var handle1 = it.Take<int>(1);
+            using var handle1 = it.TakeScoped<int>(1, _logFactory);
             var addr1 = handle1.Address;
-            it.Free(ref handle1);
+            handle1.Free();
 
-            var handle2 = it.Take<int>(1);
+            using var handle2 = it.TakeScoped<int>(1, _logFactory);
             var addr2 = handle2.Address;
-            it.Free(ref handle2);
+            handle2.Free();
 
             //assert
             addr2.ShouldBe(addr1);
@@ -80,12 +85,14 @@ namespace Atma.Memory
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
-            var handle1 = it.Take<int>(1);
+            using var handle1 = it.TakeScoped<int>(1, _logFactory);
             var addr1 = handle1.Address;
 
-            var handle2 = it.Take<int>(1);
+            using var handle2 = it.TakeScoped<int>(1, _logFactory);
             var addr2 = handle2.Address;
-            Should.Throw<Exception>(() => it.Free(ref handle1));
+
+            var allocHandle = handle1.Handle;
+            Should.Throw<Exception>(() => it.Free(ref allocHandle));
 
             //assert
             addr2.ShouldNotBe(addr1);
