@@ -6,12 +6,46 @@ namespace Atma
 {
     public static class SpanExtensions
     {
+        public static void InsertionSort(this Span<int> span)
+        {
+            for (var i = 0; i < span.Length - 1; i++)
+            {
+                for (var j = i + 1; j > 0; j--)
+                {
+                    if (span[j - 1] > span[j])
+                    {
+                        var temp = span[j - 1];
+                        span[j - 1] = span[j];
+                        span[j] = temp;
+                    }
+                }
+            }
+        }
+
+        public static void InsertionSort<T>(this Span<T> span)
+            where T : struct//, IComparable<T>
+        {
+            for (var i = 0; i < span.Length - 1; i++)
+            {
+                for (var j = i + 1; j > 0; j--)
+                {
+                    if (span[j - 1].GetHashCode() > span[j].GetHashCode())
+                    {
+                        var temp = span[j - 1];
+                        span[j - 1] = span[j];
+                        span[j] = temp;
+                    }
+                }
+            }
+        }
+
         public static void Sort<T>(this Span<T> span)
             where T : struct, IComparable<T>
         {
             for (var i = 0; i < span.Length; ++i)
             {
                 for (var j = 0; j < span.Length - 1; ++j)
+                //TODO: this code doesn't appear correct to me, j shouldn't start at 0?
                 {
                     if (span[j].CompareTo(span[j + 1]) > 0)
                     {
@@ -29,6 +63,7 @@ namespace Atma
         {
             for (var i = 0; i < span.Length; ++i)
             {
+                //TODO: this code doesn't appear correct to me, j shouldn't start at 0?
                 for (var j = 0; j < span.Length - 1; ++j)
                 {
                     if (comparer.Compare(span[j], span[j + 1]) > 0)

@@ -21,13 +21,12 @@ namespace Atma
                 if (array.Specification.HasAll(componentTypes))
                 {
                     var t0i = -1;
-                    var t0t = ComponentType<T0>.Type;
                     for (var k = 0; k < array.AllChunks.Count; k++)
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(t0t);
-                        var t0 = chunk.PackedArray.GetComponentSpan<T0>(t0i, t0t);
+                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
+                        var t0 = chunk.PackedArray.GetComponentSpan<T0>(t0i, componentTypes[0]);
 
                         for (var j = 0; j < length; j++)
                         {
@@ -46,7 +45,8 @@ namespace Atma
               where T1 : unmanaged
         {
             Span<ComponentType> componentTypes = stackalloc ComponentType[] {
-                ComponentType<T0>.Type
+                ComponentType<T0>.Type,
+                ComponentType<T1>.Type
             };
 
             var entityArrays = em.EntityArrays;
@@ -57,18 +57,16 @@ namespace Atma
                 {
                     var t0i = -1;
                     var t1i = -1;
-                    var t0t = ComponentType<T0>.Type;
-                    var t1t = ComponentType<T1>.Type;
 
                     for (var k = 0; k < array.AllChunks.Count; k++)
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(t0t);
-                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(t1t);
+                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
+                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
 
-                        var t0 = chunk.PackedArray.GetComponentSpan<T0>(t0i, t0t);
-                        var t1 = chunk.PackedArray.GetComponentSpan<T1>(t1i, t1t);
+                        var t0 = chunk.PackedArray.GetComponentSpan<T0>(t0i, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentSpan<T1>(t1i, componentTypes[1]);
                         for (var j = 0; j < length; j++)
                         {
                             var entity = chunk.GetEntity(j);

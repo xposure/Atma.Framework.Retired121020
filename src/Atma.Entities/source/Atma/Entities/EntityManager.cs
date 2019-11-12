@@ -53,7 +53,7 @@
             var specIndex = _knownSpecs.IndexOf(specId);
             if (specIndex == -1)
             {
-                var spec = new EntitySpec(specId, componentTypes.ToArray());
+                var spec = new EntitySpec(specId, componentTypes);
                 //we are limited to this many unique specs per EM
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);

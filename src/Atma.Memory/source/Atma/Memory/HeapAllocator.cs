@@ -389,6 +389,7 @@ namespace Atma.Memory
         protected override void OnUnmanagedDispose()
         {
             _pageAllocators.DisposeAll();
+            _allocator.Dispose();
         }
     }
 }

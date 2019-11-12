@@ -30,29 +30,29 @@ namespace Atma.Entities
             }
         }
 
-        [Fact]
-        public void SpecComponentsShouldBeSorted()
-        {
-            var specs = new[]
-            {
-                new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid3>.Type),
-                new EntitySpec(ComponentType<Valid2>.Type, ComponentType<Valid>.Type, ComponentType<Valid3>.Type),
-                new EntitySpec(ComponentType<Valid3>.Type, ComponentType<Valid>.Type, ComponentType<Valid2>.Type)
+        //this is no longer a requirement ComponentType stack methods do the sort using ints and insertion sort
+        // [Fact]
+        // public void SpecComponentsShouldBeSorted()
+        // {
+        //     var specs = new[]
+        //     {
+        //         new EntitySpec(ComponentType<Valid>.Type, ComponentType<Valid2>.Type, ComponentType<Valid3>.Type),
+        //         new EntitySpec(ComponentType<Valid2>.Type, ComponentType<Valid>.Type, ComponentType<Valid3>.Type),
+        //         new EntitySpec(ComponentType<Valid3>.Type, ComponentType<Valid>.Type, ComponentType<Valid2>.Type)
+        //     };
 
-            };
+        //     for (var x = 0; x < specs.Length; x++)
+        //     {
+        //         var spec = specs[x];
+        //         for (var y = 0; y < spec.ComponentTypes.Length - 1; y++)
+        //         {
+        //             var c0 = spec.ComponentTypes[y];
+        //             var c1 = spec.ComponentTypes[y + 1];
 
-            for (var x = 0; x < specs.Length; x++)
-            {
-                var archetype = specs[x];
-                for (var y = 0; y < archetype.ComponentTypes.Length - 1; y++)
-                {
-                    var c0 = archetype.ComponentTypes[y];
-                    var c1 = archetype.ComponentTypes[y + 1];
-
-                    c0.ID.ShouldBeLessThan(c1.ID);
-                }
-            }
-        }
+        //             c0.ID.ShouldBeLessThan(c1.ID);
+        //         }
+        //     }
+        // }
 
         [Fact]
         public void ShouldHaveAll()

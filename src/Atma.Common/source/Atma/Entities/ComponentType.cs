@@ -61,19 +61,30 @@
 
         public static int FindMatches(Span<ComponentType> a, Span<ComponentType> b, Span<ComponentType> results)
         {
+            //we need to defensively copy the arrays
+            Span<ComponentType> left = stackalloc ComponentType[a.Length];
+            for (var i = 0; i < a.Length; i++)
+                left[i] = a[i];
+            left.InsertionSort();
+
+            Span<ComponentType> right = stackalloc ComponentType[b.Length];
+            for (var i = 0; i < b.Length; i++)
+                right[i] = b[i];
+            right.InsertionSort();
+
             var i0 = 0;
             var i1 = 0;
             var index = 0;
 
-            while (i0 < a.Length && i1 < b.Length)
+            while (i0 < left.Length && i1 < right.Length)
             {
-                var aType = a[i0];
-                var bType = b[i1];
+                var aType = left[i0];
+                var bType = right[i1];
                 if (aType.ID > bType.ID) i1++;
                 else if (bType.ID > aType.ID) i0++;
                 else
                 {
-                    results[index++] = aType;
+                    results[index++] = left[i0];
                     //yield return aType;
                     i0++;
                     i1++;
@@ -91,13 +102,23 @@
             //oh and it only happened when I had my sample PlayerSystem enabled
 
             //var entity = typeof(Entity).GetHashCode();
+            Span<int> left = stackalloc int[components.Length];
+            for (var i = 0; i < components.Length; i++)
+                left[i] = components[i].ID;
+            left.InsertionSort();
+
+            Span<int> right = stackalloc int[match.Length];
+            for (var i = 0; i < match.Length; i++)
+                right[i] = match[i].ID;
+            right.InsertionSort();
+
             var i0 = 0;
             var i1 = 0;
 
-            while (i0 < components.Length && i1 < match.Length)
+            while (i0 < left.Length && i1 < right.Length)
             {
-                var aType = components[i0];
-                var bType = match[i1];
+                var aType = left[i0];
+                var bType = right[i1];
                 // if (aType.ID == entity)
                 // {
                 //     throw new Exception("You can not create an spec with Entity, this is assumed.");
@@ -110,12 +131,12 @@
                 //     //if (debug) Console.WriteLine($"bType was entity ... {aType.ClrType.Name}:{bType.ClrType.Name}");
                 // }
                 // else 
-                if (aType.ID > bType.ID)
+                if (aType > bType)
                 {
                     //if (debug) Console.WriteLine($"aType was > bType, exiting ... {aType.ClrType.Name}:{bType.ClrType.Name}");
                     return false; // i1++;
                 }
-                else if (bType.ID > aType.ID)
+                else if (bType > aType)
                 {
                     //if (debug) Console.WriteLine($"bType was > aType, advancing ... {aType.ClrType.Name}:{bType.ClrType.Name}");
                     i0++;
@@ -140,17 +161,27 @@
         }
 
 
-        public static bool HasAny(Span<ComponentType> a, Span<ComponentType> b)
+        public static bool HasAny(Span<ComponentType> components, Span<ComponentType> match)
         {
+            Span<int> left = stackalloc int[components.Length];
+            for (var i = 0; i < components.Length; i++)
+                left[i] = components[i].ID;
+            left.InsertionSort();
+
+            Span<int> right = stackalloc int[match.Length];
+            for (var i = 0; i < match.Length; i++)
+                right[i] = match[i].ID;
+            right.InsertionSort();
+
             var i0 = 0;
             var i1 = 0;
 
-            while (i0 < a.Length && i1 < b.Length)
+            while (i0 < left.Length && i1 < right.Length)
             {
-                var aType = a[i0];
-                var bType = b[i1];
-                if (aType.ID > bType.ID) i1++;
-                else if (bType.ID > aType.ID) i0++;
+                var aType = left[i0];
+                var bType = right[i1];
+                if (aType > bType) i1++;
+                else if (bType > aType) i0++;
                 else
                 {
                     return true;
@@ -160,15 +191,23 @@
             return false;
         }
 
+        /// <summary>
+        /// Calculates the ID of a given componentType
+        /// </summary>
+        /// <param name="types"></param>
+        /// <returns></returns>
         public static int CalculateId(Span<ComponentType> types)
         {
             Assert(types.Length > 0);
+            Span<int> hashIds = stackalloc int[types.Length];
+            for (var i = 0; i < types.Length; i++)
+                hashIds[i] = types[i].ID;
 
-            types.Sort();
+            hashIds.InsertionSort();
 
             var hashCode = new HashCode();
             for (var i = 0; i < types.Length; i++)
-                hashCode.Add(types[i]);
+                hashCode.Add(hashIds[i]);
 
             return hashCode.ToHashCode();
         }

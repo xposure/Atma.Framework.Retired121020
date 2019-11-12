@@ -10,35 +10,27 @@ namespace Atma.Entities
         //public readonly ComponentTypeHelper[] componentTypeHelpers;
         public readonly int EntitySize;
 
-
-        internal EntitySpec(int id, params ComponentType[] componentTypes)
+        internal EntitySpec(int id, Span<ComponentType> componentTypes)
         {
             ID = id;
-            ComponentTypes = componentTypes;
+            ComponentTypes = componentTypes.ToArray();
             EntitySize = ComponentTypes.Sum(x => x.Size);
         }
 
         public EntitySpec(params ComponentType[] componentTypes)
         {
-            ID = ComponentType.CalculateId(componentTypes);
             ComponentTypes = componentTypes;
+            ID = ComponentType.CalculateId(ComponentTypes);
             EntitySize = ComponentTypes.Sum(x => x.Size);
         }
 
-        public bool HasAll(EntitySpec other)
-        {
-            return ComponentType.HasAll(ComponentTypes, other.ComponentTypes);
-        }
+        public bool HasAll(EntitySpec other) => HasAll(other.ComponentTypes);
 
-        public bool HasAll(Span<ComponentType> componentTypes)
-        {
-            return ComponentType.HasAny(ComponentTypes, componentTypes);
-        }
+        public bool HasAll(Span<ComponentType> componentTypes) => ComponentType.HasAll(ComponentTypes, componentTypes);
 
-        public bool HasAny(EntitySpec other)
-        {
-            return ComponentType.HasAny(ComponentTypes, other.ComponentTypes);
-        }
+        public bool HasAny(EntitySpec other) => HasAny(other.ComponentTypes);
+
+        public bool HasAny(Span<ComponentType> componentTypes) => ComponentType.HasAny(ComponentTypes, componentTypes);
 
         public bool Has(in ComponentType type)
         {
@@ -50,9 +42,9 @@ namespace Atma.Entities
             return false;
         }
 
-        public int FindMatches(EntitySpec other, Span<ComponentType> matches)
+        public int FindMatches(EntitySpec other, Span<ComponentType> results)
         {
-            return ComponentType.FindMatches(ComponentTypes, other.ComponentTypes, matches);
+            return ComponentType.FindMatches(ComponentTypes, other.ComponentTypes, results);
         }
 
         public static EntitySpec Create<T0>()

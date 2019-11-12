@@ -36,6 +36,9 @@ namespace Atma
     {
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
+#if DEBUG
+        private readonly string _stackTrace = Environment.StackTrace;
+#endif
 
         protected virtual void OnManagedDispose() { }
         protected virtual void OnUnmanagedDispose() { }
@@ -56,6 +59,9 @@ namespace Atma
 
         ~UnmanagedDispose()
         {
+#if DEBUG
+            throw new Exception("Object was not disposed.\nCreated At:" + _stackTrace);
+#endif
             Dispose(false);
         }
 
