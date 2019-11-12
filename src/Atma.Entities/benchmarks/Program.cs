@@ -166,7 +166,30 @@ namespace Atma.Entities.Benchmarks
             });
         }
 
+        [Benchmark]
+        public void ForChunk()
+        {
+            _entities.ForChunk((int length, ReadOnlySpan<uint> entities, Span<Position> positions, Span<Velocity> velocities) =>
+            {
+                for (var i = 0; i < length; i++)
+                {
+                    ref var position = ref positions[i];
+                    ref var velocity = ref velocities[i];
 
+                    position.x += velocity.x * dt;
+                    position.y += velocity.y * dt;
+
+                    velocity.x -= velocity.x * dt;
+                    velocity.y -= velocity.y * dt;
+
+                    if ((position.x > maxx && velocity.x > 0) || (position.x < 0 && velocity.x < 0))
+                        velocity.x = -velocity.x;
+
+                    if ((position.y > maxy && velocity.y > 0) || (position.y < 0 && velocity.y < 0))
+                        velocity.y = -velocity.y;
+                }
+            });
+        }
         [Benchmark]
         public void ForEach()
         {
@@ -434,7 +457,7 @@ namespace Atma.Entities.Benchmarks
         {
             //for (var i = 0; i < 15; i++)
             //    RunOnce(1000);
-            var summary = BenchmarkRunner.Run<SIMDMaybe>();
+            var summary = BenchmarkRunner.Run<ForEachBench>();
         }
     }
 }
