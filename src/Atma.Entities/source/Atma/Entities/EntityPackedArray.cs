@@ -107,9 +107,7 @@ namespace Atma.Entities
 
         protected override void OnUnmanagedDispose()
         {
-            //using stackalocator, must do it backwards
-            for (int i = _componentData.Length - 1; i >= 0; i--)
-                _componentData[i].Dispose();
+            _componentData.DisposeAll();
         }
 
         internal static void CopyTo(EntityPackedArray srcArray, int srcIndex, EntityPackedArray dstArray, int dstIndex)

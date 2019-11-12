@@ -51,9 +51,10 @@
         {
             for (var i = 0; i < _handles.Length; i++)
             {
+                Assert.EqualTo(_handles[i].IsValid, true);
                 if (_handles[i].IsValid)
                 {
-                    Console.WriteLine("Allocation was not released, consider enabling stack tracing.");
+                    _logger.LogWarning($"{_handles[i]}\nAllocation was not released, consider enabling stack tracing.");
                     Marshal.FreeHGlobal(_handles[i].Address);
                     _handles[i] = new DynamicMemoryHandle(IntPtr.Zero, 0, 0, 0);
                     //_dynamicMemoryTracker.Return(i);

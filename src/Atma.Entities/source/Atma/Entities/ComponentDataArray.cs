@@ -112,6 +112,8 @@
         protected override void OnManagedDispose()
         {
             _allocator = null;
+            _logger = null;
+            _logFactory = null;
         }
     }
 }
