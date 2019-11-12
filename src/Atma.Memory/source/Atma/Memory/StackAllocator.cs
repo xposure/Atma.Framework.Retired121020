@@ -50,7 +50,7 @@ namespace Atma.Memory
 
         public unsafe void Free(ref AllocationHandle handle)
         {
-            Assert.EqualTo(handle.Id, _allocationIndex - 1);
+            Contract.EqualTo(handle.Id, _allocationIndex - 1);
             _allocationIndex--;
             //Contract.Assert(handle.Id == _allocationIndex);
             //Contract.Requires(handle.Id == _allocationIndex);
