@@ -196,7 +196,7 @@ namespace Atma.Memory
             public void Free(ref AllocationHandle handle)
             {
                 ref var ptr = ref _allocations[handle.Id];
-                Console.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
+                //Console.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
                 Assert.EqualTo(ptr.Address, handle.Address);
                 Assert.EqualTo(ptr.Version & 0xfffffff, handle.Flags >> 4);
 
@@ -220,7 +220,7 @@ namespace Atma.Memory
                     {
                         heapPagePtr = new HeapPagePointer(id, ptr, i, _version);
                         var handle = new AllocationHandle(ptr, id, flags);
-                        Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                        //Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
 
                         return handle;
                     }
@@ -234,7 +234,7 @@ namespace Atma.Memory
 
                     heapPagePtr = new HeapPagePointer(id, ptr, _pages.Count - 1, _version);
                     var handle = new AllocationHandle(ptr, id, flags);
-                    Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                    //Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
                     return handle;
                 }
             }

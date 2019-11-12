@@ -35,9 +35,7 @@
         private ObjectPoolInt _dynamicMemoryTracker = new ObjectPoolInt(1024);
         private DynamicMemoryHandle[] _handles = new DynamicMemoryHandle[1024];
 
-#if DEBUG
         private bool _enableStackTrace = false;
-#endif
 
         public DynamicAllocator(bool enableStackTrace = false)
         {
