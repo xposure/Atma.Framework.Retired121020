@@ -14,19 +14,17 @@
         public int SpecCount { get => _knownSpecs.Count; }
         public IReadOnlyList<EntityChunkArray> EntityArrays => _entityArrays;
 
-        private DynamicAllocator _dynamicMemory;
-        private HeapAllocator _heapAllocator;
+        private IAllocator _allocator;
 
         private EntityPool2 _entityPool;// = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
         private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
 
-        public EntityManager()
+        public EntityManager(IAllocator allocator)
         {
-            _dynamicMemory = new DynamicAllocator();
-            _heapAllocator = new HeapAllocator(_dynamicMemory);
+            _allocator = allocator;
 
-            _entityPool = new EntityPool2(_heapAllocator);
+            _entityPool = new EntityPool2(_allocator);
             //take the first one to reserve 0 as invalid
             _entityPool.Take();
         }
@@ -40,7 +38,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(_heapAllocator, spec));
+                _entityArrays.Add(new EntityChunkArray(_allocator, spec));
             }
             return specIndex;
         }
@@ -56,7 +54,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(_heapAllocator, spec));
+                _entityArrays.Add(new EntityChunkArray(_allocator, spec));
             }
             return specIndex;
         }
@@ -260,8 +258,10 @@
 
         protected override void OnUnmanagedDispose()
         {
-            _dynamicMemory.Dispose();
-            _heapAllocator.Dispose();
+            _entityArrays.DisposeAll();
+            _entityArrays.Clear();
+
+            _entityPool.Dispose();
         }
     }
 }

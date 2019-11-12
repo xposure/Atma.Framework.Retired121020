@@ -327,9 +327,14 @@ namespace Atma.Memory
         public IAllocator _allocator;
         private HeapPageAllocator[] _pageAllocators = new HeapPageAllocator[16];
 
-        public HeapAllocator(IAllocator allocator)
+        // public HeapAllocator() : this(new DynamicAllocator())
+        // {
+
+        // }
+
+        public HeapAllocator()
         {
-            _allocator = allocator;
+            _allocator = new DynamicAllocator();
             for (var i = 0; i < _pageAllocators.Length; i++)
                 _pageAllocators[i] = new HeapPageAllocator(_allocator, i);
         }

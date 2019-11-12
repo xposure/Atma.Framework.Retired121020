@@ -15,8 +15,7 @@ namespace Atma.Memory
         public void EntityPoolNewMemoryFailure()
         {
 
-            using var memory = new DynamicAllocator();
-            using var heap = new HeapAllocator(memory);
+            using var heap = new HeapAllocator();
             using var arr = new NativeArray<Entity>(heap, 4096);
 
         }

@@ -23,10 +23,10 @@ namespace Atma.Entities
                 _componentData[i] = new ComponentDataArray(_allocator, _componentTypes[i], Entity.ENTITY_MAX);
         }
 
-        private int GetComponentIndex<T>() where T : unmanaged
+        public int GetComponentIndex<T>() where T : unmanaged
             => GetComponentIndex(ComponentType<T>.Type);
 
-        private int GetComponentIndex(in ComponentType type)
+        public int GetComponentIndex(in ComponentType type)
         {
             var id = type.ID;
             var _componentTypes = Specification.ComponentTypes;
@@ -67,21 +67,28 @@ namespace Atma.Entities
             _componentData[index].Reset(dst);
         }
 
-        public Span<T> GetComponentSpan<T>()
+        public Span<T> GetComponentSpan<T>(int index = -1, ComponentType componentType = default)
             where T : unmanaged
         {
-            var index = GetComponentIndex<T>();
-            Assert.GreatherThan(index, -1);
+            if (index == -1)
+                index = GetComponentIndex<T>();
+
+            if (componentType.ID == 0)
+                componentType = ComponentType<T>.Type;
+
+            Assert.Range(index, 0, _componentData.Length);
 
             var componentDataArray = _componentData[index];
-            return componentDataArray.AsSpan<T>();
+            return componentDataArray.AsSpanInternal<T>(componentType);
         }
 
-        public unsafe T* GetComponentPointer<T>()
+        public unsafe T* GetComponentPointer<T>(int index = -1)
                    where T : unmanaged
         {
-            var index = GetComponentIndex<T>();
-            Assert.GreatherThan(index, -1);
+            if (index < 0)
+                index = GetComponentIndex<T>();
+
+            Assert.Range(index, 0, _componentData.Length);
 
             var componentDataArray = _componentData[index];
             return componentDataArray.AsPointer<T>();

@@ -26,7 +26,7 @@
             public bool IsValid => Address != IntPtr.Zero;
 
         }
-        private int _blocks;
+        private int _blocks = 0;
         public int Blocks => _blocks;
 
         private uint _size;
@@ -79,6 +79,7 @@
             _size += (uint)size;
 
             var intPtr = Marshal.AllocHGlobal(size);
+            Unsafe.ClearAlign16((void*)intPtr, size);
             _handles[id] = new DynamicMemoryHandle(intPtr, id, 0, (uint)size);
 
             ++_blocks;

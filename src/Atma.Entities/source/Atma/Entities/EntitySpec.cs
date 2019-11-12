@@ -54,5 +54,21 @@ namespace Atma.Entities
         {
             return ComponentType.FindMatches(ComponentTypes, other.ComponentTypes, matches);
         }
+
+        public static EntitySpec Create<T0>()
+            where T0 : unmanaged
+            => new EntitySpec(ComponentType<T0>.Type);
+
+        public static EntitySpec Create<T0, T1>()
+            where T0 : unmanaged
+            where T1 : unmanaged
+            => new EntitySpec(ComponentType<T0>.Type, ComponentType<T1>.Type);
+
+        public static EntitySpec Create<T0, T1, T2>()
+            where T0 : unmanaged
+            where T1 : unmanaged
+            where T2 : unmanaged
+            => new EntitySpec(ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type);
+
     }
 }

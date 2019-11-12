@@ -4,7 +4,7 @@ namespace Atma.Common
     using Atma.Memory;
     using System.Collections.Generic;
 
-    public sealed class EntityPool2
+    public sealed class EntityPool2 : UnmanagedDispose
     {
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
@@ -93,6 +93,13 @@ namespace Atma.Common
             id |= version << 24;
 
             return id;
+        }
+
+        protected override void OnUnmanagedDispose()
+        {
+            _entityMap.DisposeAll();
+            _entityMap.Clear();
+            _freeIds.Dispose();
         }
     }
 }

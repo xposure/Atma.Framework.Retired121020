@@ -31,12 +31,17 @@
             where T : unmanaged
         {
             var componentType = ComponentType<T>.Type;
-            if (componentType.ID != _componentType.ID)
-                throw new Exception("Invalid type.");
-
-
+            Assert.EqualTo(componentType.ID, _componentType.ID);
             return new Span<T>((void*)_memoryHandle.Address, Length);
         }
+
+        public Span<T> AsSpanInternal<T>(ComponentType componentType)
+            where T : unmanaged
+        {
+            Assert.EqualTo(componentType.ID, _componentType.ID);
+            return new Span<T>((void*)_memoryHandle.Address, Length);
+        }
+
 
         public T* AsPointer<T>()
             where T : unmanaged

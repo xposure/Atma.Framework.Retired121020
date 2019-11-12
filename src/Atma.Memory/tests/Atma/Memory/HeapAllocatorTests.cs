@@ -186,8 +186,7 @@ namespace Atma.Memory
         public void HeapShouldAllocate()
         {
             //arrange
-            using var unmanaged = new DynamicAllocator();
-            using var memory = new HeapAllocator(unmanaged);
+            using var memory = new HeapAllocator();
 
             //act
             var handle = memory.Take(1024);
