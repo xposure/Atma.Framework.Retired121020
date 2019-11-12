@@ -4,7 +4,7 @@ namespace Atma.Common
     using Atma.Memory;
     using System.Collections.Generic;
 
-    public sealed class EntityPool2 : UnmanagedDispose
+    public sealed class EntityPool : UnmanagedDispose
     {
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
@@ -25,7 +25,7 @@ namespace Atma.Common
 
         public int Free => _free;
 
-        public EntityPool2(IAllocator allocator)
+        public EntityPool(IAllocator allocator)
         {
             _memory = allocator;
             _freeIds = new NativeStack<uint>(_memory, ENTITIES_PER_POOL);
@@ -76,7 +76,7 @@ namespace Atma.Common
             Assert.EqualTo(e.ID, id);
 
             e = new Entity(0, 0, 0, 0);
-            _freeIds.Push(id);
+            _freeIds.Push(id & 0xffffff);
             _free++;
         }
 

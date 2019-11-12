@@ -2,7 +2,7 @@ namespace Atma.Memory
 {
     using System.Collections.Generic;
 
-    public sealed class PagedObjectPool<T>
+    public sealed class PagedObjectPool<T> : UnmanagedDispose
         where T : unmanaged
     {
         private IAllocator _memory;
@@ -66,7 +66,7 @@ namespace Atma.Memory
         {
             ref var e = ref this[id];
             e = default;
-            _freeIds.Push(id);
+            _freeIds.Push(id & 0xffffff);
             _free++;
         }
 
@@ -82,6 +82,12 @@ namespace Atma.Memory
             var version = _version++;
             id |= version << 24;
             return id;
+        }
+
+        protected override void OnUnmanagedDispose()
+        {
+            _objectMap.DisposeAll();
+            _freeIds.Dispose();
         }
     }
 }

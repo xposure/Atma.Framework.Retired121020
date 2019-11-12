@@ -3,8 +3,8 @@ namespace Atma.Memory
     using System;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
-    using Atma.Common;
-    using static Atma.Debug;
+    //using Atma.Common;
+    //using static Atma.Debug;
 
     [StructLayout(LayoutKind.Sequential, Size = 32)]
     public unsafe struct HeapAllocation
@@ -33,7 +33,7 @@ namespace Atma.Memory
             var ptr = root->Next;
             while (ptr != null)
             {
-                Assert(ptr->MagicSignature == MagicChecksum);
+                Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                 if (!ptr->IsFree)
                     break;
 
@@ -58,8 +58,8 @@ namespace Atma.Memory
         public static void Split(HeapAllocation* ptr, uint blocks)
         {
             //var blocks = (size + (HeapSize - 1)) >> 5;
-            Assert(blocks > 0); //make sure we are taking at least one block
-            Assert(ptr->MagicSignature == MagicChecksum);
+            Assert.GreatherThan(blocks, 0);//make sure we are taking at least one block
+            Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
 
             var remainingBlocks = ptr->Blocks - blocks - 1;
             if (remainingBlocks > 0)
@@ -73,7 +73,7 @@ namespace Atma.Memory
                     ptr->Next = newBlock;
                 else
                 {
-                    Assert(ptr->Next->MagicSignature == MagicChecksum);
+                    Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                     newBlock->Next = ptr->Next;
                     ptr->Next->Previous = newBlock;
                 }
@@ -86,21 +86,21 @@ namespace Atma.Memory
         {
             while (ptr->Previous != null)
             {
-                Assert(ptr->MagicSignature == MagicChecksum);
+                Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                 if (!ptr->Previous->IsFree)
                     break;
 
                 ptr = ptr->Previous;
             }
 
-            Assert(ptr->MagicSignature == MagicChecksum);
+            Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
             return ptr;
         }
 
         public static void Free(HeapAllocation* root)
         {
-            Assert(!root->IsFree);
-            Assert(root->MagicSignature == MagicChecksum);
+            Assert.EqualTo(root->IsFree, false);
+            Assert.EqualTo(root->MagicSignature, MagicChecksum);
             root->Flags ^= 1;
 
             var ptr = FindFreeBackwards(root);
@@ -165,6 +165,8 @@ namespace Atma.Memory
                     PageIndex = pageIndex;
                     Version = version;
                 }
+
+                public override string ToString() => $"{{ Id: {Id:X8}, Address: {Address}, Page: {PageIndex:X8}, Version: {Version:X8} }}";
             }
 
             private IAllocator _allocator;
@@ -178,11 +180,12 @@ namespace Atma.Memory
 
             public HeapPageAllocator(IAllocator allocator, int heapIndex)
             {
-                Assert(heapIndex >= 0 && heapIndex < 16);
+                Assert.Range(heapIndex, 0, 16);
                 _heapIndex = (uint)heapIndex;
                 _allocations = new PagedObjectPool<HeapPagePointer>(allocator);
                 _allocator = allocator;
                 _desiredSizes = ((int)Math.Pow(2, _heapIndex) * 16384);
+                _allocations.Take();
             }
 
             protected override void OnUnmanagedDispose()
@@ -193,8 +196,9 @@ namespace Atma.Memory
             public void Free(ref AllocationHandle handle)
             {
                 ref var ptr = ref _allocations[handle.Id];
-                Assert(ptr.Address == handle.Address);
-                Assert((ptr.Version >> 4) == (handle.Flags >> 4));
+                Console.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
+                Assert.EqualTo(ptr.Address, handle.Address);
+                Assert.EqualTo(ptr.Version & 0xfffffff, handle.Flags >> 4);
 
                 _pages[ptr.PageIndex].Free(handle.Address);
 
@@ -206,14 +210,19 @@ namespace Atma.Memory
             public AllocationHandle Take(int size)
             {
                 var id = _allocations.Take();
+
                 ref var heapPagePtr = ref _allocations[id];
+                var flags = (++_version << 4) + _heapIndex;
 
                 for (var i = 0; i < _pages.Count; i++)
                 {
                     if (_pages[i].TryTake(out var ptr, (uint)size))
                     {
-                        heapPagePtr = new HeapPagePointer(id, ptr, i, _version++);
-                        return new AllocationHandle(ptr, id, _heapIndex);
+                        heapPagePtr = new HeapPagePointer(id, ptr, i, _version);
+                        var handle = new AllocationHandle(ptr, id, flags);
+                        Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+
+                        return handle;
                     }
                 }
 
@@ -223,21 +232,21 @@ namespace Atma.Memory
 
                     Contract.EqualTo(page.TryTake(out var ptr, (uint)size), true);
 
-                    heapPagePtr = new HeapPagePointer(id, ptr, _pages.Count - 1, _version++);
-                    return new AllocationHandle(ptr, id, _heapIndex);
+                    heapPagePtr = new HeapPagePointer(id, ptr, _pages.Count - 1, _version);
+                    var handle = new AllocationHandle(ptr, id, flags);
+                    Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                    return handle;
                 }
             }
 
             public AllocationHandle Transfer(ref AllocationHandle handle)
             {
                 ref var ptr = ref _allocations[handle.Id];
-                Assert((ptr.Version >> 4) == (handle.Flags >> 4));
+                Assert.EqualTo(ptr.Version >> 4, (handle.Flags >> 4));
 
                 var heapIndex = handle.Flags & 0xf;
                 var version = handle.Flags >> 4;
-                version++;
-
-                var flags = ((version & 0xffffffff) >> 4) + heapIndex;
+                var flags = (++_version << 4) + _heapIndex;
                 var newHandle = new AllocationHandle(handle.Address, handle.Id, flags);
 
                 ptr = new HeapPagePointer(handle.Id, handle.Address, ptr.PageIndex, version);
@@ -276,7 +285,7 @@ namespace Atma.Memory
             public bool TryTake(out IntPtr handle, uint size)
             {
                 var blocks = (size + (HeapAllocation.HeapSize - 1)) >> 5;
-                Assert(blocks > 0);
+                Assert.GreatherThan(blocks, 0);
 
                 if (_largestFreeBlock > -1 && blocks > _largestFreeBlock)
                 {

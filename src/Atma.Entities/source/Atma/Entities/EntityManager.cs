@@ -16,7 +16,7 @@
 
         private IAllocator _allocator;
 
-        private EntityPool2 _entityPool;// = new EntityPool2();
+        private EntityPool _entityPool;// = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
         private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
 
@@ -24,7 +24,7 @@
         {
             _allocator = allocator;
 
-            _entityPool = new EntityPool2(_allocator);
+            _entityPool = new EntityPool(_allocator);
             //take the first one to reserve 0 as invalid
             _entityPool.Take();
         }
