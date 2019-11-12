@@ -2,25 +2,30 @@ namespace Atma.Entities
 {
     using System;
     using Atma.Memory;
+    using Microsoft.Extensions.Logging;
 
     public unsafe sealed class EntityPackedArray : UnmanagedDispose
     {
         private ComponentDataArray[] _componentData;
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
         private IAllocator _allocator;
 
         public EntitySpec Specification { get; }
         public int Length => Entity.ENTITY_MAX;
 
-        public EntityPackedArray(IAllocator allocator, EntitySpec specification)
+        public EntityPackedArray(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
         {
-            Specification = specification;
-
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<EntityPackedArray>();
             _allocator = allocator;
+
+            Specification = specification;
 
             var _componentTypes = Specification.ComponentTypes;
             _componentData = new ComponentDataArray[_componentTypes.Length];
             for (var i = 0; i < _componentTypes.Length; i++)
-                _componentData[i] = new ComponentDataArray(_allocator, _componentTypes[i], Entity.ENTITY_MAX);
+                _componentData[i] = new ComponentDataArray(_logFactory, _allocator, _componentTypes[i], Entity.ENTITY_MAX);
         }
 
         public int GetComponentIndex<T>() where T : unmanaged

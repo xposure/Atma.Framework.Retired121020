@@ -3,6 +3,8 @@ namespace Atma.Memory
     using System;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
+    using Microsoft.Extensions.Logging;
+
     //using Atma.Common;
     //using static Atma.Debug;
 
@@ -169,6 +171,8 @@ namespace Atma.Memory
                 public override string ToString() => $"{{ Id: {Id:X8}, Address: {Address}, Page: {PageIndex:X8}, Version: {Version:X8} }}";
             }
 
+            private ILogger _logger;
+            private ILoggerFactory _logFactory;
             private IAllocator _allocator;
             private PagedObjectPool<HeapPagePointer> _allocations;// = new PagedObjectPool<HeapPagePointer>();
             private List<HeapPage> _pages = new List<HeapPage>();
@@ -178,8 +182,10 @@ namespace Atma.Memory
 
             public int DesiredSizes => _desiredSizes;
 
-            public HeapPageAllocator(IAllocator allocator, int heapIndex)
+            public HeapPageAllocator(ILoggerFactory logFactory, IAllocator allocator, int heapIndex)
             {
+                _logFactory = logFactory;
+                _logger = _logFactory.CreateLogger<HeapPageAllocator>();
                 Assert.Range(heapIndex, 0, 16);
                 _heapIndex = (uint)heapIndex;
                 _allocations = new PagedObjectPool<HeapPagePointer>(allocator);
@@ -333,6 +339,8 @@ namespace Atma.Memory
         }
 
         //going to cheat and use a linked list until performance becomes an issue
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
         public IAllocator _allocator;
         private HeapPageAllocator[] _pageAllocators = new HeapPageAllocator[16];
 
@@ -341,11 +349,14 @@ namespace Atma.Memory
 
         // }
 
-        public HeapAllocator()
+        public HeapAllocator(ILoggerFactory logFactory)
         {
-            _allocator = new DynamicAllocator();
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<HeapAllocator>();
+
+            _allocator = new DynamicAllocator(_logFactory);
             for (var i = 0; i < _pageAllocators.Length; i++)
-                _pageAllocators[i] = new HeapPageAllocator(_allocator, i);
+                _pageAllocators[i] = new HeapPageAllocator(_logFactory, _allocator, i);
         }
 
         public void Free(ref AllocationHandle handle)

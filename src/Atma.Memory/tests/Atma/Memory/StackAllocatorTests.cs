@@ -1,16 +1,25 @@
 namespace Atma.Memory
 {
     using System;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
 
     public unsafe class StackAllocatorTests
     {
+        private readonly ILoggerFactory _logFactory;
+
+        public StackAllocatorTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
         [Fact]
         public void ShouldAllocateFromFront()
         {
             //arrange
-            using IAllocator memory = new DynamicAllocator();
+            using IAllocator memory = new DynamicAllocator(_logFactory);
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
@@ -25,7 +34,7 @@ namespace Atma.Memory
         public void GetsSameAddressFront()
         {
             //arrange
-            using IAllocator memory = new DynamicAllocator();
+            using IAllocator memory = new DynamicAllocator(_logFactory);
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
@@ -46,7 +55,7 @@ namespace Atma.Memory
         public void GetsSameAddressBack()
         {
             //arrange
-            using IAllocator memory = new DynamicAllocator();
+            using IAllocator memory = new DynamicAllocator(_logFactory);
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act
@@ -67,7 +76,7 @@ namespace Atma.Memory
         public void ShouldThrowOnUnorderedFree()
         {
             //arrange
-            using IAllocator memory = new DynamicAllocator();
+            using IAllocator memory = new DynamicAllocator(_logFactory);
             using IAllocator it = new StackAllocator(memory, 1024);
 
             //act

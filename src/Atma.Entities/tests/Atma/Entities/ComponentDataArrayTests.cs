@@ -4,8 +4,11 @@ namespace Atma.Entities
     using System.Threading;
     using System.Threading.Tasks;
     using Atma.Memory;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class ComponentArrayTests
     {
@@ -33,13 +36,20 @@ namespace Atma.Entities
             }
         }
 
+        private readonly ILoggerFactory _logFactory;
+
+        public ComponentArrayTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
         [Fact]
         public void ShouldGetIndex()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new DynamicAllocator();
-            using var data = new ComponentDataArray(allocator, componentType, 32);
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();
@@ -55,8 +65,8 @@ namespace Atma.Entities
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new DynamicAllocator();
-            using var data = new ComponentDataArray(allocator, componentType, 32);
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();
@@ -78,10 +88,10 @@ namespace Atma.Entities
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator0 = new DynamicAllocator();
-            using var data0 = new ComponentDataArray(allocator0, componentType, 32);
-            using IAllocator allocator1 = new DynamicAllocator();
-            using var data1 = new ComponentDataArray(allocator0, componentType, 32);
+            using IAllocator allocator0 = new DynamicAllocator(_logFactory);
+            using var data0 = new ComponentDataArray(_logFactory, allocator0, componentType, 32);
+            using IAllocator allocator1 = new DynamicAllocator(_logFactory);
+            using var data1 = new ComponentDataArray(_logFactory, allocator0, componentType, 32);
 
             //act
             var span0 = data0.AsSpan<Position>();
@@ -103,8 +113,8 @@ namespace Atma.Entities
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new DynamicAllocator();
-            using var data = new ComponentDataArray(allocator, componentType, 32);
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();
@@ -132,8 +142,8 @@ namespace Atma.Entities
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new DynamicAllocator();
-            using var data = new ComponentDataArray(allocator, componentType, 32);
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
 
@@ -149,8 +159,8 @@ namespace Atma.Entities
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
-            using IAllocator allocator = new DynamicAllocator();
-            using var data = new ComponentDataArray(allocator, componentType, 32);
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
             var span = data.AsSpan<Position>();

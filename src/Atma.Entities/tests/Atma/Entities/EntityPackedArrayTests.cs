@@ -3,8 +3,11 @@ namespace Atma.Entities
     using System;
     using Atma.Common;
     using Atma.Memory;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class EntityGroupArrayTests
     {
@@ -32,17 +35,25 @@ namespace Atma.Entities
             }
         }
 
+        private readonly ILoggerFactory _logFactory;
+
+        public EntityGroupArrayTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
+
         [Fact]
         public void CanCreateEntityGroup()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            using var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(_logFactory, memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
@@ -64,12 +75,12 @@ namespace Atma.Entities
         public void ShouldThrowOnWrongType()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            using var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(_logFactory, memory, specification);
 
             //act
             //assert
@@ -85,13 +96,13 @@ namespace Atma.Entities
         public void ShouldReadAndWriteEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            using var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(_logFactory, memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();
@@ -128,13 +139,13 @@ namespace Atma.Entities
         public void ShouldMoveEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            using var entityGroup = new EntityPackedArray(memory, specification);
+            using var entityGroup = new EntityPackedArray(_logFactory, memory, specification);
 
             //act
             var positions = entityGroup.GetComponentSpan<Position>();

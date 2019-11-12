@@ -3,6 +3,7 @@
     using System;
     using System.Runtime.InteropServices;
     using Atma.Common;
+    using Microsoft.Extensions.Logging;
 
     public unsafe sealed class DynamicAllocator : UnmanagedDispose, IAllocator
     {
@@ -30,12 +31,16 @@
         private uint _size;
         public uint Size => _size;
 
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
         private ObjectPoolInt _dynamicMemoryTracker = new ObjectPoolInt(1024);
         private DynamicMemoryHandle[] _handles = new DynamicMemoryHandle[1024];
         private bool _enableStackTrace = false;
 
-        public DynamicAllocator(bool enableStackTrace = false)
+        public DynamicAllocator(ILoggerFactory logFactory, bool enableStackTrace = false)
         {
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<DynamicAllocator>();
             _enableStackTrace = enableStackTrace;
 
             //take the first to enforce id = 0 as invalid

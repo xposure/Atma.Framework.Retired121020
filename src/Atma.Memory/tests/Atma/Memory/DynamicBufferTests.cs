@@ -1,5 +1,8 @@
-﻿using Shouldly;
+﻿using Divergic.Logging.Xunit;
+using Microsoft.Extensions.Logging;
+using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Atma.Memory
 {
@@ -21,11 +24,17 @@ namespace Atma.Memory
             public int z;
             public byte b;
         }
+        private readonly ILoggerFactory _logFactory;
+
+        public DynamicBufferTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
 
         [Fact]
         public void AllocatesDynamicTypes()
         {
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             using var buffer = new NativeBuffer(memory);
             var d0 = buffer.Add(new Data() { x = 10 });
             buffer.Length.ShouldBe(4);

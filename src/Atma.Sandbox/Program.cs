@@ -44,9 +44,6 @@
             // var type = em.CreateArchetype(typeof(Test));
             // var e = em.CreateEntity(type);
 
-            dothings();
-            return;
-
             // for (var y = 0; y < 3; y++)
             // {
             //     var sw = Stopwatch.StartNew();
@@ -73,21 +70,6 @@
             //     Console.WriteLine(counter);
             //     Console.WriteLine(sw.Elapsed.ToString());
             // }
-        }
-        static void dothings()
-        {
-            using var _memory = new HeapAllocator();
-            using var _entities = new EntityManager(_memory);
-
-            var r = new Random();
-            var spec = EntitySpec.Create<Position, Velocity>();
-            for (var i = 0; i < 8192; i++)
-            {
-                //TODO: bulk insert API
-                var entity = _entities.Create(spec);
-                _entities.Replace(entity, new Position(r.Next(0, 1024), r.Next(0, 1024)));
-                _entities.Replace(entity, new Velocity(r.Next(-500, 500), r.Next(-500, 500)));
-            }
         }
 
         public static unsafe void HeppAlocationShouldFillGap()

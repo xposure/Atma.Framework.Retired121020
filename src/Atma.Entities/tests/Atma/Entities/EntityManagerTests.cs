@@ -2,11 +2,14 @@
 {
     using Atma.Common;
     using Atma.Memory;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
 
     using System;
     using System.Linq;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class EntityManagerTests
     {
@@ -34,20 +37,27 @@
             }
         }
 
+        private readonly ILoggerFactory _logFactory;
+
+        public EntityManagerTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
         [Fact]
         public void ShouldAllocatorLargeAmountsOfEntities()
         {
-            using var _memory = new HeapAllocator();
-            using var _entities = new EntityManager(_memory);
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
 
             var r = new Random();
             var spec = EntitySpec.Create<Position, Velocity>();
             for (var i = 0; i < 8192; i++)
             {
                 //TODO: bulk insert API
-                var entity = _entities.Create(spec);
-                _entities.Replace(entity, new Position(r.Next(0, 1024), r.Next(0, 1024)));
-                _entities.Replace(entity, new Velocity(r.Next(-500, 500), r.Next(-500, 500)));
+                var entity = entities.Create(spec);
+                entities.Replace(entity, new Position(r.Next(0, 1024), r.Next(0, 1024)));
+                entities.Replace(entity, new Velocity(r.Next(-500, 500), r.Next(-500, 500)));
             }
         }
 
@@ -55,8 +65,8 @@
         public void ShouldCreateEntityManager()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -80,8 +90,8 @@
         public void ShouldShouldDeleteEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -97,8 +107,8 @@
         public void ShouldShiftAllEntitiesOnDelete()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -129,8 +139,8 @@
         public void ShouldAssignEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -152,8 +162,8 @@
         public void ShouldReplaceEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -175,8 +185,8 @@
         public void ShouldUpdateEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(
                 ComponentType<Position>.Type
             );
@@ -201,8 +211,8 @@
         public void ShouldMoveEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var srcSpec = new EntitySpec(ComponentType<Position>.Type);
             var dstSpec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -235,8 +245,8 @@
         public void ShouldRemoveEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(ComponentType<Position>.Type);
 
             //act
@@ -253,8 +263,8 @@
         public void ShouldRemoveComponent()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
@@ -275,8 +285,8 @@
         public void ShouldRemoveEntityWithNoComponents()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(
                 ComponentType<Position>.Type
             );
@@ -295,8 +305,8 @@
         public void ShouldResetEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
@@ -324,8 +334,8 @@
         public void ShouldResetEntityComponent()
         {
             //arrange
-            using var memory = new DynamicAllocator();
-            using var em = new EntityManager(memory);
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
             var spec = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type

@@ -2,6 +2,7 @@ namespace Atma.Common
 {
     using Atma.Entities;
     using Atma.Memory;
+    using Microsoft.Extensions.Logging;
     using System.Collections.Generic;
 
     public sealed class EntityPool : UnmanagedDispose
@@ -9,6 +10,9 @@ namespace Atma.Common
         public const int ENTITIES_BITS = 12; //4096
         public const int ENTITIES_PER_POOL = 1 << ENTITIES_BITS;
         public const int ENTITIES_MASK = ENTITIES_PER_POOL - 1;
+
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
 
         private IAllocator _memory;
         private List<NativeArray<Entity>> _entityMap;
@@ -25,8 +29,10 @@ namespace Atma.Common
 
         public int Free => _free;
 
-        public EntityPool(IAllocator allocator)
+        public EntityPool(ILoggerFactory logFactory, IAllocator allocator)
         {
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<EntityPool>();
             _memory = allocator;
             _freeIds = new NativeStack<uint>(_memory, ENTITIES_PER_POOL);
             _entityMap = new List<NativeArray<Entity>>();

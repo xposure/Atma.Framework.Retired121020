@@ -3,14 +3,25 @@ namespace Atma.Memory
     using System;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
 
     public class DynamicMemoryTests
     {
+        private readonly ILoggerFactory _logFactory;
+
+        public DynamicMemoryTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
+
         [Fact]
         public void ShoudAllocate()
         {
             //arrange
-            var allocator = new DynamicAllocator();
+            var allocator = new DynamicAllocator(_logFactory);
 
             //act
             var handle0 = allocator.Take(1024);
@@ -30,7 +41,7 @@ namespace Atma.Memory
         public void ShouldFree()
         {
             //arrange
-            var allocator = new DynamicAllocator();
+            var allocator = new DynamicAllocator(_logFactory);
 
             //act
             var handle0 = allocator.Take(1024);

@@ -2,10 +2,13 @@
 {
     using System;
     using Atma.Memory;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
 
-    public class EntityArchetypeTests
+    public class EntityChunkArrayTests
     {
         private struct Position
         {
@@ -30,17 +33,22 @@
                 VY = vy;
             }
         }
+        private readonly ILoggerFactory _logFactory;
 
+        public EntityChunkArrayTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
         [Fact]
         public void ShouldCreateChunkArray()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(memory, specifcation);
+            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex);
@@ -57,12 +65,12 @@
         public void ShouldDeleteAndMove()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(memory, specifcation);
+            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex0);
@@ -83,12 +91,12 @@
         public void ShouldExpand()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specifcation = new EntitySpec(
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(memory, specifcation);
+            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
 
             //act
             for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)
@@ -108,8 +116,8 @@
         //         ComponentType<Position>.Type
         //     );
 
-        //     var srcArray = new EntityChunkArray(specifcation);
-        //     var dstArray = new EntityChunkArray(specifcation);
+        //     var srcArray = new EntityChunkArray(_logFactory, specifcation);
+        //     var dstArray = new EntityChunkArray(_logFactory, specifcation);
 
         //     //act
         //     var srcIndex = srcArray.Create(1, out var chunkIndex);

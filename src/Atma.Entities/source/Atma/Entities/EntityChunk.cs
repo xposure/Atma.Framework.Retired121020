@@ -1,9 +1,12 @@
 namespace Atma.Entities
 {
     using Atma.Memory;
+    using Microsoft.Extensions.Logging;
 
     public sealed class EntityChunk : UnmanagedDispose
     {
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
         private IAllocator _allocator;
         private NativeArray<uint> _entities;
         private EntityPackedArray _packedArray;
@@ -15,11 +18,13 @@ namespace Atma.Entities
         public EntitySpec Specification { get; }
         public EntityPackedArray PackedArray => _packedArray;
 
-        public EntityChunk(IAllocator allocator, EntitySpec specifcation)
+        public EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation)
         {
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<EntityChunk>();
             _allocator = allocator;
             Specification = specifcation;
-            _packedArray = new EntityPackedArray(_allocator, specifcation);
+            _packedArray = new EntityPackedArray(logFactory, _allocator, specifcation);
             _entities = new NativeArray<uint>(_allocator, _packedArray.Length);
         }
 

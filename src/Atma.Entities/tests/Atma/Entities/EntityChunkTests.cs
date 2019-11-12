@@ -2,8 +2,11 @@ namespace Atma.Entities
 {
     using System;
     using Atma.Memory;
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class EntityChunkTests
     {
@@ -31,17 +34,24 @@ namespace Atma.Entities
             }
         }
 
+        private readonly ILoggerFactory _logFactory;
+
+        public EntityChunkTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
         [Fact]
         public void ShouldCreateEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            using var entityChunk = new EntityChunk(memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
 
             //act
             var free = entityChunk.Free;
@@ -58,13 +68,13 @@ namespace Atma.Entities
         public void ShouldDeleteEntity()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            using var entityChunk = new EntityChunk(memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
 
             //act
             var free = entityChunk.Free;
@@ -82,14 +92,14 @@ namespace Atma.Entities
         public void ShouldCopyToOtherChunk()
         {
             //arrange
-            using var memory = new DynamicAllocator();
+            using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             );
 
-            using var chunk0 = new EntityChunk(memory, specification);
-            using var chunk1 = new EntityChunk(memory, specification);
+            using var chunk0 = new EntityChunk(_logFactory, memory, specification);
+            using var chunk1 = new EntityChunk(_logFactory, memory, specification);
 
 
             //act

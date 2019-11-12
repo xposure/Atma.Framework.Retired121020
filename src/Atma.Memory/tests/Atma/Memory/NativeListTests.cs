@@ -1,7 +1,10 @@
 ﻿namespace Atma.Memory
 {
+    using Divergic.Logging.Xunit;
+    using Microsoft.Extensions.Logging;
     using Shouldly;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class NativeListTests
     {
@@ -12,10 +15,17 @@
             public byte b;
         }
 
+        private readonly ILoggerFactory _logFactory;
+
+        public NativeListTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
         [Fact]
         public void ShouldAdd()
         {
-            using var m = new DynamicAllocator();
+            using var m = new DynamicAllocator(_logFactory);
             using var x = new NativeList<Data>(m);
 
             x.Add(new Data() { x = 10, y = 11, b = 12 });
@@ -53,7 +63,7 @@
         [Fact]
         public void ShouldResize()
         {
-            using var m = new DynamicAllocator();
+            using var m = new DynamicAllocator(_logFactory);
             using var x = new NativeList<Data>(m);
 
             var maxLength = x.MaxLength;

@@ -2,7 +2,7 @@
 {
     using Atma.Common;
     using Atma.Memory;
-
+    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -14,17 +14,21 @@
         public int SpecCount { get => _knownSpecs.Count; }
         public IReadOnlyList<EntityChunkArray> EntityArrays => _entityArrays;
 
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
         private IAllocator _allocator;
 
         private EntityPool _entityPool;// = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
         private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
 
-        public EntityManager(IAllocator allocator)
+        public EntityManager(ILoggerFactory logFactory, IAllocator allocator)
         {
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<EntityManager>();
             _allocator = allocator;
 
-            _entityPool = new EntityPool(_allocator);
+            _entityPool = new EntityPool(_logFactory, _allocator);
             //take the first one to reserve 0 as invalid
             _entityPool.Take();
         }
@@ -38,7 +42,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(_allocator, spec));
+                _entityArrays.Add(new EntityChunkArray(_logFactory, _allocator, spec));
             }
             return specIndex;
         }
@@ -54,7 +58,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(_allocator, spec));
+                _entityArrays.Add(new EntityChunkArray(_logFactory, _allocator, spec));
             }
             return specIndex;
         }

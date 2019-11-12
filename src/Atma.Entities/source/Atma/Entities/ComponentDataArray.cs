@@ -1,6 +1,7 @@
 ﻿namespace Atma.Entities
 {
     using Atma.Memory;
+    using Microsoft.Extensions.Logging;
     using System;
 
     public sealed unsafe class ComponentDataArray : UnmanagedDispose//, IComponentDataArray2
@@ -9,14 +10,18 @@
 
         public int Length { get; }
 
+        private ILogger _logger;
+        private ILoggerFactory _logFactory;
         private IAllocator _allocator;
         private AllocationHandle _memoryHandle;
         private readonly ComponentType _componentType;
         private readonly ComponentTypeHelper _componentHelper;
 
-
-        public ComponentDataArray(IAllocator allocator, ComponentType componentType, int length)
+        public ComponentDataArray(ILoggerFactory logFactory, IAllocator allocator, ComponentType componentType, int length)
         {
+            _logFactory = logFactory;
+            _logger = _logFactory.CreateLogger<ComponentDataArray>();
+
             ElementSize = componentType.Size;
             Length = length;
 
@@ -42,14 +47,12 @@
             return new Span<T>((void*)_memoryHandle.Address, Length);
         }
 
-
         public T* AsPointer<T>()
             where T : unmanaged
         {
             var componentType = ComponentType<T>.Type;
             if (componentType.ID != _componentType.ID)
                 throw new Exception("Invalid type.");
-
 
             return (T*)_memoryHandle.Address;
         }
@@ -110,7 +113,5 @@
         {
             _allocator = null;
         }
-
-
     }
 }

@@ -2,11 +2,21 @@ namespace Atma.Memory
 {
     using System;
     using Xunit;
+    using Xunit.Abstractions;
     using Shouldly;
     using static Atma.Debug;
+    using Microsoft.Extensions.Logging;
+    using Divergic.Logging.Xunit;
 
     public class HeapAllocatorTests
     {
+        private readonly ILoggerFactory _logFactory;
+
+        public HeapAllocatorTests(ITestOutputHelper output)
+        {
+            _logFactory = LogFactory.Create(output);
+        }
+
         [Fact]
         public unsafe void HeapAllocationShouldAllocate()
         {
@@ -186,7 +196,7 @@ namespace Atma.Memory
         public void HeapShouldAllocate()
         {
             //arrange
-            using var memory = new HeapAllocator();
+            using var memory = new HeapAllocator(_logFactory);
 
             //act
             var handle = memory.Take(1024);
