@@ -201,6 +201,7 @@ namespace Atma.Memory
             protected override void OnUnmanagedDispose()
             {
                 _pages.DisposeAll();
+                _allocations.Dispose();
             }
 
             public void Free(ref AllocationHandle handle)
