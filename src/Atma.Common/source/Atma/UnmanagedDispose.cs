@@ -44,6 +44,7 @@ namespace Atma
         {
             if (!disposedValue)
             {
+                Assert.EqualTo(disposing, true);
                 OnUnmanagedDispose();
 
                 if (disposing)

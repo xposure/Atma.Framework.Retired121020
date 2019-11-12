@@ -15,5 +15,8 @@ namespace Atma.Memory
         public static DisposableAllocHandle TakeScoped<T>(this IAllocator it, int count, ILoggerFactory logFactory = null)
             where T : unmanaged
             => new DisposableAllocHandle(logFactory, it, it.Take<T>(count));
+
+        public static DisposableAllocHandle TakeScoped(this IAllocator it, int bytes, ILoggerFactory logFactory = null)
+           => new DisposableAllocHandle(logFactory, it, it.Take<byte>(bytes));
     }
 }

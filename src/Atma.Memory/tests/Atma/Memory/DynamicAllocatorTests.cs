@@ -24,8 +24,8 @@ namespace Atma.Memory
             using var allocator = new DynamicAllocator(_logFactory);
 
             //act
-            var handle0 = allocator.Take(1024);
-            var handle1 = allocator.Take(1024);
+            using var handle0 = allocator.TakeScoped(1024);
+            using var handle1 = allocator.TakeScoped(1024);
 
             //assert
             handle0.Address.ShouldNotBe(IntPtr.Zero);
@@ -44,10 +44,10 @@ namespace Atma.Memory
             using var allocator = new DynamicAllocator(_logFactory);
 
             //act
-            var handle0 = allocator.Take(1024);
-            var handle1 = allocator.Take(1024);
+            using var handle0 = allocator.TakeScoped(1024);
+            using var handle1 = allocator.TakeScoped(1024);
 
-            allocator.Free(ref handle0);
+            handle0.Free();
 
             //assert
             handle0.Address.ShouldBe(IntPtr.Zero);

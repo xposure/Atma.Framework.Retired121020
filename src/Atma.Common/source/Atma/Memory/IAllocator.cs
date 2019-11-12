@@ -38,6 +38,8 @@ namespace Atma.Memory
         public uint Id => _handle.Id;
         public uint Flags => _handle.Flags;
 
+        public bool IsValid => _handle.IsValid;
+
         public AllocationHandle Handle => _handle;
 
         public void Free()
