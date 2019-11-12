@@ -11,15 +11,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Atma.Entities.Benchmarks
 {
-    public struct Color
-    {
-        public int ARGB;
-        public Color(int a, int r, int g, int b)
-        {
-            ARGB = a << 24 + r << 16 + g << 8 + b;
-        }
-    }
-
     public struct Position
     {
         public float x;
@@ -43,7 +34,7 @@ namespace Atma.Entities.Benchmarks
         }
     }
 
-    [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 10000, id: "QuickJob")]
+    [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 2000, id: "QuickJob")]
     //[MediumRunJob]
     public class Md5VsSha256
     {
@@ -55,49 +46,58 @@ namespace Atma.Entities.Benchmarks
         private ILogger _logger;
         private EntityManager _entities;
 
-
         private IAllocator _memory;
 
 
         [Params(100000)]
         public int N;
 
-        [IterationCleanup]
+        [GlobalCleanup]
         public void Cleanup()
         {
             _entities.Dispose();
             _memory.Dispose();
 
-            // for (var i = 0; i < index; i++)
-            //     Console.WriteLine($"{i}: {elapsed[i]}");
 
         }
 
         [IterationSetup]
+        public void IterationSetup()
+        {
+            var r = new Random(123456789);
+            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            {
+                position = new Position(r.Next(0, 1024), r.Next(0, 1024));
+                velocity = new Velocity(r.Next(-500, 500), r.Next(-500, 500));
+            });
+        }
+
+        [IterationCleanup]
+        public void IterationCleanup()
+        {
+
+        }
+
+        [GlobalSetup]
         public void Setup()
         {
-            elapsed = new float[N];
-            _logFactory = new NullLoggerFactory();
+            _logFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+            });
 
             _memory = new HeapAllocator(_logFactory);
             _entities = new EntityManager(_logFactory, _memory);
 
-            var r = new Random();
-            var spec = EntitySpec.Create<Position, Velocity, Color>();
+            var spec = EntitySpec.Create<Position, Velocity>();
             for (var i = 0; i < N; i++)
             {
                 //TODO: bulk insert API
                 var entity = _entities.Create(spec);
-                _entities.Replace(entity, new Position(r.Next(0, 1024), r.Next(0, 1024)));
-                _entities.Replace(entity, new Velocity(r.Next(-500, 500), r.Next(-500, 500)));
-                _entities.Replace(entity, new Color(r.Next(255), r.Next(255), r.Next(255), 255));
             }
         }
 
-        public static int index = 0;
-        public static float[] elapsed;
-
-        [Benchmark(Baseline = true)]
+        [Benchmark]
         public void Raw()
         {
             Span<ComponentType> componentTypes = stackalloc ComponentType[] {
@@ -131,6 +131,8 @@ namespace Atma.Entities.Benchmarks
                             position.x += velocity.x * dt;
                             position.y += velocity.y * dt;
 
+                            //WTF: Well I learned the hard way today about denormalized floats... 
+                            //need to reset the data on each iteration
                             velocity.x -= velocity.x * dt;
                             velocity.y -= velocity.y * dt;
 
@@ -144,10 +146,30 @@ namespace Atma.Entities.Benchmarks
                 }
             }
             sw.Stop();
-            elapsed[Interlocked.Increment(ref index)] = (float)sw.Elapsed.TotalSeconds;
         }
 
-        //[Benchmark]
+        [Benchmark]
+        public void ForEachNoEntity()
+        {
+            _entities.ForEach((ref Position position, ref Velocity velocity) =>
+            {
+                position.x += velocity.x * dt;
+                position.y += velocity.y * dt;
+
+                velocity.x -= velocity.x * dt;
+                velocity.y -= velocity.y * dt;
+
+                if ((position.x > maxx && velocity.x > 0) || (position.x < 0 && velocity.x < 0))
+                    velocity.x = -velocity.x;
+
+                if ((position.y > maxy && velocity.y > 0) || (position.y < 0 && velocity.y < 0))
+                    velocity.y = -velocity.y;
+
+            });
+        }
+
+
+        [Benchmark]
         public void ForEach()
         {
             _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
@@ -184,9 +206,8 @@ namespace Atma.Entities.Benchmarks
         }
         static void Main(string[] args)
         {
-            //RunOnce(1000);
-            //RunOnce(1000);
-            //RunOnce(1000);
+            //for (var i = 0; i < 15; i++)
+            //    RunOnce(1000);
             var summary = BenchmarkRunner.Run<Md5VsSha256>();
         }
     }
