@@ -1,8 +1,9 @@
 ﻿namespace Atma.Common
 {
+    using System;
     using System.Collections.Generic;
 
-    public abstract class ObjectPool<T>
+    public abstract class AbstractObjectPool<T>
     {
         //private List<T> _pool;
         private readonly List<T> _free;
@@ -15,7 +16,7 @@
 
         //public IEnumerable<T> Free => _free;
 
-        public ObjectPool(int initialSize = 8)
+        public AbstractObjectPool(int initialSize = 8)
         {
             _free = new List<T>(initialSize);
 
@@ -72,7 +73,7 @@
         }
     }
 
-    public sealed class ObjectPoolInt : ObjectPool<int>
+    public sealed class ObjectPoolInt : AbstractObjectPool<int>
     {
         private int _sequenceId = 0;
 
@@ -88,7 +89,7 @@
         }
     }
 
-    public sealed class ObjectPoolRef<T> : ObjectPool<T>
+    public sealed class ObjectPoolRef<T> : AbstractObjectPool<T>
         where T : new()
     {
         protected override T Next()
@@ -96,4 +97,17 @@
             return new T();
         }
     }
+
+    public sealed class ObjectPool<T> : AbstractObjectPool<T>
+    {
+        private Func<T> _create;
+        public ObjectPool(Func<T> create)
+        {
+            _create = create;
+        }
+
+        protected override T Next() => _create();
+    }
+
+
 }
