@@ -29,17 +29,8 @@ namespace Atma.Entities
         }
 
         public int GetComponentIndex<T>() where T : unmanaged
-            => GetComponentIndex(ComponentType<T>.Type);
+            => Specification.GetComponentIndex(ComponentType<T>.Type);
 
-        public int GetComponentIndex(in ComponentType type)
-        {
-            var id = type.ID;
-            var _componentTypes = Specification.ComponentTypes;
-            for (var i = 0; i < _componentTypes.Length; i++)
-                if (_componentTypes[i].ID == id)
-                    return i;
-            return -1;
-        }
 
         //TODO: Add a group lock here and implement internal no lock moves in ComponentDataArray
         public void Move(int src, int dst)

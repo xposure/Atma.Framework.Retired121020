@@ -36,7 +36,7 @@ namespace Atma.Entities.Benchmarks
 
     [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 2000, id: "QuickJob")]
     //[MediumRunJob]
-    public class ForEachBench
+    public class ForEntityBench
     {
         public float dt = 0.016f;
         public float maxx = 1024;
@@ -65,7 +65,7 @@ namespace Atma.Entities.Benchmarks
         public void IterationSetup()
         {
             var r = new Random(123456789);
-            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            _entities.ForEntity((uint entity, ref Position position, ref Velocity velocity) =>
             {
                 position = new Position(r.Next(0, 1024), r.Next(0, 1024));
                 velocity = new Velocity(r.Next(-500, 500), r.Next(-500, 500));
@@ -111,15 +111,13 @@ namespace Atma.Entities.Benchmarks
                 var array = entityArrays[i];
                 if (array.Specification.HasAll(componentTypes))
                 {
-                    var t0i = -1;
-                    var t1i = -1;
+                    var t0i = array.Specification.GetComponentIndex(componentTypes[0]);
+                    var t1i = array.Specification.GetComponentIndex(componentTypes[1]);
 
                     for (var k = 0; k < array.AllChunks.Count; k++)
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
-                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
 
                         var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
@@ -147,26 +145,6 @@ namespace Atma.Entities.Benchmarks
         }
 
         [Benchmark]
-        public void ForEachNoEntity()
-        {
-            _entities.ForEach((ref Position position, ref Velocity velocity) =>
-            {
-                position.x += velocity.x * dt;
-                position.y += velocity.y * dt;
-
-                velocity.x -= velocity.x * dt;
-                velocity.y -= velocity.y * dt;
-
-                if ((position.x > maxx && velocity.x > 0) || (position.x < 0 && velocity.x < 0))
-                    velocity.x = -velocity.x;
-
-                if ((position.y > maxy && velocity.y > 0) || (position.y < 0 && velocity.y < 0))
-                    velocity.y = -velocity.y;
-
-            });
-        }
-
-        [Benchmark]
         public void ForChunk()
         {
             _entities.ForChunk((int length, ReadOnlySpan<uint> entities, Span<Position> positions, Span<Velocity> velocities) =>
@@ -191,9 +169,9 @@ namespace Atma.Entities.Benchmarks
             });
         }
         [Benchmark]
-        public void ForEach()
+        public void ForEntity()
         {
-            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            _entities.ForEntity((uint entity, ref Position position, ref Velocity velocity) =>
             {
                 position.x += velocity.x * dt;
                 position.y += velocity.y * dt;
@@ -213,7 +191,7 @@ namespace Atma.Entities.Benchmarks
 
     [SimpleJob(launchCount: 1, warmupCount: 3, targetCount: 5, invocationCount: 2000, id: "SIMDMaybe")]
     //[MediumRunJob]
-    public class SIMDMaybe
+    public class ForChunkBench
     {
         public float dt = 0.016f;
         public float maxx = 1024;
@@ -242,7 +220,7 @@ namespace Atma.Entities.Benchmarks
         public void IterationSetup()
         {
             var r = new Random(123456789);
-            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            _entities.ForEntity((uint entity, ref Position position, ref Velocity velocity) =>
             {
                 position = new Position(r.Next(0, 1024), r.Next(0, 1024));
                 velocity = new Velocity(r.Next(-500, 500), r.Next(-500, 500));
@@ -288,15 +266,13 @@ namespace Atma.Entities.Benchmarks
                 var array = entityArrays[i];
                 if (array.Specification.HasAll(componentTypes))
                 {
-                    var t0i = -1;
-                    var t1i = -1;
+                    var t0i = array.Specification.GetComponentIndex(componentTypes[0]);
+                    var t1i = array.Specification.GetComponentIndex(componentTypes[1]);
 
                     for (var k = 0; k < array.AllChunks.Count; k++)
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
-                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
 
                         var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
@@ -315,23 +291,9 @@ namespace Atma.Entities.Benchmarks
         }
 
         [Benchmark]
-        public void ForEachNoEntitySinglePass()
+        public void ForEntitySinglePass()
         {
-            _entities.ForEach((ref Position position, ref Velocity velocity) =>
-            {
-                position.x += velocity.x * dt;
-                position.y += velocity.y * dt;
-
-                velocity.x -= velocity.x * dt;
-                velocity.y -= velocity.y * dt;
-            });
-        }
-
-
-        [Benchmark]
-        public void ForEachSinglePass()
-        {
-            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            _entities.ForEntity((uint entity, ref Position position, ref Velocity velocity) =>
             {
                 position.x += velocity.x * dt;
                 position.y += velocity.y * dt;
@@ -356,15 +318,13 @@ namespace Atma.Entities.Benchmarks
                 var array = entityArrays[i];
                 if (array.Specification.HasAll(componentTypes))
                 {
-                    var t0i = -1;
-                    var t1i = -1;
+                    var t0i = array.Specification.GetComponentIndex(componentTypes[0]);
+                    var t1i = array.Specification.GetComponentIndex(componentTypes[1]);
 
                     for (var k = 0; k < array.AllChunks.Count; k++)
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        if (t0i == -1) t0i = chunk.PackedArray.GetComponentIndex(componentTypes[0]);
-                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
 
                         var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
@@ -384,14 +344,12 @@ namespace Atma.Entities.Benchmarks
                 var array = entityArrays[i];
                 if (array.Specification.HasAll(componentTypes))
                 {
-                    var t1i = -1;
+                    var t1i = array.Specification.GetComponentIndex(componentTypes[1]);
 
                     for (var k = 0; k < array.AllChunks.Count; k++)
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        if (t1i == -1) t1i = chunk.PackedArray.GetComponentIndex(componentTypes[1]);
-
                         var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
                         for (var j = 0; j < length; j++)
                         {
@@ -405,32 +363,15 @@ namespace Atma.Entities.Benchmarks
         }
 
         [Benchmark]
-        public void ForEachNoEntityTwoPass()
+        public void ForEntityTwoPass()
         {
-            _entities.ForEach((ref Position position, ref Velocity velocity) =>
-            {
-                position.x += velocity.x * dt;
-                position.y += velocity.y * dt;
-
-            });
-            _entities.ForEach((ref Velocity velocity) =>
-            {
-                velocity.x -= velocity.x * dt;
-                velocity.y -= velocity.y * dt;
-            });
-        }
-
-
-        [Benchmark]
-        public void ForEachTwoPass()
-        {
-            _entities.ForEach((uint entity, ref Position position, ref Velocity velocity) =>
+            _entities.ForEntity((uint entity, ref Position position, ref Velocity velocity) =>
             {
                 position.x += velocity.x * dt;
                 position.y += velocity.y * dt;
             });
 
-            _entities.ForEach((uint entity, ref Velocity velocity) =>
+            _entities.ForEntity((uint entity, ref Velocity velocity) =>
             {
                 velocity.x -= velocity.x * dt;
                 velocity.y -= velocity.y * dt;
@@ -443,7 +384,7 @@ namespace Atma.Entities.Benchmarks
     {
         static void RunOnce(int iterations)
         {
-            var xyz = new ForEachBench();
+            var xyz = new ForEntityBench();
             xyz.N = 100000;
             xyz.Setup();
             var sw = Stopwatch.StartNew();
@@ -457,7 +398,7 @@ namespace Atma.Entities.Benchmarks
         {
             //for (var i = 0; i < 15; i++)
             //    RunOnce(1000);
-            var summary = BenchmarkRunner.Run<ForEachBench>();
+            var summary = BenchmarkRunner.Run<ForChunkBench>();
         }
     }
 }

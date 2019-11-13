@@ -47,6 +47,15 @@ namespace Atma.Entities
             return ComponentType.FindMatches(ComponentTypes, other.ComponentTypes, results);
         }
 
+        public int GetComponentIndex(in ComponentType type)
+        {
+            var id = type.ID;
+            for (var i = 0; i < ComponentTypes.Length; i++)
+                if (ComponentTypes[i].ID == id)
+                    return i;
+            return -1;
+        }
+
         public static EntitySpec Create<T0>()
             where T0 : unmanaged
             => new EntitySpec(ComponentType<T0>.Type);
