@@ -69,19 +69,16 @@ namespace Atma
                     var c1 = array.Specification.GetComponentIndex(componentTypes[1]);
                     var c2 = array.Specification.GetComponentIndex(componentTypes[2]);
 
-                    array.AllChunks.AsParallel()
-                        .WithDegreeOfParallelism(Environment.ProcessorCount)
-                        .WithMergeOptions(ParallelMergeOptions.NotBuffered)
-                        .ForAll(chunk =>
-                        {
-                            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type };
-                            var length = chunk.Count;
-                            var entities = chunk.Entities.AsSpan();
-                            var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
-                            var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
-                            var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
-                            view(length, entities, t0, t1, t2);
-                        });
+                    for (var k = 0; k < array.AllChunks.Count; k++)
+                    {
+                        var chunk = array.AllChunks[k];
+                        var length = chunk.Count;
+                        var entities = chunk.Entities.AsSpan();
+                        var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
+                        var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
+                        view(length, entities, t0, t1, t2);
+                    }
                 }
             }
         }

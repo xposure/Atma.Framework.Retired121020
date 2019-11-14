@@ -398,7 +398,7 @@ namespace Atma.Entities.Benchmarks
         {
             //for (var i = 0; i < 15; i++)
             //    RunOnce(1000);
-            var summary = BenchmarkRunner.Run<ForChunkBench>();
+            var summary = BenchmarkRunner.Run<ForEntityBench>();
         }
     }
 }

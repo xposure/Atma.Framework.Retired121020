@@ -28,6 +28,35 @@ namespace ExtensionGenerator
         protected void WriteFunction(int genericCount)
         {
             var generics = genericCount.Range().Select(i => $"T{i}").ToArray();
+            var spanGenerics = genericCount.Range().Select(i => $"Span<T{i}> t{i}");
+            var where = genericCount.Range().Select(i => $"where T{i}: unmanaged").ToArray();
+            var spanArgs = genericCount.Range().Select(i => $"ref T{i} t{i}");
+            var viewArgs = genericCount.Range().Select(i => $"ref t{i}[i]");
+
+            Console.WriteLine($"public delegate void ForEachEntity<{generics.Join()}>(uint entity, {spanArgs.Join()}){where.Join(" ")};");
+            Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityManager em, ForEachEntity<{generics.Join()}> view) ");
+            Console.WriteLine($"  {where.Join(" ")}");
+            Console.WriteLine($"{{");
+            Console.WriteLine($"  em.ForChunk((int length, ReadOnlySpan<uint> entities, {spanGenerics.Join()}) => {{");
+            Console.WriteLine($"    for (var i = 0; i < length; i++)");
+            Console.WriteLine($"      view(entities[i], {viewArgs.Join()});");
+            Console.WriteLine($"  }});");
+            Console.WriteLine($"}}");
+
+            // public unsafe static void ForChunkEntity<T0, T1>(this EntityManager em, ForEachExtensions.ForEachEntity<T0, T1> view)
+            //   where T0 : unmanaged where T1 : unmanaged
+            // {
+            //     em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0s, Span<T1> t1s) =>
+            //     {
+            //         for (var i = 0; i < length; i++)
+            //             view(entities[i], ref t0s[i], ref t1s[i]);
+            //     });
+            // }            
+        }
+
+        protected void WriteFunctionOld(int genericCount)
+        {
+            var generics = genericCount.Range().Select(i => $"T{i}").ToArray();
             var spanGenerics = genericCount.Range().Select(i => $"ref T{i} t{i}");
             var where = genericCount.Range().Select(i => $"where T{i}: unmanaged").ToArray();
             var componentType = genericCount.Range().Select(i => $"ComponentType<T{i}>.Type").ToArray();
