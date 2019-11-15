@@ -59,10 +59,10 @@ namespace Atma
 
         ~UnmanagedDispose()
         {
+            Dispose(false);
 #if DEBUG
             throw new Exception("Object was not disposed.\nCreated At:" + _stackTrace);
 #endif
-            Dispose(false);
         }
 
         public void Dispose()
