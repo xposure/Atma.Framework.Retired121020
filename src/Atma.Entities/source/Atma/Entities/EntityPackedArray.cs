@@ -32,6 +32,12 @@ namespace Atma.Entities
             => Specification.GetComponentIndex(ComponentType<T>.Type);
 
 
+        internal void Copy(ComponentType* componentType, void* src, int dstIndex)
+        {
+            var index = Specification.GetComponentIndex(componentType->ID);
+            Assert.GreatherThan(index, -1);
+            _componentData[index].Copy(src, dstIndex);
+        }
         //TODO: Add a group lock here and implement internal no lock moves in ComponentDataArray
         public void Move(int src, int dst)
         {

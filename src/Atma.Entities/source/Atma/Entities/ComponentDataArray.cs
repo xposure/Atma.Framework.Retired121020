@@ -86,6 +86,15 @@
 #endif
         }
 
+        internal void Copy(void* ptr, int dstIndex)
+        {
+            Assert.Range(dstIndex, 0, Length);
+            var addr = (byte*)_memoryHandle.Address;
+            var dst = addr + dstIndex * ElementSize;
+
+            _componentHelper.Copy(ptr, dst);
+        }
+
         public static void CopyTo(ComponentDataArray srcArray, int srcIndex, ComponentDataArray dstArray, int dstIndex)
         {
             Assert.EqualTo(srcArray._componentType.ID, dstArray._componentType.ID);

@@ -3,11 +3,10 @@ namespace Atma.Entities
     using System;
     using System.Linq;
 
-    public class EntitySpec
+    public struct EntitySpec : IEquatable<EntitySpec>
     {
         public readonly int ID;
         public readonly ComponentType[] ComponentTypes;
-        //public readonly ComponentTypeHelper[] componentTypeHelpers;
         public readonly int EntitySize;
 
         internal EntitySpec(int id, Span<ComponentType> componentTypes)
@@ -32,9 +31,10 @@ namespace Atma.Entities
 
         public bool HasAny(Span<ComponentType> componentTypes) => ComponentType.HasAny(ComponentTypes, componentTypes);
 
-        public bool Has(in ComponentType type)
+        public bool Has(in ComponentType type) => Has(type.ID);
+
+        internal bool Has(int id)
         {
-            var id = type.ID;
             for (var i = 0; i < ComponentTypes.Length; i++)
                 if (ComponentTypes[i].ID == id)
                     return true;
@@ -47,14 +47,17 @@ namespace Atma.Entities
             return ComponentType.FindMatches(ComponentTypes, other.ComponentTypes, results);
         }
 
-        public int GetComponentIndex(in ComponentType type)
+        internal int GetComponentIndex(int componentId)
         {
-            var id = type.ID;
             for (var i = 0; i < ComponentTypes.Length; i++)
-                if (ComponentTypes[i].ID == id)
+                if (ComponentTypes[i].ID == componentId)
                     return i;
             return -1;
         }
+
+        public int GetComponentIndex(in ComponentType type) => GetComponentIndex(type.ID);
+
+        public bool Equals(EntitySpec other) => this.ID == other.ID;
 
         public static EntitySpec Create<T0>()
             where T0 : unmanaged

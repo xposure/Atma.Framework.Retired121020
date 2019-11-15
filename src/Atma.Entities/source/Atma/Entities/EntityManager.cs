@@ -33,6 +33,7 @@
             _entityPool.Take();
         }
 
+
         private int GetOrCreateSpec(EntitySpec spec)
         {
             var specIndex = _knownSpecs.IndexOf(spec.ID);
@@ -74,10 +75,17 @@
             return entity;
         }
 
-        public void Assign<T>(uint entity, in T t)
-            where T : unmanaged
+        internal uint Create(int specId)
         {
-            Assert.EqualTo(Has<T>(entity), false);
+            var specIndex = _knownSpecs.IndexOf(specId);
+            Assert.GreatherThan(specIndex, -1);
+            var spec = _knownSpecs[specIndex];
+            return Create(spec);
+        }
+
+        internal unsafe void Assign(uint entity, ComponentType* type, void* src)
+        {
+            Assert.EqualTo(Has(entity, type->ID), false);
 
             ref var entityInfo = ref _entityPool[entity];
             var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
@@ -86,8 +94,7 @@
             Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
             srcSpec.ComponentTypes.CopyTo(componentTypes);
 
-            var newComponentType = ComponentType<T>.Type;
-            componentTypes[srcSpec.ComponentTypes.Length] = newComponentType;
+            componentTypes[srcSpec.ComponentTypes.Length] = *type;
 
             var specId = ComponentType.CalculateId(componentTypes);
             var dstSpecIndex = GetOrCreateSpec(componentTypes);
@@ -95,8 +102,38 @@
 
             Move(ref entityInfo, dstSpecIndex);
             //Move(entity, dstSpec);
-            Replace<T>(ref entityInfo, t);
+            Replace(entity, type, src); ;
         }
+
+        public unsafe void Assign<T>(uint entity, in T t)
+           where T : unmanaged
+        {
+            //assign has too move logic with moving data around so we are just going to put things on the stack and call a single function
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            var data = stackalloc[] { t };
+            Assign(entity, componentType, data);
+
+            // Assert.EqualTo(Has<T>(entity), false);
+
+            // ref var entityInfo = ref _entityPool[entity];
+            // var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
+
+            // //we need to move the entity to the new spec
+            // Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
+            // srcSpec.ComponentTypes.CopyTo(componentTypes);
+
+            // var newComponentType = ComponentType<T>.Type;
+            // componentTypes[srcSpec.ComponentTypes.Length] = newComponentType;
+
+            // var specId = ComponentType.CalculateId(componentTypes);
+            // var dstSpecIndex = GetOrCreateSpec(componentTypes);
+            // //var dstSpec = _knownSpecs[specIndex];
+
+            // Move(ref entityInfo, dstSpecIndex);
+            // //Move(entity, dstSpec);
+            // Replace<T>(ref entityInfo, t);
+        }
+
 
         public ref T Get<T>(uint entity)
             where T : unmanaged
@@ -121,14 +158,19 @@
             where T : unmanaged
         {
             ref var e = ref _entityPool[entity];
-            return Has<T>(ref e);
+            return Has(ref e, ComponentType<T>.Type.ID);
         }
 
-        private bool Has<T>(ref Entity entityInfo)
-            where T : unmanaged
+        private bool Has(uint entity, int componentId)
+        {
+            ref var e = ref _entityPool[entity];
+            return Has(ref e, componentId);
+        }
+
+        private bool Has(ref Entity entityInfo, int componentId)
         {
             var spec = _entityArrays[entityInfo.SpecIndex].Specification;
-            return spec.Has(ComponentType<T>.Type);
+            return spec.Has(componentId);
         }
 
         public void Remove(uint entity)
@@ -155,32 +197,39 @@
         }
 
         public void Remove<T>(uint entity)
-            where T : unmanaged
+          where T : unmanaged
         {
-            Assert.EqualTo(Has<T>(entity), true);
+            Remove(entity, ComponentType<T>.Type.ID);
+        }
 
-            var oldComponentType = ComponentType<T>.Type;
-            var oldComponentId = oldComponentType.ID;
+        internal bool Remove(uint entity, int componentId)
+        {
+            Assert.EqualTo(Has(entity, componentId), true);
+
             ref var entityInfo = ref _entityPool[entity];
             var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
 
             var srcComponentCount = srcSpec.ComponentTypes.Length - 1;
             if (srcComponentCount == 0)
+            {
                 //TODO: Should we throw an exception instead?
                 Remove(entity); //if there are no more components, delete the entity
+                return true;
+            }
             else
             {
                 //we need to move the entity to the new spec
                 var copyIndex = 0;
                 Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length - 1];
                 for (var i = 0; i < srcSpec.ComponentTypes.Length; i++)
-                    if (srcSpec.ComponentTypes[i].ID != oldComponentId)
+                    if (srcSpec.ComponentTypes[i].ID != componentId)
                         componentTypes[copyIndex++] = srcSpec.ComponentTypes[i];
 
                 var specId = ComponentType.CalculateId(componentTypes);
                 var dstSpecIndex = GetOrCreateSpec(componentTypes);
 
                 Move(ref entityInfo, dstSpecIndex);
+                return true;
             }
         }
 
@@ -191,10 +240,19 @@
             Replace<T>(ref e, t);
         }
 
+        internal unsafe void Replace(uint entity, ComponentType* type, void* ptr)
+        {
+            ref var e = ref _entityPool[entity];
+            Assert.Equals(Has(ref e, type->ID), true);
+            var array = _entityArrays[e.SpecIndex];
+            var chunk = array.AllChunks[e.ChunkIndex];
+            chunk.PackedArray.Copy(type, ptr, e.Index);
+        }
+
         public void Replace<T>(ref Entity entity, in T t)
           where T : unmanaged
         {
-            Assert.Equals(Has<T>(ref entity), true);
+            Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             var array = _entityArrays[entity.SpecIndex];
             var chunk = array.AllChunks[entity.ChunkIndex];
             var span = chunk.PackedArray.GetComponentSpan<T>();
@@ -228,6 +286,16 @@
                 Replace<T>(ref e, t);
             else
                 Assign<T>(entity, t);
+        }
+
+        internal unsafe void Update(uint entity, ComponentType* type, void* ptr)
+        {
+            ref var e = ref _entityPool[entity];
+            var spec = _entityArrays[e.SpecIndex].Specification;
+            if (spec.Has(type->ID))
+                Replace(entity, type, ptr);
+            else
+                Assign(entity, type, ptr);
         }
 
         public void Move(uint entity, EntitySpec spec)
