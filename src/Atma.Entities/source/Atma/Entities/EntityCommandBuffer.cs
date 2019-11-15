@@ -3,7 +3,7 @@ namespace Atma.Entities
     using System;
     using Atma.Memory;
 
-    public unsafe class EntityCommandBuffer : UnmanagedDispose
+    public unsafe readonly ref struct EntityCommandBuffer //: UnmanagedDispose
     {
         private enum CommandTypes
         {
@@ -36,18 +36,19 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
-            public int SpecId;
+            public int ComponentCount;
 
-            public CreateEntityCommand(EntitySpec spec)
+            public CreateEntityCommand(int componentCount)
             {
                 CommandType = CommandTypes.CreateEntity;
                 Size = sizeof(CreateEntityCommand);
-                SpecId = spec.ID;
+                ComponentCount = componentCount;
             }
 
             public static uint Process(EntityManager entityManager, CreateEntityCommand* it)
             {
-                return entityManager.Create(it->SpecId);
+                Span<ComponentType> componentTypes = new Span<ComponentType>((void*)(it + 1), it->ComponentCount);
+                return entityManager.Create(componentTypes);
             }
         }
 
@@ -155,16 +156,29 @@ namespace Atma.Entities
             }
         }
 
-        private NativeBuffer _buffer;
+        private readonly NativeBuffer _buffer;
 
-        internal EntityCommandBuffer(IAllocator allocator, int sizeInBytes = 65536)
+        public EntityCommandBuffer(IAllocator allocator, int sizeInBytes = 65536)
         {
             _buffer = new NativeBuffer(allocator, sizeInBytes);
         }
 
+        public unsafe void CreateEntity(Span<ComponentType> componentTypes)
+        {
+            //old code did not store the components and there is overhead to this
+            //but its the only way to make sure the em doesn't crash if it never 
+            //seen the spec before (old system stored all specs in a static array)
+
+            CreateEntityCommand* it = _buffer.Add(new CreateEntityCommand(componentTypes.Length));
+            for (var i = 0; i < componentTypes.Length; i++)
+                _buffer.Add(componentTypes[i]);
+
+            it->Size += sizeof(ComponentType);
+        }
         public void CreateEntity(EntitySpec spec)
         {
-            _buffer.Add(new CreateEntityCommand(spec));
+            Span<ComponentType> componentTypes = spec.ComponentTypes;
+            CreateEntity(componentTypes);
         }
 
         public void RemoveEntity(uint entity)
@@ -243,7 +257,7 @@ namespace Atma.Entities
             _buffer.Reset();
         }
 
-        protected override void OnUnmanagedDispose()
+        public void Dispose()
         {
             _buffer.Dispose();
         }

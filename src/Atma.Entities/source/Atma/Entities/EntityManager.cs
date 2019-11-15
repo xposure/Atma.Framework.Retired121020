@@ -75,13 +75,24 @@
             return entity;
         }
 
-        internal uint Create(int specId)
+        public uint Create(Span<ComponentType> componentTypes)
         {
-            var specIndex = _knownSpecs.IndexOf(specId);
-            Assert.GreatherThan(specIndex, -1);
-            var spec = _knownSpecs[specIndex];
-            return Create(spec);
+            var specIndex = GetOrCreateSpec(componentTypes);
+            var entity = _entityPool.Take();
+            ref var e = ref _entityPool[entity];
+
+            var index = _entityArrays[specIndex].Create(entity, out var chunkIndex);
+            e = new Entity(entity, specIndex, chunkIndex, index);
+            return entity;
         }
+
+        // internal uint Create(int specId)
+        // {
+        //     var specIndex = _knownSpecs.IndexOf(specId);
+        //     Assert.GreatherThan(specIndex, -1);
+        //     var spec = _knownSpecs[specIndex];
+        //     return Create(spec);
+        // }
 
         internal unsafe void Assign(uint entity, ComponentType* type, void* src)
         {
