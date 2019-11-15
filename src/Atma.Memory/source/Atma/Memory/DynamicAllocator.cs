@@ -86,7 +86,7 @@
             _handles[id] = new DynamicMemoryHandle(intPtr, id, 0, (uint)size);
 
             ++_blocks;
-            _logger.LogDebug($"DynamicAlloc allocated { _handles[id]}");
+            //_logger.LogDebug($"DynamicAlloc allocated { _handles[id]}");
 
             return new AllocationHandle(intPtr, id, 0);
         }
@@ -94,7 +94,7 @@
         public void Free(ref AllocationHandle handle)
         {
             AssertValid(ref handle);
-            _logger.LogDebug($"DynamicAlloc freeing {handle}");
+            //_logger.LogDebug($"DynamicAlloc freeing {handle}");
             Marshal.FreeHGlobal(handle.Address);
             _size -= _handles[handle.Id].Size;
             _handles[handle.Id] = new DynamicMemoryHandle(IntPtr.Zero, 0, 0, 0);

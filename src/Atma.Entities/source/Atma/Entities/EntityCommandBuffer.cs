@@ -86,9 +86,9 @@ namespace Atma.Entities
                 ComponentType = componentType;
             }
 
-            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it)
+            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, uint lastEntity)
             {
-                entityManager.Replace(it->Entity, &it->ComponentType, (void*)(it + 1));
+                entityManager.Replace(it->Entity > 0u ? it->Entity : lastEntity, &it->ComponentType, (void*)(it + 1));
             }
         }
 
@@ -107,9 +107,9 @@ namespace Atma.Entities
                 ComponentType = componentType;
             }
 
-            public static void Process(EntityManager entityManager, UpdateComponentCommand* it)
+            public static void Process(EntityManager entityManager, UpdateComponentCommand* it, uint lastEntity)
             {
-                entityManager.Update(it->Entity, &it->ComponentType, (void*)(it + 1));
+                entityManager.Update(it->Entity > 0u ? it->Entity : lastEntity, &it->ComponentType, (void*)(it + 1));
             }
         }
 
@@ -128,9 +128,9 @@ namespace Atma.Entities
                 ComponentType = componentType;
             }
 
-            public static void Process(EntityManager entityManager, AssignComponentCommand* it)
+            public static void Process(EntityManager entityManager, AssignComponentCommand* it, uint lastEntity)
             {
-                entityManager.Assign(it->Entity, &it->ComponentType, (void*)(it + 1));
+                entityManager.Assign(it->Entity > 0u ? it->Entity : lastEntity, &it->ComponentType, (void*)(it + 1));
             }
         }
 
@@ -150,9 +150,9 @@ namespace Atma.Entities
                 ComponentId = componentId;
             }
 
-            public static bool Process(EntityManager entityManager, RemoveComponentCommand* it)
+            public static bool Process(EntityManager entityManager, RemoveComponentCommand* it, uint lastEntity)
             {
-                return entityManager.Remove(it->Entity, it->ComponentId);
+                return entityManager.Remove(it->Entity > 0u ? it->Entity : lastEntity, it->ComponentId);
             }
         }
 
@@ -186,6 +186,15 @@ namespace Atma.Entities
             _buffer.Add(new RemoveEntityCommand(entity));
         }
 
+        public void ReplaceComponent<T>(in T t)
+            where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(0u, type));
+            _buffer.Add(t);
+            it->Size += type.Size;
+        }
+
         public void ReplaceComponent<T>(uint entity, in T t)
             where T : unmanaged
         {
@@ -202,11 +211,28 @@ namespace Atma.Entities
             _buffer.Add(new RemoveComponentCommand(entity, type.ID));
         }
 
+        public void AssignComponent<T>(in T t)
+            where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(0u, type));
+            _buffer.Add(t);
+            it->Size += type.Size;
+        }
         public void AssignComponent<T>(uint entity, in T t)
             where T : unmanaged
         {
             var type = ComponentType<T>.Type;
             AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(entity, type));
+            _buffer.Add(t);
+            it->Size += type.Size;
+        }
+
+        public void UpdateComponent<T>(in T t)
+           where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(0u, type));
             _buffer.Add(t);
             it->Size += type.Size;
         }
@@ -237,18 +263,18 @@ namespace Atma.Entities
                         lastEntity = 0u;
                         break;
                     case CommandTypes.AssignComponent:
-                        AssignComponentCommand.Process(em, (AssignComponentCommand*)cmd);
+                        AssignComponentCommand.Process(em, (AssignComponentCommand*)cmd, lastEntity);
                         break;
                     case CommandTypes.ReplaceComponent:
-                        ReplaceComponentCommand.Process(em, (ReplaceComponentCommand*)cmd);
+                        ReplaceComponentCommand.Process(em, (ReplaceComponentCommand*)cmd, lastEntity);
                         break;
                     case CommandTypes.RemoveComponent:
                         //removing the last component of an entity has the side effect of deleting it, could cause bugs
-                        if (RemoveComponentCommand.Process(em, (RemoveComponentCommand*)cmd))
+                        if (RemoveComponentCommand.Process(em, (RemoveComponentCommand*)cmd, lastEntity))
                             lastEntity = 0u;
                         break;
                     case CommandTypes.UpdateComponent:
-                        UpdateComponentCommand.Process(em, (UpdateComponentCommand*)cmd);
+                        UpdateComponentCommand.Process(em, (UpdateComponentCommand*)cmd, lastEntity);
                         break;
                 }
                 rawPtr += cmd->Size;
