@@ -359,6 +359,51 @@
             em.EntityCount.ShouldBe(1);
         }
 
+        [Fact]
+        public unsafe void ShouldCopyDataPtr()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
+            var spec0 = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+            var spec1 = new EntitySpec(ComponentType<Position>.Type);
+
+            //act
+            var id0 = em.Create(spec0);
+            var id1 = em.Create(spec1);
+            var id2 = em.Create(spec1);
+            var id3 = em.Create(spec0);
+
+            using var entities = new NativeArray<uint>(memory, 4);
+            entities[0] = id0;
+            entities[1] = id1;
+            entities[2] = id2;
+            entities[3] = id3;
+
+            using var data = new NativeArray<Position>(memory, 4);
+            data[0] = new Position(100, 100);
+            data[1] = new Position(200, 200);
+            data[2] = new Position(400, 100);
+            data[3] = new Position(100, 400);
+
+            em.Replace(entities, data);
+
+            //assert
+            var p0 = em.Get<Position>(id0);
+            var p1 = em.Get<Position>(id1);
+            var p2 = em.Get<Position>(id2);
+            var p3 = em.Get<Position>(id3);
+
+            p0.X.ShouldBe(100);
+            p0.Y.ShouldBe(100);
+            p1.X.ShouldBe(200);
+            p1.Y.ShouldBe(200);
+            p2.X.ShouldBe(400);
+            p2.Y.ShouldBe(100);
+            p3.X.ShouldBe(100);
+            p3.Y.ShouldBe(400);
+        }
+
         // public void ShouldCreateValidArchetype()
         // {
         //     var _manager = GetEntityManager();

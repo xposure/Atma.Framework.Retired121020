@@ -276,6 +276,33 @@ namespace Atma.Entities
             span[entity.Index] = t;
         }
 
+        public unsafe void Replace<T>(NativeArray<uint> entities, in NativeArray<T> t)
+            where T : unmanaged
+        {
+            Assert.EqualTo(entities.Length, t.Length);
+            //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref _entityPool[entities[i]];
+                Assert.Equals(Has(ref e, componentType->ID), true);
+                entityRefs[i] = e;
+            }
+
+            //TODO: should we set a cap to ensure no infinite loop from a bug?
+            var src = (void*)t.RawPointer;
+            var slice = entityRefs.Slice();
+            while (slice.Length > 0)
+            {
+                ref var e = ref slice[0];
+                var array = _entityArrays[e.SpecIndex];
+                var length = slice.Length;
+                slice = array.Copy(componentType, ref src, slice);
+                Assert.NotEqualTo(slice.Length, length);
+            }
+        }
+
         public void Reset(uint entity)
         {
             ref var e = ref _entityPool[entity];

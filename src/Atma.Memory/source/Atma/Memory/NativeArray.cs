@@ -125,6 +125,8 @@
             }
         }
 
+        public static implicit operator Span<T>(NativeArray<T> it) => it.Span;
+
         public override string ToString()
         {
             return Slice().ToString();
