@@ -360,7 +360,7 @@
         }
 
         [Fact]
-        public unsafe void ShouldCopyDataPtr()
+        public unsafe void ShouldBulkReplaceWithNativeArrays()
         {
             //arrange
             using var memory = new DynamicAllocator(_logFactory);

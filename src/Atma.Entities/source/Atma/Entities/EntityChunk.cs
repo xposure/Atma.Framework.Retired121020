@@ -46,6 +46,16 @@ namespace Atma.Entities
             return index;
         }
 
+        public void Create(NativeSlice<uint> entities, int count)
+        {
+            Assert.GreatherThanEqualTo(Free, count);
+            for (var i = 0; i < entities.Length; i++)
+            {
+                var index = _entityCount++;
+                _entities[index] = entities[i];
+            }
+        }
+
         // internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities)
         // {
         //     for (var i = 0; i < entities.Length; i++)
