@@ -46,6 +46,17 @@ namespace Atma.Entities
             return index;
         }
 
+        // internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities)
+        // {
+        //     for (var i = 0; i < entities.Length; i++)
+        //     {
+
+        //     }
+
+
+        //     return entities;
+        // }
+
         public int Delete(int index)
         {
             Assert.Range(index, 0, _entityCount);

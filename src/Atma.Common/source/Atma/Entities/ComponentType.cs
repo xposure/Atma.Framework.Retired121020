@@ -213,6 +213,7 @@
         }
     }
 
+    public unsafe delegate void CopyAndMoveNext(ref void* src, ref void* dst);
     public unsafe delegate void Copy(void* src, void* dst);
     public unsafe delegate void Reset(void* dst);
 
@@ -230,11 +231,13 @@
 
         public readonly ComponentType ComponentType;
         public readonly Copy Copy;
+        public readonly CopyAndMoveNext CopyAndMoveNext;
         public readonly Reset Reset;
-        internal ComponentTypeHelper(ComponentType componentType, Copy copy, Reset reset)
+        internal ComponentTypeHelper(ComponentType componentType, Copy copy, CopyAndMoveNext copyAndMoveNext, Reset reset)
         {
             ComponentType = componentType;
             Copy = copy;
+            CopyAndMoveNext = copyAndMoveNext;
             Reset = reset;
             _helpers.Add(componentType.ID, this);
         }
@@ -251,9 +254,17 @@
             var unmanagedType = UnmanagedType<T>.Type;
             Type = new ComponentType(unmanagedType.ID, unmanagedType.Size);
 
+            CopyAndMoveNext copyAndMoveNext = (ref void* src, ref void* dst) =>
+            {
+                T* srcT = (T*)src;
+                T* dstT = (T*)dst;
+                *dstT++ = *srcT++;
+                src = srcT;
+                dst = dstT;
+            };
             Copy copy = (void* src, void* dst) => *(T*)dst = *(T*)src;
             Reset reset = (void* dst) => *(T*)dst = default;
-            Helper = new ComponentTypeHelper(Type, copy, reset);
+            Helper = new ComponentTypeHelper(Type, copy, copyAndMoveNext, reset);
         }
     }
 

@@ -38,6 +38,12 @@ namespace Atma.Entities
             Assert.GreatherThan(index, -1);
             _componentData[index].Copy(src, dstIndex);
         }
+
+        internal void Copy(int componentIndex, ref void* src, int dstIndex, int length)
+        {
+            _componentData[componentIndex].Copy(ref src, dstIndex, length);
+        }
+
         //TODO: Add a group lock here and implement internal no lock moves in ComponentDataArray
         public void Move(int src, int dst)
         {

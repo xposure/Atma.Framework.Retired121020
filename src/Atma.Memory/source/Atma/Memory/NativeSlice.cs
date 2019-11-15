@@ -5,7 +5,7 @@
     using System.Text;
     using static Atma.Debug;
 
-    public unsafe ref struct NativeSlice<T>
+    public unsafe readonly ref struct NativeSlice<T>
         where T : unmanaged
     {
         private readonly T* _rawAddress;
@@ -74,6 +74,13 @@
         }
 
         public Span<T> AsSpan() => new Span<T>(RawPointer, Length);
+
+        public NativeSlice<T> Slice(int start)
+        {
+            var addr = (T*)_rawAddress;
+            addr += start;
+            return new NativeSlice<T>(addr, Length - start);
+        }
 
         public override string ToString()
         {

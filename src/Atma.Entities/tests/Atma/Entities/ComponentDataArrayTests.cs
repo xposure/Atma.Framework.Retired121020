@@ -1,8 +1,6 @@
 namespace Atma.Entities
 {
     using System;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Atma.Memory;
     using Divergic.Logging.Xunit;
     using Microsoft.Extensions.Logging;
@@ -180,6 +178,33 @@ namespace Atma.Entities
             p1.Y.ShouldBe(20);
             p1.X.ShouldBe(p1.X);
             p1.Y.ShouldBe(p1.Y);
+        }
+
+
+        [Fact]
+        public unsafe void ShouldCopyVoidPtr()
+        {
+            //arrange
+            var componentType = ComponentType<Position>.Type;
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
+
+            var span = data.AsSpan<Position>();
+            var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
+            var src = (void*)ptr;
+
+            //act
+            data.Copy(ref src, 0, 4);
+
+            //assert
+            span[0].X.ShouldBe(100);
+            span[0].Y.ShouldBe(100);
+            span[1].X.ShouldBe(200);
+            span[1].Y.ShouldBe(200);
+            span[2].X.ShouldBe(400);
+            span[2].Y.ShouldBe(100);
+            span[3].X.ShouldBe(100);
+            span[3].Y.ShouldBe(400);
         }
     }
 }

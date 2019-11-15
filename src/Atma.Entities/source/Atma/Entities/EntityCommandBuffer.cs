@@ -36,12 +36,14 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
+            public int EntityCount;
             public int ComponentCount;
 
-            public CreateEntityCommand(int componentCount)
+            public CreateEntityCommand(int entityCount, int componentCount)
             {
                 CommandType = CommandTypes.CreateEntity;
                 Size = sizeof(CreateEntityCommand);
+                EntityCount = entityCount;
                 ComponentCount = componentCount;
             }
 
@@ -163,22 +165,22 @@ namespace Atma.Entities
             _buffer = new NativeBuffer(allocator, sizeInBytes);
         }
 
-        public unsafe void CreateEntity(Span<ComponentType> componentTypes)
+        public unsafe void CreateEntity(Span<ComponentType> componentTypes, int count = 1)
         {
             //old code did not store the components and there is overhead to this
             //but its the only way to make sure the em doesn't crash if it never 
             //seen the spec before (old system stored all specs in a static array)
 
-            CreateEntityCommand* it = _buffer.Add(new CreateEntityCommand(componentTypes.Length));
+            CreateEntityCommand* it = _buffer.Add(new CreateEntityCommand(count, componentTypes.Length));
             for (var i = 0; i < componentTypes.Length; i++)
                 _buffer.Add(componentTypes[i]);
 
             it->Size += sizeof(ComponentType);
         }
-        public void CreateEntity(EntitySpec spec)
+        public void CreateEntity(EntitySpec spec, int count = 1)
         {
             Span<ComponentType> componentTypes = spec.ComponentTypes;
-            CreateEntity(componentTypes);
+            CreateEntity(componentTypes, count);
         }
 
         public void RemoveEntity(uint entity)

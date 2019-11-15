@@ -44,6 +44,37 @@
             return chunk.Create(entity);
         }
 
+
+        // public void Create(NativeArray<uint> entity, out int chunkIndex)
+        // {
+        //     _entityCount++;
+        //     var chunk = GetOrCreateFreeChunk(out chunkIndex);
+        //     return chunk.Create(entity);
+        // }
+
+        internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities)
+        {
+            Assert.GreatherThan(entities.Length, 0);
+
+            var componentIndex = Specification.GetComponentIndex(componentType->ID);
+            var chunkIndex = entities[0].ChunkIndex;
+            var chunk = _chunks[chunkIndex];
+
+            ref var e = ref entities[0];
+            var index = e.Index;
+            var length = 1;
+            for (; length < entities.Length; length++)
+            {
+                ref var e1 = ref entities[length];
+                if (e.SpecIndex != e1.SpecIndex || e1.ChunkIndex != e.ChunkIndex || e1.Index != ++index)
+                    break;
+            }
+
+            chunk.PackedArray.Copy(componentIndex, ref src, e.Index, length);
+            return entities.Slice(length);
+        }
+
+
         private EntityChunk GetOrCreateFreeChunk(out int chunkIndex)
         {
             for (chunkIndex = 0; chunkIndex < _chunks.Count; chunkIndex++)

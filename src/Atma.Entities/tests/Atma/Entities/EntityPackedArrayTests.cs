@@ -135,6 +135,38 @@ namespace Atma.Entities
             }
         }
 
+
+        [Fact]
+        public unsafe void ShouldCopyPtrDataToComponent()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            var specification = new EntitySpec(
+                ComponentType<Position>.Type,
+                ComponentType<Velocity>.Type
+            );
+
+            using var entityGroup = new EntityPackedArray(_logFactory, memory, specification);
+            var componentIndex = entityGroup.GetComponentIndex<Position>();
+            var span = entityGroup.GetComponentSpan<Position>();
+
+            var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
+            var src = (void*)ptr;
+
+            //act
+            entityGroup.Copy(componentIndex, ref src, 0, 4);
+
+            //assert
+            span[0].X.ShouldBe(100);
+            span[0].Y.ShouldBe(100);
+            span[1].X.ShouldBe(200);
+            span[1].Y.ShouldBe(200);
+            span[2].X.ShouldBe(400);
+            span[2].Y.ShouldBe(100);
+            span[3].X.ShouldBe(100);
+            span[3].Y.ShouldBe(400);
+        }
+
         [Fact]
         public void ShouldMoveEntity()
         {

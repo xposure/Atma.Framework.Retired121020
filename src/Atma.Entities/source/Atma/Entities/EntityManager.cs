@@ -1,4 +1,5 @@
-﻿namespace Atma.Entities
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Atma.Entities.Tests")]
+namespace Atma.Entities
 {
     using Atma.Common;
     using Atma.Memory;
@@ -84,6 +85,11 @@
             var index = _entityArrays[specIndex].Create(entity, out var chunkIndex);
             e = new Entity(entity, specIndex, chunkIndex, index);
             return entity;
+        }
+
+        public void Create(int count, NativeArray<uint> entities)
+        {
+
         }
 
         // internal uint Create(int specId)

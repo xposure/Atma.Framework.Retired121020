@@ -109,6 +109,94 @@
             chunkArray.Free.ShouldBe(Entity.ENTITY_MAX - 1);
         }
 
+        [Fact]
+        public unsafe void ShoudlCopyPtrData()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            var specifcation = new EntitySpec(
+                ComponentType<Position>.Type
+            );
+
+            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            var entity = 1u;
+            var specIndex = 0;
+            var index = chunkArray.Create(entity, out var chunkIndex);
+            var componentType = stackalloc[] { ComponentType<Position>.Type };
+            var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
+            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentSpan<Position>();
+
+            var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
+            var src = (void*)ptr;
+
+            using var entities = new NativeArray<Entity>(memory, 4);
+            entities[0] = new Entity(entity, specIndex, chunkIndex, index);
+
+            //act
+            var remaining = chunkArray.Copy(componentType, ref src, entities.Slice());
+
+            //assert
+            remaining.Length.ShouldBe(3);
+            span[0].X.ShouldBe(100);
+            span[0].Y.ShouldBe(100);
+        }
+
+        [Fact]
+        public unsafe void ShouldCopyMoreThanOne()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            var specifcation = new EntitySpec(
+                ComponentType<Position>.Type
+            );
+
+            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            var entity0 = 1u;
+            var entity1 = 2u;
+            var entity2 = 3u;
+            var entity3 = 4u;
+            var specIndex = 0;
+            var index0 = chunkArray.Create(entity0, out var chunkIndex);
+            var index1 = chunkArray.Create(entity1, out var _);
+            var index2 = chunkArray.Create(entity2, out var _);
+            var index3 = chunkArray.Create(entity3, out var _);
+
+            var componentType = stackalloc[] { ComponentType<Position>.Type };
+            var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
+            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentSpan<Position>();
+
+            var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
+            var src = (void*)ptr;
+
+            using var entities = new NativeArray<Entity>(memory, 4);
+            entities[0] = new Entity(entity0, specIndex, chunkIndex, index0);
+            entities[1] = new Entity(entity1, specIndex, chunkIndex, index1);
+
+            //swapping 2 and 3 to see if we can resume correctly
+            entities[2] = new Entity(entity3, specIndex, chunkIndex, index3);
+            entities[3] = new Entity(entity2, specIndex, chunkIndex, index2);
+
+            //act
+            var slice = entities.Slice();
+            var attempts = 4;//make sure we don't get in a inifinite loop
+            while (slice.Length > 0 && attempts-- > 0)
+            {
+                slice = chunkArray.Copy(componentType, ref src, slice);
+            }
+
+            //assert
+            slice.Length.ShouldBe(0);
+            attempts.ShouldBe(1);
+            span[0].X.ShouldBe(100);
+            span[0].Y.ShouldBe(100);
+            span[1].X.ShouldBe(200);
+            span[1].Y.ShouldBe(200);
+            span[3].X.ShouldBe(400);
+            span[3].Y.ShouldBe(100);
+            span[2].X.ShouldBe(100);
+            span[2].Y.ShouldBe(400);
+        }
+
         // public void ShouldMoveToAnotherArray()
         // {
         //     //arrange
