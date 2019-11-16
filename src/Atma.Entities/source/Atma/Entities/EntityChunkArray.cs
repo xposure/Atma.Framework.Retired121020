@@ -45,14 +45,21 @@
         }
 
 
-        // public void Create(NativeArray<uint> entity, out int chunkIndex)
-        // {
-        //     _entityCount++;
-        //     var chunk = GetOrCreateFreeChunk(out chunkIndex);
-        //     return chunk.Create(entity);
-        // }
+        public void Create(NativeSlice<uint> entity)
+        {
+            var i = 0;
+            while (i < entity.Length)
+            {
+                var remaining = entity.Length - i;
+                var chunk = GetOrCreateFreeChunk(out var chunkIndex);
+                var count = chunk.Free > remaining ? remaining : chunk.Free;
+                chunk.Create(entity.Slice(i, count));
+                i += count;
+                _entityCount += count;
+            }
+        }
 
-        internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities)
+        internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities, bool oneToMany)
         {
             Assert.GreatherThan(entities.Length, 0);
 
@@ -70,7 +77,7 @@
                     break;
             }
 
-            chunk.PackedArray.Copy(componentIndex, ref src, e.Index, length);
+            chunk.PackedArray.Copy(componentIndex, ref src, e.Index, length, oneToMany);
             return entities.Slice(length);
         }
 

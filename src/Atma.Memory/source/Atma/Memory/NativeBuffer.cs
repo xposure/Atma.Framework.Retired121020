@@ -88,6 +88,17 @@
             return location;
         }
 
+        public unsafe T* Take<T>(int count)
+            where T : unmanaged
+        {
+            var sizeInBytes = SizeOf<T>.Size * count;
+            EnsureCapacity(sizeInBytes);
+
+            var location = (T*)EndPointer;
+            Length += sizeInBytes;
+            return location;
+        }
+
 
         /// <summary>
         /// if the buffer is at its max more space will be allocated to fit additionalItemCount

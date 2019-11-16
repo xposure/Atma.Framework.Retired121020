@@ -87,9 +87,16 @@ namespace Atma.Entities
             return entity;
         }
 
-        public void Create(int count, NativeArray<uint> entities)
-        {
+        public void Create(EntitySpec spec, NativeArray<uint> entities) => Create(spec.ComponentTypes, entities);
 
+        public void Create(Span<ComponentType> componentTypes, NativeSlice<uint> entities)
+        {
+            var specId = ComponentType.CalculateId(componentTypes);
+            var specIndex = GetOrCreateSpec(componentTypes);
+            var array = _entityArrays[specIndex];
+
+            _entityPool.Take(entities);
+            array.Create(entities);
         }
 
         // internal uint Create(int specId)
@@ -99,28 +106,63 @@ namespace Atma.Entities
         //     var spec = _knownSpecs[specIndex];
         //     return Create(spec);
         // }
-
-        internal unsafe void Assign(uint entity, ComponentType* type, void* src)
+        private void GetEntities(NativeSlice<uint> ids, NativeSlice<Entity> entities)
         {
-            Assert.EqualTo(Has(entity, type->ID), false);
 
-            ref var entityInfo = ref _entityPool[entity];
-            var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
-
-            //we need to move the entity to the new spec
-            Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
-            srcSpec.ComponentTypes.CopyTo(componentTypes);
-
-            componentTypes[srcSpec.ComponentTypes.Length] = *type;
-
-            var specId = ComponentType.CalculateId(componentTypes);
-            var dstSpecIndex = GetOrCreateSpec(componentTypes);
-            //var dstSpec = _knownSpecs[specIndex];
-
-            Move(ref entityInfo, dstSpecIndex);
-            //Move(entity, dstSpec);
-            Replace(entity, type, src); ;
         }
+
+        internal unsafe void Assign(uint entity, ComponentType* type, void* src, bool oneToMany)
+        {
+            ref var e = ref _entityPool[entity];
+            var entities = stackalloc Entity[] { e };
+            var slice = new NativeSlice<Entity>(entities, 1);
+
+            Move(slice, type);
+            Replace(entity, type, src);
+        }
+
+        internal unsafe void Assign(NativeSlice<uint> entities, ComponentType* type, void* src, bool oneToMany)
+        {
+            using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
+
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref _entityPool[entities[i]];
+                entityRefs[i] = e;
+                Assert.EqualTo(Has(ref e, type->ID), false);
+            }
+
+            Move(entityRefs, type);
+
+            //TODO: pass the entity ref array in instead of looking it up again
+            SetComponentInternal(type, entities, src, oneToMany, false);
+        }
+
+        internal unsafe void Move(NativeSlice<Entity> entities, ComponentType* type)
+        {
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var entityInfo = ref entities[i];
+                Assert.EqualTo(Has(ref entityInfo, type->ID), false);
+                var srcSpecIndex = entityInfo.SpecIndex;
+                var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
+
+                //we need to move the entity to the new spec
+                Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
+                srcSpec.ComponentTypes.CopyTo(componentTypes);
+
+                componentTypes[srcSpec.ComponentTypes.Length] = *type;
+
+                var specId = ComponentType.CalculateId(componentTypes);
+                var dstSpecIndex = GetOrCreateSpec(componentTypes);
+                //var dstSpec = _knownSpecs[specIndex];
+
+                Move(ref entityInfo, dstSpecIndex);
+                while (i < entities.Length && entities[i + 1].SpecIndex == srcSpecIndex)
+                    Move(ref entities[++i], dstSpecIndex);
+            }
+        }
+
 
         public unsafe void Assign<T>(uint entity, in T t)
            where T : unmanaged
@@ -128,7 +170,8 @@ namespace Atma.Entities
             //assign has too move logic with moving data around so we are just going to put things on the stack and call a single function
             var componentType = stackalloc[] { ComponentType<T>.Type };
             var data = stackalloc[] { t };
-            Assign(entity, componentType, data);
+            var entities = stackalloc[] { entity };
+            Assign(new NativeSlice<uint>(entities, 1), componentType, data, true);
 
             // Assert.EqualTo(Has<T>(entity), false);
 
@@ -190,11 +233,21 @@ namespace Atma.Entities
             return spec.Has(componentId);
         }
 
-        public void Remove(uint entity)
+        public unsafe void Remove(uint entity)
         {
-            ref var e = ref _entityPool[entity];
-            Remove(ref e);
-            _entityPool.Return(entity);
+            var entities = stackalloc[] { entity };
+            Remove(new NativeSlice<uint>(entities, 1));
+        }
+
+        public void Remove(NativeSlice<uint> entities)
+        {
+            for (var i = 0; i < entities.Length; i++)
+            {
+                var entity = entities[i];
+                ref var e = ref _entityPool[entity];
+                Remove(ref e);
+                _entityPool.Return(entity);
+            }
         }
 
         private void Remove(ref Entity e)
@@ -276,30 +329,75 @@ namespace Atma.Entities
             span[entity.Index] = t;
         }
 
+        public unsafe void Replace<T>(NativeArray<uint> entities, in T t)
+            where T : unmanaged
+        {
+            var data = stackalloc[] { t };
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            SetComponentInternal(componentType, entities, data, true, false);
+        }
+
         public unsafe void Replace<T>(NativeArray<uint> entities, in NativeArray<T> t)
             where T : unmanaged
         {
             Assert.EqualTo(entities.Length, t.Length);
-            //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
-            var componentType = stackalloc[] { ComponentType<T>.Type };
-            using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
-            for (var i = 0; i < entities.Length; i++)
-            {
-                ref var e = ref _entityPool[entities[i]];
-                Assert.Equals(Has(ref e, componentType->ID), true);
-                entityRefs[i] = e;
-            }
 
-            //TODO: should we set a cap to ensure no infinite loop from a bug?
-            var src = (void*)t.RawPointer;
-            var slice = entityRefs.Slice();
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            SetComponentInternal(componentType, entities, t.RawPointer, false, false);
+        }
+
+        internal unsafe void SetComponentInternal(EntityChunkArray array, NativeSlice<Entity> slice, ComponentType* componentType, void* src, bool oneToMany)
+        {
             while (slice.Length > 0)
             {
                 ref var e = ref slice[0];
-                var array = _entityArrays[e.SpecIndex];
                 var length = slice.Length;
-                slice = array.Copy(componentType, ref src, slice);
+                slice = array.Copy(componentType, ref src, slice, oneToMany);
                 Assert.NotEqualTo(slice.Length, length);
+            }
+        }
+
+        internal unsafe void SetComponentInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany, bool allowAssign)
+        {
+            //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
+            //we are going to put replaces in front of the array and assigns in the back if we are allowed
+            using var entityRefs = new NativeList<Entity>(_allocator, entities.Length);
+
+            //TODO: come back to this
+            Assert.EqualTo(allowAssign, false);
+
+            //this whole function needs rewrote, we need to do this in a loop and group specIndices together
+            var specIndex = -1;
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref _entityPool[entities[i]];
+                if (e.SpecIndex != specIndex)
+                {
+                    //flush
+                    if (entityRefs.Length > 0)
+                    {
+                        var array = _entityArrays[specIndex];
+                        SetComponentInternal(array, entityRefs.Slice(), componentType, src, oneToMany);
+                        entityRefs.Reset();
+                    }
+                    specIndex = e.SpecIndex;
+                }
+                if (Has(ref e, componentType->ID))
+                {
+                    entityRefs.Add(e);
+                }
+                else
+                {
+                    Assert.EqualTo(true, false); //no update yet
+                    //Assert.EqualTo(allowAssign, true);
+                    //entityRefs[assign--] = e;
+                }
+            }
+
+            if (entityRefs.Length > 0)
+            {
+                var array = _entityArrays[specIndex];
+                SetComponentInternal(array, entityRefs.Slice(), componentType, src, oneToMany);
             }
         }
 
@@ -339,7 +437,29 @@ namespace Atma.Entities
             if (spec.Has(type->ID))
                 Replace(entity, type, ptr);
             else
-                Assign(entity, type, ptr);
+                Assign(entity, type, ptr, true);
+        }
+
+        internal unsafe void UpdateInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany)
+        {
+            //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
+            using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref _entityPool[entities[i]];
+                Assert.Equals(Has(ref e, componentType->ID), true);
+                entityRefs[i] = e;
+            }
+
+            var slice = entityRefs.Slice();
+            while (slice.Length > 0)
+            {
+                ref var e = ref slice[0];
+                var array = _entityArrays[e.SpecIndex];
+                var length = slice.Length;
+                slice = array.Copy(componentType, ref src, slice, oneToMany);
+                Assert.NotEqualTo(slice.Length, length);
+            }
         }
 
         public void Move(uint entity, EntitySpec spec)

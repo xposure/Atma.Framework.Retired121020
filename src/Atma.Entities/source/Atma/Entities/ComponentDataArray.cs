@@ -86,14 +86,25 @@
 #endif
         }
 
-        internal void Copy(ref void* ptr, int dstIndex, int length)
+        internal void Copy(ref void* ptr, int dstIndex, int length, bool oneToMany)
         {
             Assert.Range(dstIndex, 0, Length - length + 1);
             var addr = (byte*)_memoryHandle.Address;
             var dst = (void*)(addr + dstIndex * ElementSize);
 
-            while (length-- > 0)
-                _componentHelper.CopyAndMoveNext(ref ptr, ref dst);
+            if (oneToMany)
+            {
+                while (length-- > 0)
+                {
+                    var savePtr = ptr;
+                    _componentHelper.CopyAndMoveNext(ref savePtr, ref dst);
+                }
+            }
+            else
+            {
+                while (length-- > 0)
+                    _componentHelper.CopyAndMoveNext(ref ptr, ref dst);
+            }
         }
 
         internal void Copy(void* ptr, int dstIndex)

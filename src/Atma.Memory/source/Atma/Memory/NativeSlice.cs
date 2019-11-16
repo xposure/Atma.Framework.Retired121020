@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
-    using static Atma.Debug;
 
     public unsafe readonly ref struct NativeSlice<T>
         where T : unmanaged
@@ -13,6 +12,9 @@
 
         public T* RawPointer => _rawAddress;
         public T* EndPointer => _rawAddress + Length;
+
+        public static NativeSlice<T> Empty => new NativeSlice<T>(null, 0);
+        public bool IsEmpty => Length == 0;
 
         internal NativeSlice(in AllocationHandle handle, int start, int length)
         {
@@ -34,7 +36,7 @@
         {
             get
             {
-                Assert(index >= 0 && index < Length);
+                Assert.Range(index, 0, Length);
                 return ref RawPointer[index];
             }
         }
@@ -75,8 +77,15 @@
 
         public Span<T> AsSpan() => new Span<T>(RawPointer, Length);
 
-        public NativeSlice<T> Slice(int start)
+        public NativeSlice<T> Slice() => Slice(0, Length);
+
+        public NativeSlice<T> Slice(int start) => Slice(start, Length - start);
+
+        public NativeSlice<T> Slice(int start, int length)
         {
+            Assert.GreatherThanEqualTo(start, 0);
+            Assert.GreatherThanEqualTo(length, 0);
+            Assert.LessThanEqualTo(start + length, Length);
             var addr = (T*)_rawAddress;
             addr += start;
             return new NativeSlice<T>(addr, Length - start);

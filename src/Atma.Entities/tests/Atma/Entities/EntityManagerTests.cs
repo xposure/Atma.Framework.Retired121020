@@ -87,6 +87,27 @@
         }
 
         [Fact]
+        public void ShouldBulkCreateEntities()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            using var em = new EntityManager(_logFactory, memory);
+            var spec = new EntitySpec(ComponentType<Position>.Type);
+
+            //act
+            using var entities = new NativeArray<uint>(memory, 32);
+            em.Create(spec, entities);
+
+            //assert
+            for (var i = 0; i < entities.Length; i++)
+            {
+                var id = (int)(entities[i] & 0xffffff);
+                id.ShouldBe(i + 1);
+            }
+
+        }
+
+        [Fact]
         public void ShouldShouldDeleteEntity()
         {
             //arrange
@@ -179,7 +200,6 @@
             em.EntityArrays[0].EntityCount.ShouldBe(1);
             em.EntityCount.ShouldBe(1);
         }
-
 
         [Fact]
         public void ShouldUpdateEntity()

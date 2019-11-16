@@ -101,6 +101,13 @@ namespace Atma.Common
             return id;
         }
 
+        public void Take(NativeSlice<uint> array)
+        {
+            //TODO: later we should grab entire pages at a time
+            for (var i = 0; i < array.Length; i++)
+                array[i] = Take();
+        }
+
         protected override void OnUnmanagedDispose()
         {
             _entityMap.DisposeAll();

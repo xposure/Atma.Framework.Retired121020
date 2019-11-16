@@ -133,7 +133,7 @@
             entities[0] = new Entity(entity, specIndex, chunkIndex, index);
 
             //act
-            var remaining = chunkArray.Copy(componentType, ref src, entities.Slice());
+            var remaining = chunkArray.Copy(componentType, ref src, entities.Slice(), false);
 
             //assert
             remaining.Length.ShouldBe(3);
@@ -181,7 +181,7 @@
             var attempts = 4;//make sure we don't get in a inifinite loop
             while (slice.Length > 0 && attempts-- > 0)
             {
-                slice = chunkArray.Copy(componentType, ref src, slice);
+                slice = chunkArray.Copy(componentType, ref src, slice, false);
             }
 
             //assert

@@ -194,7 +194,7 @@ namespace Atma.Entities
             var src = (void*)ptr;
 
             //act
-            data.Copy(ref src, 0, 4);
+            data.Copy(ref src, 0, 4, false);
 
             //assert
             span[0].X.ShouldBe(100);

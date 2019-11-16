@@ -9,6 +9,7 @@ namespace Atma.Entities
         {
             CreateEntity,
             RemoveEntity,
+            SetEntity,
             AssignComponent,
             UpdateComponent,
             ReplaceComponent,
@@ -32,25 +33,42 @@ namespace Atma.Entities
             }
         }
 
-        private struct CreateEntityCommand
+        private struct SetEntityCommand
         {
             public CommandTypes CommandType;
             public int Size;
             public int EntityCount;
+
+            public SetEntityCommand(int entityCount)
+            {
+                CommandType = CommandTypes.SetEntity;
+                Size = sizeof(EntityCommand);
+                EntityCount = entityCount;
+            }
+
+            public static NativeSlice<uint> Process(EntityManager entityManager, SetEntityCommand* it)
+            {
+                return new NativeSlice<uint>(it + 1, it->EntityCount);
+            }
+        }
+
+        private struct CreateEntityCommand
+        {
+            public CommandTypes CommandType;
+            public int Size;
             public int ComponentCount;
 
-            public CreateEntityCommand(int entityCount, int componentCount)
+            public CreateEntityCommand(int componentCount)
             {
                 CommandType = CommandTypes.CreateEntity;
                 Size = sizeof(CreateEntityCommand);
-                EntityCount = entityCount;
                 ComponentCount = componentCount;
             }
 
-            public static uint Process(EntityManager entityManager, CreateEntityCommand* it)
+            public static void Process(EntityManager entityManager, CreateEntityCommand* it, NativeSlice<uint> lastEntities)
             {
-                Span<ComponentType> componentTypes = new Span<ComponentType>((void*)(it + 1), it->ComponentCount);
-                return entityManager.Create(componentTypes);
+                Span<ComponentType> componentTypes = new Span<ComponentType>(it + 1, it->ComponentCount);
+                entityManager.Create(componentTypes, lastEntities);
             }
         }
 
@@ -58,18 +76,18 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
-            public uint Entity;
 
-            public RemoveEntityCommand(uint entity)
+            public RemoveEntityCommand(int dummy)
             {
                 CommandType = CommandTypes.RemoveEntity;
                 Size = sizeof(RemoveEntityCommand);
-                Entity = entity;
             }
 
-            public static void Process(EntityManager entityManager, RemoveEntityCommand* it)
+            public static void Process(EntityManager entityManager, RemoveEntityCommand* it, NativeSlice<uint> lastEntities)
             {
-                entityManager.Remove(it->Entity);
+                //TODO: bulk remove entity
+                Assert.GreatherThan(lastEntities.Length, 0);
+                entityManager.Remove(lastEntities);
             }
         }
 
@@ -77,20 +95,29 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
-            public uint Entity;
             public ComponentType ComponentType;
+            public int DataCount;
 
-            public ReplaceComponentCommand(uint entity, in ComponentType componentType)
+            public ReplaceComponentCommand(in ComponentType componentType, int dataCount)
             {
                 CommandType = CommandTypes.ReplaceComponent;
                 Size = sizeof(ReplaceComponentCommand);
-                Entity = entity;
                 ComponentType = componentType;
+                DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, uint lastEntity)
+            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, NativeSlice<uint> lastEntities)
             {
-                entityManager.Replace(it->Entity > 0u ? it->Entity : lastEntity, &it->ComponentType, (void*)(it + 1));
+                Assert.GreatherThan(lastEntities.Length, 0);
+                if (it->DataCount == 1)
+                {
+                    entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, true, false);
+                }
+                else
+                {
+                    Assert.EqualTo(lastEntities.Length, it->DataCount);
+                    entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, false, true);
+                }
             }
         }
 
@@ -98,20 +125,30 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
-            public uint Entity;
             public ComponentType ComponentType;
+            public int DataCount;
 
-            public UpdateComponentCommand(uint entity, in ComponentType componentType)
+            public UpdateComponentCommand(in ComponentType componentType, int dataCount)
             {
                 CommandType = CommandTypes.UpdateComponent;
                 Size = sizeof(UpdateComponentCommand);
-                Entity = entity;
                 ComponentType = componentType;
+                DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, UpdateComponentCommand* it, uint lastEntity)
+
+            public static void Process(EntityManager entityManager, UpdateComponentCommand* it, NativeSlice<uint> lastEntities)
             {
-                entityManager.Update(it->Entity > 0u ? it->Entity : lastEntity, &it->ComponentType, (void*)(it + 1));
+                Assert.GreatherThan(lastEntities.Length, 0);
+                if (it->DataCount == 1)
+                {
+                    entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, true);
+                }
+                else
+                {
+                    Assert.EqualTo(lastEntities.Length, it->DataCount);
+                    entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, false);
+                }
             }
         }
 
@@ -119,20 +156,31 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
-            public uint Entity;
             public ComponentType ComponentType;
+            public int DataCount;
 
-            public AssignComponentCommand(uint entity, in ComponentType componentType)
+            public AssignComponentCommand(in ComponentType componentType, int dataCount)
             {
                 CommandType = CommandTypes.AssignComponent;
                 Size = sizeof(AssignComponentCommand);
-                Entity = entity;
                 ComponentType = componentType;
+                DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, AssignComponentCommand* it, uint lastEntity)
+            public static void Process(EntityManager entityManager, AssignComponentCommand* it, NativeSlice<uint> lastEntities)
             {
-                entityManager.Assign(it->Entity > 0u ? it->Entity : lastEntity, &it->ComponentType, (void*)(it + 1));
+                // Assert.GreatherThan(lastEntities.Length, 0);
+                // if (it->DataCount == 1)
+                // {
+                //     //assigning one piece of data to all entities
+                //     for (var i = 0; i < lastEntities.Length; i++)
+                //         entityManager.Assign(lastEntities[i], &it->ComponentType, (void*)(it + 1));
+                // }
+                // else
+                // {
+                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
+                //     entityManager.Assign(lastEntities, &it->ComponentType, it + 1);
+                // }
             }
         }
 
@@ -141,20 +189,21 @@ namespace Atma.Entities
         {
             public CommandTypes CommandType;
             public int Size;
-            public uint Entity;
             public int ComponentId;
 
-            public RemoveComponentCommand(uint entity, int componentId)
+            public RemoveComponentCommand(int componentId)
             {
                 CommandType = CommandTypes.RemoveComponent;
                 Size = sizeof(RemoveComponentCommand);
-                Entity = entity;
                 ComponentId = componentId;
             }
 
-            public static bool Process(EntityManager entityManager, RemoveComponentCommand* it, uint lastEntity)
+            public static void Process(EntityManager entityManager, RemoveComponentCommand* it, NativeSlice<uint> lastEntities)
             {
-                return entityManager.Remove(it->Entity > 0u ? it->Entity : lastEntity, it->ComponentId);
+                //TODO: bulk remove
+                Assert.GreatherThan(lastEntities.Length, 0);
+                for (var i = 0; i < lastEntities.Length; i++)
+                    entityManager.Remove(lastEntities[i], it->ComponentId);
             }
         }
 
@@ -171,28 +220,62 @@ namespace Atma.Entities
             //but its the only way to make sure the em doesn't crash if it never 
             //seen the spec before (old system stored all specs in a static array)
 
-            CreateEntityCommand* it = _buffer.Add(new CreateEntityCommand(count, componentTypes.Length));
+            ReserveSetEntity(count);
+
+            //if this buffer array resizes after the pointer is taken, its going to be invalid...
+            var reserveSize = sizeof(CreateEntityCommand) + sizeof(ComponentType) * componentTypes.Length;
+            _buffer.EnsureCapacity(reserveSize);
+
+            CreateEntityCommand* it = _buffer.Add(new CreateEntityCommand(componentTypes.Length));
+
             for (var i = 0; i < componentTypes.Length; i++)
                 _buffer.Add(componentTypes[i]);
-
             it->Size += sizeof(ComponentType);
         }
+
+
         public void CreateEntity(EntitySpec spec, int count = 1)
         {
             Span<ComponentType> componentTypes = spec.ComponentTypes;
             CreateEntity(componentTypes, count);
         }
 
+        private NativeSlice<uint> ReserveSetEntity(int count)
+        {
+            _buffer.EnsureCapacity(sizeof(SetEntityCommand) + sizeof(uint) * count);
+            var ptr = _buffer.Add(new SetEntityCommand(count));
+            return new NativeSlice<uint>(ptr + 1, count);
+        }
+
+        public void SetEntity(uint entity)
+        {
+            var data = ReserveSetEntity(1);
+            data[0] = entity;
+        }
+
+        public void SetEntity(NativeSlice<uint> entities)
+        {
+            var data = ReserveSetEntity(entities.Length);
+            for (var i = 0; i < entities.Length; i++)
+                data[i] = entities[i];
+        }
+
         public void RemoveEntity(uint entity)
         {
-            _buffer.Add(new RemoveEntityCommand(entity));
+            _buffer.EnsureCapacity(sizeof(RemoveEntityCommand) + sizeof(uint));
+            SetEntity(entity);
+
+            _buffer.Add(new RemoveEntityCommand(0));
         }
 
         public void ReplaceComponent<T>(in T t)
             where T : unmanaged
         {
+            var reserveSize = sizeof(ReplaceComponentCommand) + SizeOf<T>.Size;
+            _buffer.EnsureCapacity(reserveSize);
+
             var type = ComponentType<T>.Type;
-            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(0u, type));
+            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(type, 1));
             _buffer.Add(t);
             it->Size += type.Size;
         }
@@ -200,8 +283,13 @@ namespace Atma.Entities
         public void ReplaceComponent<T>(uint entity, in T t)
             where T : unmanaged
         {
+            SetEntity(entity);
+
+            var reserveSize = sizeof(ReplaceComponentCommand) + SizeOf<T>.Size;
+            _buffer.EnsureCapacity(reserveSize);
+
             var type = ComponentType<T>.Type;
-            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(entity, type));
+            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(type, 1));
             _buffer.Add(t);
             it->Size += type.Size;
         }
@@ -209,23 +297,34 @@ namespace Atma.Entities
         public void RemoveComponent<T>(uint entity)
             where T : unmanaged
         {
+            SetEntity(entity);
+
             var type = ComponentType<T>.Type;
-            _buffer.Add(new RemoveComponentCommand(entity, type.ID));
+            _buffer.Add(new RemoveComponentCommand(type.ID));
         }
 
         public void AssignComponent<T>(in T t)
             where T : unmanaged
         {
+            var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
+            _buffer.EnsureCapacity(reserveSize);
+
             var type = ComponentType<T>.Type;
-            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(0u, type));
+            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
             _buffer.Add(t);
             it->Size += type.Size;
         }
+
         public void AssignComponent<T>(uint entity, in T t)
             where T : unmanaged
         {
+            SetEntity(entity);
+
+            var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
+            _buffer.EnsureCapacity(reserveSize);
+
             var type = ComponentType<T>.Type;
-            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(entity, type));
+            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
             _buffer.Add(t);
             it->Size += type.Size;
         }
@@ -233,8 +332,11 @@ namespace Atma.Entities
         public void UpdateComponent<T>(in T t)
            where T : unmanaged
         {
+            var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
+            _buffer.EnsureCapacity(reserveSize);
+
             var type = ComponentType<T>.Type;
-            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(0u, type));
+            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
             _buffer.Add(t);
             it->Size += type.Size;
         }
@@ -242,8 +344,13 @@ namespace Atma.Entities
         public void UpdateComponent<T>(uint entity, in T t)
            where T : unmanaged
         {
+            SetEntity(entity);
+
+            var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
+            _buffer.EnsureCapacity(reserveSize);
+
             var type = ComponentType<T>.Type;
-            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(entity, type));
+            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
             _buffer.Add(t);
             it->Size += type.Size;
         }
@@ -251,32 +358,34 @@ namespace Atma.Entities
         public void Execute(EntityManager em)
         {
             var rawPtr = _buffer.RawPointer;
-            var lastEntity = 0u;
+            NativeSlice<uint> lastEntities = NativeSlice<uint>.Empty;
             while (rawPtr < _buffer.EndPointer)
             {
                 var cmd = (EntityCommand*)rawPtr;
                 switch (cmd->CommandType)
                 {
+                    case CommandTypes.SetEntity:
+                        lastEntities = SetEntityCommand.Process(em, (SetEntityCommand*)cmd);
+                        break;
                     case CommandTypes.CreateEntity:
-                        lastEntity = CreateEntityCommand.Process(em, (CreateEntityCommand*)cmd);
+                        CreateEntityCommand.Process(em, (CreateEntityCommand*)cmd, lastEntities);
                         break;
                     case CommandTypes.RemoveEntity:
-                        RemoveEntityCommand.Process(em, (RemoveEntityCommand*)cmd);
-                        lastEntity = 0u;
+                        RemoveEntityCommand.Process(em, (RemoveEntityCommand*)cmd, lastEntities);
+                        lastEntities = NativeSlice<uint>.Empty;
                         break;
                     case CommandTypes.AssignComponent:
-                        AssignComponentCommand.Process(em, (AssignComponentCommand*)cmd, lastEntity);
+                        AssignComponentCommand.Process(em, (AssignComponentCommand*)cmd, lastEntities);
                         break;
                     case CommandTypes.ReplaceComponent:
-                        ReplaceComponentCommand.Process(em, (ReplaceComponentCommand*)cmd, lastEntity);
+                        ReplaceComponentCommand.Process(em, (ReplaceComponentCommand*)cmd, lastEntities);
                         break;
                     case CommandTypes.RemoveComponent:
                         //removing the last component of an entity has the side effect of deleting it, could cause bugs
-                        if (RemoveComponentCommand.Process(em, (RemoveComponentCommand*)cmd, lastEntity))
-                            lastEntity = 0u;
+                        RemoveComponentCommand.Process(em, (RemoveComponentCommand*)cmd, lastEntities);
                         break;
                     case CommandTypes.UpdateComponent:
-                        UpdateComponentCommand.Process(em, (UpdateComponentCommand*)cmd, lastEntity);
+                        UpdateComponentCommand.Process(em, (UpdateComponentCommand*)cmd, lastEntities);
                         break;
                 }
                 rawPtr += cmd->Size;

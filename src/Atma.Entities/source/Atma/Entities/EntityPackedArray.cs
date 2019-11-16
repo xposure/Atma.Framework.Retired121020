@@ -39,9 +39,9 @@ namespace Atma.Entities
             _componentData[index].Copy(src, dstIndex);
         }
 
-        internal void Copy(int componentIndex, ref void* src, int dstIndex, int length)
+        internal void Copy(int componentIndex, ref void* src, int dstIndex, int length, bool oneToMany)
         {
-            _componentData[componentIndex].Copy(ref src, dstIndex, length);
+            _componentData[componentIndex].Copy(ref src, dstIndex, length, oneToMany);
         }
 
         //TODO: Add a group lock here and implement internal no lock moves in ComponentDataArray

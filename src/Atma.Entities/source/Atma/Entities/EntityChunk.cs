@@ -46,9 +46,9 @@ namespace Atma.Entities
             return index;
         }
 
-        public void Create(NativeSlice<uint> entities, int count)
+        public void Create(NativeSlice<uint> entities)
         {
-            Assert.GreatherThanEqualTo(Free, count);
+            Assert.GreatherThanEqualTo(Free, entities.Length);
             for (var i = 0; i < entities.Length; i++)
             {
                 var index = _entityCount++;

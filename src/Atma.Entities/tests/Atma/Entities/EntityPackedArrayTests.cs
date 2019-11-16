@@ -154,7 +154,7 @@ namespace Atma.Entities
             var src = (void*)ptr;
 
             //act
-            entityGroup.Copy(componentIndex, ref src, 0, 4);
+            entityGroup.Copy(componentIndex, ref src, 0, 4, false);
 
             //assert
             span[0].X.ShouldBe(100);
