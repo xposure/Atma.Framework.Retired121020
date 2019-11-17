@@ -111,17 +111,17 @@ namespace Atma.Entities
 
         }
 
-        internal unsafe void Assign(uint entity, ComponentType* type, void* src, bool oneToMany)
-        {
-            ref var e = ref _entityPool[entity];
-            var entities = stackalloc Entity[] { e };
-            var slice = new NativeSlice<Entity>(entities, 1);
+        // internal unsafe void Assign(uint entity, ComponentType* type, ref void* src, bool oneToMany)
+        // {
+        //     ref var e = ref _entityPool[entity];
+        //     var entities = stackalloc Entity[] { e };
+        //     var slice = new NativeSlice<Entity>(entities, 1);
 
-            Move(slice, type);
-            Replace(entity, type, src);
-        }
+        //     Move(slice, type);
+        //     Replace(entity, type, ref src, oneToMany);
+        // }
 
-        internal unsafe void Assign(NativeSlice<uint> entities, ComponentType* type, void* src, bool oneToMany)
+        internal unsafe void Assign(NativeSlice<uint> entities, ComponentType* type, ref void* src, bool oneToMany)
         {
             using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
 
@@ -158,8 +158,12 @@ namespace Atma.Entities
                 //var dstSpec = _knownSpecs[specIndex];
 
                 Move(ref entityInfo, dstSpecIndex);
-                while (i < entities.Length && entities[i + 1].SpecIndex == srcSpecIndex)
+                _entityPool[entityInfo.ID] = entityInfo;
+                while (i < entities.Length - 1 && entities[i + 1].SpecIndex == srcSpecIndex)
+                {
                     Move(ref entities[++i], dstSpecIndex);
+                    _entityPool[entityInfo.ID] = entityInfo;
+                }
             }
         }
 
@@ -169,9 +173,9 @@ namespace Atma.Entities
         {
             //assign has too move logic with moving data around so we are just going to put things on the stack and call a single function
             var componentType = stackalloc[] { ComponentType<T>.Type };
-            var data = stackalloc[] { t };
+            void* data = stackalloc[] { t };
             var entities = stackalloc[] { entity };
-            Assign(new NativeSlice<uint>(entities, 1), componentType, data, true);
+            Assign(new NativeSlice<uint>(entities, 1), componentType, ref data, true);
 
             // Assert.EqualTo(Has<T>(entity), false);
 
@@ -310,13 +314,14 @@ namespace Atma.Entities
             Replace<T>(ref e, t);
         }
 
-        internal unsafe void Replace(uint entity, ComponentType* type, void* ptr)
+        internal unsafe void Replace(uint entity, ComponentType* type, ref void* ptr, bool oneToMany)
         {
             ref var e = ref _entityPool[entity];
             Assert.Equals(Has(ref e, type->ID), true);
             var array = _entityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
-            chunk.PackedArray.Copy(type, ptr, e.Index);
+            var componentIndex = array.Specification.GetComponentIndex(type->ID);
+            chunk.PackedArray.Copy(componentIndex, ref ptr, e.Index, 1, oneToMany);
         }
 
         public void Replace<T>(ref Entity entity, in T t)
@@ -346,7 +351,7 @@ namespace Atma.Entities
             SetComponentInternal(componentType, entities, t.RawPointer, false, false);
         }
 
-        internal unsafe void SetComponentInternal(EntityChunkArray array, NativeSlice<Entity> slice, ComponentType* componentType, void* src, bool oneToMany)
+        internal unsafe void SetComponentInternal(EntityChunkArray array, NativeSlice<Entity> slice, ComponentType* componentType, ref void* src, bool oneToMany)
         {
             while (slice.Length > 0)
             {
@@ -357,14 +362,14 @@ namespace Atma.Entities
             }
         }
 
-        internal unsafe void SetComponentInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany, bool allowAssign)
+        internal unsafe void SetComponentInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany, bool allowUpdate)
         {
             //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             //we are going to put replaces in front of the array and assigns in the back if we are allowed
             using var entityRefs = new NativeList<Entity>(_allocator, entities.Length);
 
             //TODO: come back to this
-            Assert.EqualTo(allowAssign, false);
+            Assert.EqualTo(allowUpdate, false);
 
             //this whole function needs rewrote, we need to do this in a loop and group specIndices together
             var specIndex = -1;
@@ -377,7 +382,7 @@ namespace Atma.Entities
                     if (entityRefs.Length > 0)
                     {
                         var array = _entityArrays[specIndex];
-                        SetComponentInternal(array, entityRefs.Slice(), componentType, src, oneToMany);
+                        SetComponentInternal(array, entityRefs.Slice(), componentType, ref src, oneToMany);
                         entityRefs.Reset();
                     }
                     specIndex = e.SpecIndex;
@@ -388,6 +393,10 @@ namespace Atma.Entities
                 }
                 else
                 {
+                    //TODO: modifying data can have serious considerations during looping but I think we really only need to worry aboout remove, since the rest is append only
+                    //TODO: assign is already one at a time and slow, so might as well stackalloc
+                    var ep = stackalloc[] { entities[i] };
+                    Assign(new NativeSlice<uint>(ep, 1), componentType, ref src, oneToMany);
                     Assert.EqualTo(true, false); //no update yet
                     //Assert.EqualTo(allowAssign, true);
                     //entityRefs[assign--] = e;
@@ -397,7 +406,7 @@ namespace Atma.Entities
             if (entityRefs.Length > 0)
             {
                 var array = _entityArrays[specIndex];
-                SetComponentInternal(array, entityRefs.Slice(), componentType, src, oneToMany);
+                SetComponentInternal(array, entityRefs.Slice(), componentType, ref src, oneToMany);
             }
         }
 
@@ -430,15 +439,15 @@ namespace Atma.Entities
                 Assign<T>(entity, t);
         }
 
-        internal unsafe void Update(uint entity, ComponentType* type, void* ptr)
-        {
-            ref var e = ref _entityPool[entity];
-            var spec = _entityArrays[e.SpecIndex].Specification;
-            if (spec.Has(type->ID))
-                Replace(entity, type, ptr);
-            else
-                Assign(entity, type, ptr, true);
-        }
+        // internal unsafe void Update(ComponentType* type, uint entity, ref void* ptr, bool oneToMany)
+        // {
+        //     ref var e = ref _entityPool[entity];
+        //     var spec = _entityArrays[e.SpecIndex].Specification;
+        //     if (spec.Has(type->ID))
+        //         Replace(entity, type, ref ptr, oneToMany);
+        //     else
+        //         Assign(entity, type, ref ptr, oneToMany);
+        // }
 
         internal unsafe void UpdateInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany)
         {

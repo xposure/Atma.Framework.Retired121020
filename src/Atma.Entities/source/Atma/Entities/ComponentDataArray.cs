@@ -103,7 +103,12 @@
             else
             {
                 while (length-- > 0)
+                {
+                    //var ss = ptr;
+                    //var dd = dst;
                     _componentHelper.CopyAndMoveNext(ref ptr, ref dst);
+                    //_logger.LogDebug($"Assigned {new IntPtr(ss)} to {new IntPtr(dd)}, now src is {new IntPtr(ptr)} and dst is {new IntPtr(dd)} ");
+                }
             }
         }
 
