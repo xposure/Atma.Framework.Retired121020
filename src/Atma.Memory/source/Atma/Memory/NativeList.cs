@@ -275,7 +275,7 @@
             Assert.GreatherThanEqualTo(start, 0);
             Assert.GreatherThanEqualTo(length, 0);
             Assert.LessThanEqualTo(start + length, Length);
-            return new NativeSlice<T>(Handle, start, length);
+            return new NativeSlice<T>(&RawPointer[start], length);
         }
 
         public Span<T> AsSpan()
