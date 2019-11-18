@@ -9,7 +9,7 @@ namespace Atma.Entities
     using Xunit;
     using Xunit.Abstractions;
 
-    public class EntityGroupArrayTests
+    public class ComponentPackedArrayTests
     {
         private struct Position
         {
@@ -37,7 +37,7 @@ namespace Atma.Entities
 
         private readonly ILoggerFactory _logFactory;
 
-        public EntityGroupArrayTests(ITestOutputHelper output)
+        public ComponentPackedArrayTests(ITestOutputHelper output)
         {
             _logFactory = LogFactory.Create(output);
         }
