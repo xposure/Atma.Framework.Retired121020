@@ -3,7 +3,7 @@ namespace Atma.Entities
     using System;
     using System.Linq;
 
-    public struct EntitySpec : IEquatable<EntitySpec>
+    public readonly struct EntitySpec : IEquatable<EntitySpec>
     {
         public readonly int ID;
         public readonly ComponentType[] ComponentTypes;
@@ -58,6 +58,8 @@ namespace Atma.Entities
         public int GetComponentIndex(in ComponentType type) => GetComponentIndex(type.ID);
 
         public bool Equals(EntitySpec other) => this.ID == other.ID;
+
+        public static implicit operator Span<ComponentType>(EntitySpec it) => it.ComponentTypes;
 
         public static EntitySpec Create<T0>()
             where T0 : unmanaged

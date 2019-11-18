@@ -54,6 +54,7 @@
             Specification = specification;
         }
 
+        [Obsolete("We want to remove this in favor of bulk create below")]
         public int Create(uint entity, out int chunkIndex)
         {
             _entityCount++;
