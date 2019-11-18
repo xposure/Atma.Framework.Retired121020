@@ -13,7 +13,7 @@ namespace Atma.Entities
 
         public int EntityCount { get => _entityArrays.Sum(x => x.EntityCount); }
         public int SpecCount { get => _knownSpecs.Count; }
-        public IReadOnlyList<EntityChunkArray> EntityArrays => _entityArrays;
+        public IReadOnlyList<EntityChunkList> EntityArrays => _entityArrays;
 
         private ILogger _logger;
         private ILoggerFactory _logFactory;
@@ -21,7 +21,7 @@ namespace Atma.Entities
 
         private EntityPool _entityPool;// = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
-        private List<EntityChunkArray> _entityArrays = new List<EntityChunkArray>();
+        private List<EntityChunkList> _entityArrays = new List<EntityChunkList>();
 
         public EntityManager(ILoggerFactory logFactory, IAllocator allocator)
         {
@@ -44,7 +44,7 @@ namespace Atma.Entities
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(_logFactory, _allocator, spec));
+                _entityArrays.Add(new EntityChunkList(_logFactory, _allocator, spec));
             }
             return specIndex;
         }
@@ -60,7 +60,7 @@ namespace Atma.Entities
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkArray(_logFactory, _allocator, spec));
+                _entityArrays.Add(new EntityChunkList(_logFactory, _allocator, spec));
             }
             return specIndex;
         }
@@ -429,7 +429,7 @@ namespace Atma.Entities
             SetComponentInternal(componentType, entities, t.RawPointer, false, false);
         }
 
-        internal unsafe void SetComponentInternal(EntityChunkArray array, Span<Entity> slice, ComponentType* componentType, ref void* src, bool oneToMany)
+        internal unsafe void SetComponentInternal(EntityChunkList array, Span<Entity> slice, ComponentType* componentType, ref void* src, bool oneToMany)
         {
             while (slice.Length > 0)
             {

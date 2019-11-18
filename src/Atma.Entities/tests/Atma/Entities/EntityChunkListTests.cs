@@ -8,7 +8,7 @@
     using Xunit;
     using Xunit.Abstractions;
 
-    public class EntityChunkArrayTests
+    public class EntityChunkListTests
     {
         private struct Position
         {
@@ -35,7 +35,7 @@
         }
         private readonly ILoggerFactory _logFactory;
 
-        public EntityChunkArrayTests(ITestOutputHelper output)
+        public EntityChunkListTests(ITestOutputHelper output)
         {
             _logFactory = LogFactory.Create(output);
         }
@@ -48,7 +48,7 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex);
@@ -96,7 +96,7 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
 
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex0);
@@ -122,7 +122,7 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
 
             //act
             for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)
@@ -144,7 +144,7 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
             var entity = 1u;
             var specIndex = 0;
             var index = chunkArray.Create(entity, out var chunkIndex);
@@ -176,7 +176,7 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
             var entity0 = 1u;
             var entity1 = 2u;
             var entity2 = 3u;

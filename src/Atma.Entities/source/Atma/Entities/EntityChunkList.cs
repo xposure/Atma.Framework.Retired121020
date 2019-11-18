@@ -17,7 +17,7 @@
         }
     }
 
-    public sealed class EntityChunkArray : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
+    public sealed class EntityChunkList : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
     {
         private ILogger _logger;
         private ILoggerFactory _logFactory;
@@ -42,10 +42,10 @@
         }
         public EntitySpec Specification { get; }
 
-        public EntityChunkArray(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
+        public EntityChunkList(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
         {
             _logFactory = logFactory;
-            _logger = logFactory.CreateLogger<EntityChunkArray>();
+            _logger = logFactory.CreateLogger<EntityChunkList>();
             _allocator = allocator;
             Specification = specification;
         }
