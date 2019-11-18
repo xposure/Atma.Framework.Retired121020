@@ -169,13 +169,13 @@
 
         public NativeReadOnlySlice<T> Slice(int start, int length)
         {
-            Assert.GreatherThanEqualTo(start, 0);
-            Assert.GreatherThanEqualTo(length, 0);
-            Assert.LessThanEqualTo(start + length, Length);
+            Assert.Range(start, 0, Length);
+            Assert.Range(start + length - 1, start, Length);
             var addr = (T*)_rawAddress;
             addr += start;
-            return new NativeReadOnlySlice<T>(addr, Length - start);
+            return new NativeReadOnlySlice<T>(addr, length);
         }
+
 
         public override string ToString()
         {
