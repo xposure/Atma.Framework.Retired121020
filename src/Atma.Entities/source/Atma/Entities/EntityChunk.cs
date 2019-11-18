@@ -4,26 +4,6 @@ namespace Atma.Entities
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
 
-    internal interface IEntityChunk
-    {
-        int Count { get; }
-        int Free { get; }
-        ReadOnlySpan<uint> Entities { get; }
-        EntitySpec Specification { get; }
-        EntityPackedArray PackedArray { get; }
-
-        uint Get(int index);
-        int Create(uint entity);
-
-        //entities are always appended, therefore we can assume the indicies
-        int Create(NativeSlice<uint> entities/*, NativeSlice<int> indices*/);
-        MovedEntity Delete(int index);
-
-        //void Delete(NativeSlice<int> indicies, EntityPool entityPool);
-        void Delete(NativeSlice<int> indicies, NativeSlice<MovedEntity> movedEntities);
-
-    }
-
     [System.Diagnostics.DebuggerStepThrough]
     public readonly struct MovedEntity
     {
@@ -103,24 +83,25 @@ namespace Atma.Entities
             return moved[0];
         }
 
-        internal void Delete(NativeSlice<int> indicies, EntityPool entityPool)
-        {
-            for (var index = 0; index < indicies.Length; index++)
-            {
-                Assert.Range(index, 0, _entityCount);
-                _entityCount--;
+        //This would be faster but exposes implementation details further up the chain :/
+        // internal void Delete(NativeSlice<int> indicies, EntityPool entityPool)
+        // {
+        //     for (var index = 0; index < indicies.Length; index++)
+        //     {
+        //         Assert.Range(index, 0, _entityCount);
+        //         _entityCount--;
 
-                if (index < _entityCount) //removing the last element, no need to patch
-                {
-                    _packedArray.Move(_entityCount, index);
-                    _entities[index] = _entities[_entityCount];
-                    ref var entity = ref entityPool[_entities[index]];
-                    entity.Index = index;
-                }
+        //         if (index < _entityCount) //removing the last element, no need to patch
+        //         {
+        //             _packedArray.Move(_entityCount, index);
+        //             _entities[index] = _entities[_entityCount];
+        //             ref var entity = ref entityPool[_entities[index]];
+        //             entity.Index = index;
+        //         }
 
-                _entities[_entityCount] = 0;
-            }
-        }
+        //         _entities[_entityCount] = 0;
+        //     }
+        // }
 
         internal void Delete(NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
         {
