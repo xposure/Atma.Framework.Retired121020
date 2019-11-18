@@ -32,7 +32,7 @@
             _memoryHandle = allocator.Take(componentType.Size * length);
         }
 
-        public NativeSlice<T> AsSlice<T>(int start = 0, int length = -1)
+        public Span<T> AsSlice<T>(int start = 0, int length = -1)
             where T : unmanaged
         {
             var componentType = ComponentType<T>.Type;
@@ -40,7 +40,7 @@
             return AsSlice<T>(componentType, start, length);
         }
 
-        internal NativeSlice<T> AsSlice<T>(ComponentType componentType, int start = 0, int length = -1)
+        internal Span<T> AsSlice<T>(ComponentType componentType, int start = 0, int length = -1)
             where T : unmanaged
         {
             if (length == -1)
@@ -50,7 +50,7 @@
             Assert.Range(start + length - 1, start, Length);
             Assert.EqualTo(componentType.ID, _componentType.ID);
             var src = (T*)_memoryHandle.Address;
-            return new NativeSlice<T>((void*)(src + start), length);
+            return new Span<T>((void*)(src + start), length);
         }
 
         public T* AsPointer<T>()

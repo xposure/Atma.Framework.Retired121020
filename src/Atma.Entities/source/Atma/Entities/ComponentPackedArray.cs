@@ -68,7 +68,7 @@ namespace Atma.Entities
             _componentData[index].Reset(dst);
         }
 
-        public NativeSlice<T> GetComponentData<T>(int index = -1, ComponentType componentType = default)
+        public Span<T> GetComponentData<T>(int index = -1, ComponentType componentType = default)
             where T : unmanaged
         {
             if (index == -1)
@@ -118,8 +118,8 @@ namespace Atma.Entities
             var i1 = 0;
             var index = 0;
 
-            Span<ComponentType> a = srcArray.Specification.ComponentTypes;
-            Span<ComponentType> b = dstArray.Specification.ComponentTypes;
+            System.Span<ComponentType> a = srcArray.Specification.ComponentTypes;
+            System.Span<ComponentType> b = dstArray.Specification.ComponentTypes;
             while (i0 < a.Length && i1 < b.Length)
             {
                 var aType = a[i0];

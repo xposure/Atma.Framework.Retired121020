@@ -103,30 +103,32 @@
                 *dst++ = *src++;
         }
 
-        public static implicit operator NativeSlice<T>(NativeArray<T> arr) => arr.Slice();
-        public NativeSlice<T> Slice() => Slice(0, Length);
+        public Span<T> Slice() => Slice(0, Length);
 
-        public NativeSlice<T> Slice(int start) => Slice(start, Length - start);
+        public Span<T> Slice(int start) => Slice(start, Length - start);
 
-        public NativeSlice<T> Slice(int start, int length)
+        public Span<T> Slice(int start, int length)
         {
+            if (length == 0)
+                return Span<T>.Empty;
+
             Assert.EqualTo(Handle.IsValid, true);
-            Assert.GreatherThanEqualTo(start, 0);
-            Assert.GreatherThanEqualTo(length, 0);
-            Assert.LessThanEqualTo(start + length, Length);
-            return new NativeSlice<T>(Handle, start, length);
+            Assert.Range(start, 0, Length);
+            Assert.Range(start + length - 1, 0, Length);
+
+            return new Span<T>(RawPointer + start, length);
         }
 
-        public Span<T> Span
+        public System.Span<T> Span
         {
             get
             {
                 Assert.EqualTo(Handle.IsValid, true);
-                return new Span<T>(RawPointer, Length);
+                return new System.Span<T>(RawPointer, Length);
             }
         }
 
-        public static implicit operator Span<T>(NativeArray<T> it) => it.Span;
+        public static implicit operator System.Span<T>(NativeArray<T> it) => it.Span;
 
         public override string ToString()
         {

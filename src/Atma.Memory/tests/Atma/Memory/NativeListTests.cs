@@ -99,7 +99,7 @@
             using var memory = new DynamicAllocator(_logFactory);
             using var list = new NativeList<Data>(memory);
 
-            Span<Data> data = stackalloc[] {
+            System.Span<Data> data = stackalloc[] {
                 new Data() { b = 1, x = 2, y = 3 },
                 new Data() { b = 2, x = 1, y = 3 },
                 new Data() { b = 3, x = 2, y = 1 },

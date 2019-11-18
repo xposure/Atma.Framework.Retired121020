@@ -100,7 +100,7 @@ namespace Atma.Entities.Benchmarks
         [Benchmark]
         public void Raw()
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] {
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] {
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             };
@@ -255,7 +255,7 @@ namespace Atma.Entities.Benchmarks
         [Benchmark]
         public void RawSinglePass()
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] {
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] {
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             };
@@ -307,7 +307,7 @@ namespace Atma.Entities.Benchmarks
         [Benchmark]
         public void RawTwoPass()
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] {
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] {
                 ComponentType<Position>.Type,
                 ComponentType<Velocity>.Type
             };

@@ -90,7 +90,7 @@ namespace Atma.Entities
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
 
             var stackIds = stackalloc uint[entityChunk.Free + 1];
-            var ids = new NativeSlice<uint>(stackIds, entityChunk.Free + 1);
+            var ids = new Span<uint>(stackIds, entityChunk.Free + 1);
             for (var i = 0; i < ids.Length; i++)
                 ids[i] = (uint)i + 1u;
 
@@ -142,7 +142,7 @@ namespace Atma.Entities
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
 
             var stackIds = stackalloc uint[entityChunk.Free + 1];
-            var ids = new NativeSlice<uint>(stackIds, entityChunk.Free + 1);
+            var ids = new Span<uint>(stackIds, entityChunk.Free + 1);
             for (var i = 0; i < ids.Length; i++)
                 ids[i] = (uint)i + 1u;
 
@@ -154,7 +154,7 @@ namespace Atma.Entities
 
             //act
             var stackDeleteIndicies = stackalloc uint[128];
-            var deleteIndicies = new NativeSlice<int>(stackDeleteIndicies, 128);
+            var deleteIndicies = new Span<int>(stackDeleteIndicies, 128);
             for (var i = 0; i < deleteIndicies.Length; i++)
                 deleteIndicies[i] = i + 128;
 

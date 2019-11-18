@@ -79,7 +79,7 @@
             var blocks = 256;
             var size = blocks * HeapAllocation.HeapSize;
             var memory = stackalloc HeapAllocation[blocks];
-            var span = new Span<HeapAllocation>(memory, blocks);
+            var span = new System.Span<HeapAllocation>(memory, blocks);
             *memory = new HeapAllocation(size);
 
             //act

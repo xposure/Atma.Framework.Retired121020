@@ -2,6 +2,7 @@
 {
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
+    using System;
     using System.Collections.Generic;
 
     public readonly struct CreatedEntity
@@ -57,7 +58,7 @@
         }
 
 
-        internal void Create(NativeSlice<uint> entity, NativeSlice<CreatedEntity> createdEntities)
+        internal void Create(Span<uint> entity, Span<CreatedEntity> createdEntities)
         {
             var i = 0;
             while (i < entity.Length)
@@ -73,7 +74,7 @@
             }
         }
 
-        internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities, bool oneToMany)
+        internal unsafe Span<Entity> Copy(ComponentType* componentType, ref void* src, in Span<Entity> entities, bool oneToMany)
         {
             Assert.GreatherThan(entities.Length, 0);
 
@@ -117,7 +118,7 @@
             return chunk.Delete(index);
         }
 
-        internal void Delete(int chunkIndex, NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        internal void Delete(int chunkIndex, Span<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
         {
             Assert.Range(chunkIndex, 0, _chunks.Count);
             Assert.GreatherThanEqualTo(_entityCount, indicies.Length);

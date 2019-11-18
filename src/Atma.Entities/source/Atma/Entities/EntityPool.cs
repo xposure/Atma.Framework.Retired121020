@@ -1,6 +1,6 @@
 namespace Atma.Entities
 {
-    using Atma.Entities;
+    using System;
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
     using System.Collections.Generic;
@@ -56,7 +56,7 @@ namespace Atma.Entities
             }
         }
 
-        internal void UpdateEntities(NativeSlice<MovedEntity> movedEntities)
+        internal void UpdateEntities(Span<MovedEntity> movedEntities)
         {
             for (var i = 0; i < movedEntities.Length; i++)
             {
@@ -141,7 +141,7 @@ namespace Atma.Entities
             return new EntityRef(GetPointer(id));
         }
 
-        internal void Take(NativeSlice<uint> array)
+        internal void Take(Span<uint> array)
         {
             while (_freeIds.Length < array.Length)
                 AddPage();

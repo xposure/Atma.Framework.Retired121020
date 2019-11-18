@@ -5,11 +5,11 @@ namespace Atma
     using Atma.Memory;
     public static class ForChunkExtensions
     {
-        public delegate void ForEachChunk<T0>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0) where T0 : unmanaged;
+        public delegate void ForEachChunk<T0>(int length, ReadOnlySpan<uint> entities, Span<T0> t0) where T0 : unmanaged;
         public unsafe static void ForChunk<T0>(this EntityManager em, ForEachChunk<T0> view)
           where T0 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -28,11 +28,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1) where T0 : unmanaged where T1 : unmanaged;
+        public delegate void ForEachChunk<T0, T1>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1) where T0 : unmanaged where T1 : unmanaged;
         public unsafe static void ForChunk<T0, T1>(this EntityManager em, ForEachChunk<T0, T1> view)
           where T0 : unmanaged where T1 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -53,11 +53,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2>(this EntityManager em, ForEachChunk<T0, T1, T2> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -80,11 +80,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3>(this EntityManager em, ForEachChunk<T0, T1, T2, T3> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -109,11 +109,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3, T4>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3, T4>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3, T4>(this EntityManager em, ForEachChunk<T0, T1, T2, T3, T4> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -140,11 +140,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3, T4, T5>(this EntityManager em, ForEachChunk<T0, T1, T2, T3, T4, T5> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -173,11 +173,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3, T4, T5, T6>(this EntityManager em, ForEachChunk<T0, T1, T2, T3, T4, T5, T6> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -208,11 +208,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6, NativeSlice<T7> t7) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6, Span<T7> t7) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3, T4, T5, T6, T7>(this EntityManager em, ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -245,11 +245,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6, NativeSlice<T7> t7, NativeSlice<T8> t8) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6, Span<T7> t7, Span<T8> t8) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8>(this EntityManager em, ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type, ComponentType<T8>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type, ComponentType<T8>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {
@@ -284,11 +284,11 @@ namespace Atma
                 }
             }
         }
-        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>(int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6, NativeSlice<T7> t7, NativeSlice<T8> t8, NativeSlice<T9> t9) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged;
+        public delegate void ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>(int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6, Span<T7> t7, Span<T8> t8, Span<T9> t9) where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged;
         public unsafe static void ForChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>(this EntityManager em, ForEachChunk<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type, ComponentType<T8>.Type, ComponentType<T9>.Type };
+            System.Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type, ComponentType<T8>.Type, ComponentType<T9>.Type };
             var entityArrays = em.EntityArrays;
             for (var i = 0; i < entityArrays.Count; i++)
             {

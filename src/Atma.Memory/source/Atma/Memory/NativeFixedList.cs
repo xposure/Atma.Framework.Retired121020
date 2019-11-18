@@ -174,25 +174,25 @@
             span.Sort(comparer);
         }
 
-        public static implicit operator NativeSlice<T>(NativeFixedList<T> arr) => arr.Slice();
+        public static implicit operator Span<T>(NativeFixedList<T> arr) => arr.Slice();
 
-        public NativeSlice<T> Slice() => Slice(0, Length);
+        public Span<T> Slice() => Slice(0, Length);
 
-        public NativeSlice<T> Slice(int start) => Slice(start, Length - start);
+        public Span<T> Slice(int start) => Slice(start, Length - start);
 
-        public NativeSlice<T> Slice(int start, int length)
+        public Span<T> Slice(int start, int length)
         {
             Assert.EqualTo(IsValid, true);
             Assert.GreatherThanEqualTo(start, 0);
             Assert.GreatherThanEqualTo(length, 0);
             Assert.LessThanEqualTo(start + length, Length);
-            return new NativeSlice<T>(&RawPointer[start], length);
+            return new Span<T>(&RawPointer[start], length);
         }
 
-        public Span<T> AsSpan()
+        public System.Span<T> AsSpan()
         {
             Assert.EqualTo(IsValid, true);
-            return new Span<T>(RawPointer, Length);
+            return new System.Span<T>(RawPointer, Length);
         }
 
         public override string ToString()

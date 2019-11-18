@@ -46,9 +46,9 @@ namespace Atma.Entities
                 EntityCount = entityCount;
             }
 
-            public static NativeSlice<uint> Process(EntityManager entityManager, SetEntityCommand* it)
+            public static Span<uint> Process(EntityManager entityManager, SetEntityCommand* it)
             {
-                return new NativeSlice<uint>(it + 1, it->EntityCount);
+                return new Span<uint>(it + 1, it->EntityCount);
             }
         }
 
@@ -65,9 +65,9 @@ namespace Atma.Entities
                 ComponentCount = componentCount;
             }
 
-            public static void Process(EntityManager entityManager, CreateEntityCommand* it, NativeSlice<uint> lastEntities)
+            public static void Process(EntityManager entityManager, CreateEntityCommand* it, Span<uint> lastEntities)
             {
-                Span<ComponentType> componentTypes = new Span<ComponentType>(it + 1, it->ComponentCount);
+                System.Span<ComponentType> componentTypes = new System.Span<ComponentType>(it + 1, it->ComponentCount);
                 entityManager.Create(componentTypes, lastEntities);
             }
         }
@@ -83,7 +83,7 @@ namespace Atma.Entities
                 Size = sizeof(RemoveEntityCommand);
             }
 
-            public static void Process(EntityManager entityManager, RemoveEntityCommand* it, NativeSlice<uint> lastEntities)
+            public static void Process(EntityManager entityManager, RemoveEntityCommand* it, Span<uint> lastEntities)
             {
                 //TODO: bulk remove entity
                 Assert.GreatherThan(lastEntities.Length, 0);
@@ -106,7 +106,7 @@ namespace Atma.Entities
                 DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, NativeSlice<uint> lastEntities)
+            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, Span<uint> lastEntities)
             {
                 Assert.GreatherThan(lastEntities.Length, 0);
                 if (it->DataCount == 1)
@@ -137,7 +137,7 @@ namespace Atma.Entities
             }
 
 
-            public static void Process(EntityManager entityManager, UpdateComponentCommand* it, NativeSlice<uint> lastEntities)
+            public static void Process(EntityManager entityManager, UpdateComponentCommand* it, Span<uint> lastEntities)
             {
                 Assert.GreatherThan(lastEntities.Length, 0);
                 if (it->DataCount == 1)
@@ -167,7 +167,7 @@ namespace Atma.Entities
                 DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, AssignComponentCommand* it, NativeSlice<uint> lastEntities)
+            public static void Process(EntityManager entityManager, AssignComponentCommand* it, Span<uint> lastEntities)
             {
                 Assert.GreatherThan(lastEntities.Length, 0);
                 var dataPtr = (void*)(it + 1);
@@ -199,7 +199,7 @@ namespace Atma.Entities
                 ComponentId = componentId;
             }
 
-            public static void Process(EntityManager entityManager, RemoveComponentCommand* it, NativeSlice<uint> lastEntities)
+            public static void Process(EntityManager entityManager, RemoveComponentCommand* it, Span<uint> lastEntities)
             {
                 //TODO: bulk remove
                 Assert.GreatherThan(lastEntities.Length, 0);
@@ -215,7 +215,7 @@ namespace Atma.Entities
             _buffer = new NativeBuffer(allocator, sizeInBytes);
         }
 
-        public unsafe void CreateEntity(Span<ComponentType> componentTypes, int count = 1)
+        public unsafe void CreateEntity(System.Span<ComponentType> componentTypes, int count = 1)
         {
             //old code did not store the components and there is overhead to this
             //but its the only way to make sure the em doesn't crash if it never 
@@ -237,15 +237,15 @@ namespace Atma.Entities
 
         public void CreateEntity(EntitySpec spec, int count = 1)
         {
-            Span<ComponentType> componentTypes = spec.ComponentTypes;
+            System.Span<ComponentType> componentTypes = spec.ComponentTypes;
             CreateEntity(componentTypes, count);
         }
 
-        private NativeSlice<uint> ReserveSetEntity(int count)
+        private Span<uint> ReserveSetEntity(int count)
         {
             _buffer.EnsureCapacity(sizeof(SetEntityCommand) + sizeof(uint) * count);
             var ptr = _buffer.Add(new SetEntityCommand(count));
-            return new NativeSlice<uint>(ptr + 1, count);
+            return new Span<uint>(ptr + 1, count);
         }
 
         public void SetEntity(uint entity)
@@ -254,7 +254,7 @@ namespace Atma.Entities
             data[0] = entity;
         }
 
-        public void SetEntity(NativeSlice<uint> entities)
+        public void SetEntity(Span<uint> entities)
         {
             var data = ReserveSetEntity(entities.Length);
             for (var i = 0; i < entities.Length; i++)
@@ -359,7 +359,7 @@ namespace Atma.Entities
         public void Execute(EntityManager em)
         {
             var rawPtr = _buffer.RawPointer;
-            NativeSlice<uint> lastEntities = NativeSlice<uint>.Empty;
+            Span<uint> lastEntities = Span<uint>.Empty;
             while (rawPtr < _buffer.EndPointer)
             {
                 var cmd = (EntityCommand*)rawPtr;
@@ -373,7 +373,7 @@ namespace Atma.Entities
                         break;
                     case CommandTypes.RemoveEntity:
                         RemoveEntityCommand.Process(em, (RemoveEntityCommand*)cmd, lastEntities);
-                        lastEntities = NativeSlice<uint>.Empty;
+                        lastEntities = Span<uint>.Empty;
                         break;
                     case CommandTypes.AssignComponent:
                         AssignComponentCommand.Process(em, (AssignComponentCommand*)cmd, lastEntities);

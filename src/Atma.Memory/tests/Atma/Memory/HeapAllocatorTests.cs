@@ -24,7 +24,7 @@ namespace Atma.Memory
             var blocks = 256;
             var size = blocks * HeapAllocation.HeapSize;
             var memory = stackalloc HeapAllocation[blocks];
-            var span = new Span<HeapAllocation>(memory, blocks);
+            var span = new System.Span<HeapAllocation>(memory, blocks);
             *memory = new HeapAllocation(size);
             //memory->Blocks = (uint)blocks - 1; //offset the first heap block
 
@@ -54,7 +54,7 @@ namespace Atma.Memory
             var blocks = 256;
             var size = blocks * HeapAllocation.HeapSize;
             var memory = stackalloc HeapAllocation[blocks];
-            var span = new Span<HeapAllocation>(memory, blocks);
+            var span = new System.Span<HeapAllocation>(memory, blocks);
             *memory = new HeapAllocation(size);
 
             //act
@@ -83,7 +83,7 @@ namespace Atma.Memory
             var blocks = 256;
             var size = blocks * HeapAllocation.HeapSize;
             var memory = stackalloc HeapAllocation[blocks];
-            var span = new Span<HeapAllocation>(memory, blocks);
+            var span = new System.Span<HeapAllocation>(memory, blocks);
             *memory = new HeapAllocation(size);
 
             //act

@@ -33,7 +33,7 @@ namespace Atma.Entities
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
 
-        public NativeReadOnlySlice<uint> Entities => _entities.Slice();
+        public ReadOnlySpan<uint> Entities => _entities.Slice();
 
         public EntitySpec Specification { get; }
         public ComponentPackedArray PackedArray => _packedArray;
@@ -63,7 +63,7 @@ namespace Atma.Entities
             return index;
         }
 
-        public int Create(NativeSlice<uint> entities)
+        public int Create(Span<uint> entities)
         {
             var amountToCreate = entities.Length > Free ? Free : entities.Length;
             for (var i = 0; i < amountToCreate; i++)
@@ -76,7 +76,7 @@ namespace Atma.Entities
             var data = stackalloc int[] { index };
             var result = stackalloc MovedEntity[1];
 
-            var slice = new NativeSlice<int>(data, 1);
+            var slice = new Span<int>(data, 1);
             var moved = new NativeFixedList<MovedEntity>(data, 1);
 
             Delete(slice, ref moved);
@@ -103,7 +103,7 @@ namespace Atma.Entities
         //     }
         // }
 
-        internal void Delete(NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        internal void Delete(Span<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
         {
             for (var i = 0; i < indicies.Length; i++)
             {

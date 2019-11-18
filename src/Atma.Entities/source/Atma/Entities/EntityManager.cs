@@ -89,7 +89,7 @@ namespace Atma.Entities
 
         public void Create(EntitySpec spec, NativeArray<uint> entities) => Create(spec.ComponentTypes, entities);
 
-        public unsafe void Create(Span<ComponentType> componentTypes, NativeSlice<uint> entities)
+        public unsafe void Create(Span<ComponentType> componentTypes, Span<uint> entities)
         {
             var specId = ComponentType.CalculateId(componentTypes);
             var specIndex = GetOrCreateSpec(componentTypes);
@@ -99,7 +99,7 @@ namespace Atma.Entities
             _entityPool.Take(entities);
 
             var stackCreated = stackalloc CreatedEntity[entities.Length];
-            var created = new NativeSlice<CreatedEntity>(stackCreated, entities.Length);
+            var created = new Span<CreatedEntity>(stackCreated, entities.Length);
 
             array.Create(entities, created);
             for (var i = 0; i < entities.Length; i++)
@@ -117,7 +117,7 @@ namespace Atma.Entities
         //     var spec = _knownSpecs[specIndex];
         //     return Create(spec);
         // }
-        private void GetEntities(NativeSlice<uint> ids, NativeSlice<Entity> entities)
+        private void GetEntities(Span<uint> ids, Span<Entity> entities)
         {
 
         }
@@ -132,7 +132,7 @@ namespace Atma.Entities
         //     Replace(entity, type, ref src, oneToMany);
         // }
 
-        internal unsafe void Assign(NativeSlice<uint> entities, ComponentType* type, ref void* src, bool oneToMany)
+        internal unsafe void Assign(Span<uint> entities, ComponentType* type, ref void* src, bool oneToMany)
         {
             using var entityRefs = new NativeArray<EntityRef>(_allocator, entities.Length);
 
@@ -148,7 +148,7 @@ namespace Atma.Entities
             SetComponentInternal(type, entities, src, oneToMany, false);
         }
 
-        internal unsafe void Move(NativeSlice<EntityRef> entities, ComponentType* type)
+        internal unsafe void Move(Span<EntityRef> entities, ComponentType* type)
         {
             var lastIndex = 0;
             for (var i = 0; i < entities.Length; i++)
@@ -194,7 +194,7 @@ namespace Atma.Entities
             var componentType = stackalloc[] { ComponentType<T>.Type };
             void* data = stackalloc[] { t };
             var entities = stackalloc[] { entity };
-            Assign(new NativeSlice<uint>(entities, 1), componentType, ref data, true);
+            Assign(new Span<uint>(entities, 1), componentType, ref data, true);
 
             // Assert.EqualTo(Has<T>(entity), false);
 
@@ -265,10 +265,10 @@ namespace Atma.Entities
         public unsafe void Remove(uint entity)
         {
             var entities = stackalloc[] { entity };
-            Remove(new NativeSlice<uint>(entities, 1));
+            Remove(new Span<uint>(entities, 1));
         }
 
-        public unsafe void Remove(NativeSlice<uint> entities)
+        public unsafe void Remove(Span<uint> entities)
         {
             var temp = stackalloc EntityRef[256];
             var entityRefs = new NativeFixedList<EntityRef>(temp, 256);
@@ -290,7 +290,7 @@ namespace Atma.Entities
         private unsafe void Remove(ref EntityRef e, bool returnId)
         {
             var temp = stackalloc[] { e };
-            var slice = new NativeSlice<EntityRef>(temp, 1);
+            var slice = new Span<EntityRef>(temp, 1);
             Remove(slice, returnId);
         }
 
@@ -298,7 +298,7 @@ namespace Atma.Entities
         {
             var array = _entityArrays[specIndex];
             var stackIndicies = stackalloc int[removeEntities.Length];
-            var sliceIndicies = new NativeSlice<int>(stackIndicies, removeEntities.Length);
+            var sliceIndicies = new Span<int>(stackIndicies, removeEntities.Length);
 
             var stackMovedEntities = stackalloc MovedEntity[removeEntities.Length];
             var movedEntities = new NativeFixedList<MovedEntity>(stackMovedEntities, removeEntities.Length);
@@ -319,7 +319,7 @@ namespace Atma.Entities
             removeEntities.Reset();
         }
 
-        internal unsafe void Remove(NativeSlice<EntityRef> entities, bool returnId)
+        internal unsafe void Remove(Span<EntityRef> entities, bool returnId)
         {
             var tempEntities = stackalloc EntityRef[128];
             var removeEntities = new NativeFixedList<EntityRef>(tempEntities, 128);
@@ -378,7 +378,7 @@ namespace Atma.Entities
                 var specId = ComponentType.CalculateId(componentTypes);
                 var dstSpecIndex = GetOrCreateSpec(componentTypes);
                 var temp = stackalloc[] { new EntityRef(_entityPool.GetPointer(entity)) };
-                var slice = new NativeSlice<EntityRef>(temp, 1);
+                var slice = new Span<EntityRef>(temp, 1);
 
                 Move(slice, dstSpecIndex);
                 return true;
@@ -429,7 +429,7 @@ namespace Atma.Entities
             SetComponentInternal(componentType, entities, t.RawPointer, false, false);
         }
 
-        internal unsafe void SetComponentInternal(EntityChunkArray array, NativeSlice<Entity> slice, ComponentType* componentType, ref void* src, bool oneToMany)
+        internal unsafe void SetComponentInternal(EntityChunkArray array, Span<Entity> slice, ComponentType* componentType, ref void* src, bool oneToMany)
         {
             while (slice.Length > 0)
             {
@@ -440,7 +440,7 @@ namespace Atma.Entities
             }
         }
 
-        internal unsafe void SetComponentInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany, bool allowUpdate)
+        internal unsafe void SetComponentInternal(ComponentType* componentType, Span<uint> entities, void* src, bool oneToMany, bool allowUpdate)
         {
             //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             //we are going to put replaces in front of the array and assigns in the back if we are allowed
@@ -473,7 +473,7 @@ namespace Atma.Entities
                     //TODO: modifying data can have serious considerations during looping but I think we really only need to worry aboout remove, since the rest is append only
                     //TODO: assign is already one at a time and slow, so might as well stackalloc
                     var ep = stackalloc[] { entities[i] };
-                    Assign(new NativeSlice<uint>(ep, 1), componentType, ref src, oneToMany);
+                    Assign(new Span<uint>(ep, 1), componentType, ref src, oneToMany);
                     Assert.EqualTo(true, false); //no update yet
                     //Assert.EqualTo(allowAssign, true);
                     //entityRefs[assign--] = e;
@@ -526,7 +526,7 @@ namespace Atma.Entities
         //         Assign(entity, type, ref ptr, oneToMany);
         // }
 
-        internal unsafe void UpdateInternal(ComponentType* componentType, NativeSlice<uint> entities, void* src, bool oneToMany)
+        internal unsafe void UpdateInternal(ComponentType* componentType, Span<uint> entities, void* src, bool oneToMany)
         {
             //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
@@ -552,12 +552,12 @@ namespace Atma.Entities
         {
             var specIndex = GetOrCreateSpec(spec);
             var temp = stackalloc[] { new EntityRef(_entityPool.GetPointer(entity)) };
-            var slice = new NativeSlice<EntityRef>(temp, 1);
+            var slice = new Span<EntityRef>(temp, 1);
 
             Move(slice, specIndex);
         }
 
-        private void Move(NativeSlice<EntityRef> entities, int dstSpecIndex)
+        private void Move(Span<EntityRef> entities, int dstSpecIndex)
         {
             for (var i = 0; i < entities.Length; i++)
             {
