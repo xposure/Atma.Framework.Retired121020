@@ -60,6 +60,32 @@
             chunkIndex.ShouldBe(0);
         }
 
+        // [Fact]
+        // public void ShouldCreateManyEntities()
+        // {
+        //     //arrange
+        //     using var memory = new DynamicAllocator(_logFactory);
+        //     var specifcation = new EntitySpec(
+        //         ComponentType<Position>.Type
+        //     );
+
+        //     using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+
+
+        //     NativeSlice<Position> data = stackalloc Position[2];
+
+        //     //chunkArray.Create()
+
+        //     //act
+        //     var index0 = chunkArray.Create(1, out var chunkIndex);
+        //     var index1 = chunkArray.Create(2, out chunkIndex);
+
+        //     //assert
+        //     index0.ShouldBe(0);
+        //     index1.ShouldBe(1);
+        //     chunkIndex.ShouldBe(0);
+        // }
+
 
         [Fact]
         public void ShouldDeleteAndMove()

@@ -89,14 +89,25 @@ namespace Atma.Entities
 
         public void Create(EntitySpec spec, NativeArray<uint> entities) => Create(spec.ComponentTypes, entities);
 
-        public void Create(Span<ComponentType> componentTypes, NativeSlice<uint> entities)
+        public unsafe void Create(Span<ComponentType> componentTypes, NativeSlice<uint> entities)
         {
             var specId = ComponentType.CalculateId(componentTypes);
             var specIndex = GetOrCreateSpec(componentTypes);
             var array = _entityArrays[specIndex];
 
+            //TODO: we should work with entity refs here so we aren't looking these up again
             _entityPool.Take(entities);
-            array.Create(entities);
+
+            var stackCreated = stackalloc CreatedEntity[entities.Length];
+            var created = new NativeSlice<CreatedEntity>(stackCreated, entities.Length);
+
+            array.Create(entities, created);
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var entity = ref _entityPool[entities[i]];
+                ref var createdEntity = ref created[i];
+                entity = new Entity(entities[i], specIndex, createdEntity.ChunkIndex, createdEntity.Index);
+            }
         }
 
         // internal uint Create(int specId)

@@ -4,6 +4,18 @@
     using Microsoft.Extensions.Logging;
     using System.Collections.Generic;
 
+    public readonly struct CreatedEntity
+    {
+        public readonly int ChunkIndex;
+        public readonly int Index;
+
+        public CreatedEntity(int chunkIndex, int index)
+        {
+            ChunkIndex = chunkIndex;
+            Index = index;
+        }
+    }
+
     public sealed class EntityChunkArray : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
     {
         private ILogger _logger;
@@ -45,17 +57,19 @@
         }
 
 
-        public void Create(NativeSlice<uint> entity)
+        internal void Create(NativeSlice<uint> entity, NativeSlice<CreatedEntity> createdEntities)
         {
             var i = 0;
             while (i < entity.Length)
             {
-                var remaining = entity.Length - i;
                 var chunk = GetOrCreateFreeChunk(out var chunkIndex);
-                var count = chunk.Free > remaining ? remaining : chunk.Free;
-                chunk.Create(entity.Slice(i, count));
-                i += count;
-                _entityCount += count;
+                var created = chunk.Create(entity.Slice(i));
+
+                var startIndex = Entity.ENTITY_MAX - created;
+                for (var j = 0; j < created; ++j)
+                    createdEntities[i++] = new CreatedEntity(chunkIndex, startIndex + j);
+
+                _entityCount += created;
             }
         }
 
