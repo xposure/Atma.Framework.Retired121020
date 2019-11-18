@@ -1,6 +1,7 @@
 ﻿namespace Atma.Entities
 {
     using System;
+    using System.Linq;
     using Atma.Memory;
     using Divergic.Logging.Xunit;
     using Microsoft.Extensions.Logging;
@@ -60,31 +61,34 @@
             chunkIndex.ShouldBe(0);
         }
 
-        // [Fact]
-        // public void ShouldCreateManyEntities()
-        // {
-        //     //arrange
-        //     using var memory = new DynamicAllocator(_logFactory);
-        //     var specifcation = new EntitySpec(
-        //         ComponentType<Position>.Type
-        //     );
+        [Fact]
+        public unsafe void ShouldCreateManyEntities()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            var specifcation = new EntitySpec(ComponentType<Position>.Type);
 
-        //     using var chunkArray = new EntityChunkArray(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
 
+            var entities = Enumerable.Range(0, Entity.ENTITY_MAX * 2).Select(x => (uint)x + 1).ToArray();
+            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[entities.Length];
 
-        //     NativeSlice<Position> data = stackalloc Position[2];
+            //act
+            chunkArray.Create(entities, createdEntities);
 
-        //     //chunkArray.Create()
+            //assert
+            var created = createdEntities.ToArray();
+            var first = created.Take(Entity.ENTITY_MAX).ToArray();
+            var firstSet = Enumerable.Range(0, Entity.ENTITY_MAX).Select(x => new CreatedEntity(0, x)).ToArray();
+            first.ShouldBe(firstSet);
 
-        //     //act
-        //     var index0 = chunkArray.Create(1, out var chunkIndex);
-        //     var index1 = chunkArray.Create(2, out chunkIndex);
+            var second = created.Skip(Entity.ENTITY_MAX).Take(Entity.ENTITY_MAX).ToArray();
+            var secondSet = Enumerable.Range(0, Entity.ENTITY_MAX).Select(x => new CreatedEntity(1, x)).ToArray();
+            second.ShouldBe(secondSet);
 
-        //     //assert
-        //     index0.ShouldBe(0);
-        //     index1.ShouldBe(1);
-        //     chunkIndex.ShouldBe(0);
-        // }
+            chunkArray.ChunkCount.ShouldBe(2);
+            chunkArray.EntityCount.ShouldBe(entities.Length);
+        }
 
 
         [Fact]
@@ -159,10 +163,9 @@
             entities[0] = new Entity(entity, specIndex, chunkIndex, index);
 
             //act
-            var remaining = chunkArray.Copy(componentType, ref src, entities.Slice(), false);
+            chunkArray.Copy(specIndex, componentType, ref src, entities.Slice(), false);
 
             //assert
-            remaining.Length.ShouldBe(3);
             span[0].X.ShouldBe(100);
             span[0].Y.ShouldBe(100);
         }
@@ -203,16 +206,9 @@
             entities[3] = new Entity(entity2, specIndex, chunkIndex, index2);
 
             //act
-            var slice = entities.Slice();
-            var attempts = 4;//make sure we don't get in a inifinite loop
-            while (slice.Length > 0 && attempts-- > 0)
-            {
-                slice = chunkArray.Copy(componentType, ref src, slice, true);
-            }
+            chunkArray.Copy(specIndex, componentType, ref src, entities, true);
 
             //assert
-            slice.Length.ShouldBe(0);
-            attempts.ShouldBe(1);
             span[0].X.ShouldBe(100);
             span[0].Y.ShouldBe(100);
             span[1].X.ShouldBe(200);

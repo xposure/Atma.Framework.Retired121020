@@ -5,7 +5,7 @@
     using System;
     using System.Collections.Generic;
 
-    public readonly struct CreatedEntity
+    public readonly struct CreatedEntity : IEquatable<CreatedEntity>
     {
         public readonly int ChunkIndex;
         public readonly int Index;
@@ -15,6 +15,10 @@
             ChunkIndex = chunkIndex;
             Index = index;
         }
+
+        public bool Equals(CreatedEntity other) => ChunkIndex == other.ChunkIndex && Index == other.Index;
+
+        public override string ToString() => $"{{ ChunkIndex: {ChunkIndex}, Index: {Index} }}";
     }
 
     public sealed class EntityChunkList : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
@@ -74,26 +78,31 @@
             }
         }
 
-        internal unsafe Span<Entity> Copy(ComponentType* componentType, ref void* src, in Span<Entity> entities, bool oneToMany)
+        internal unsafe void Copy(int specIndex, ComponentType* componentType, ref void* src, Span<Entity> entities, bool incrementSource)
         {
-            Assert.GreatherThan(entities.Length, 0);
-
-            var componentIndex = Specification.GetComponentIndex(componentType->ID);
-            var chunkIndex = entities[0].ChunkIndex;
-            var chunk = _chunks[chunkIndex];
-
-            ref var e = ref entities[0];
-            var index = e.Index;
-            var length = 1;
-            for (; length < entities.Length; length++)
+            while (entities.Length > 0)
             {
-                ref var e1 = ref entities[length];
-                if (e.SpecIndex != e1.SpecIndex || e1.ChunkIndex != e.ChunkIndex || e1.Index != ++index)
-                    break;
-            }
+                Assert.GreatherThan(entities.Length, 0);
 
-            chunk.PackedArray.Copy(componentIndex, ref src, e.Index, length, oneToMany);
-            return entities.Slice(length);
+                var componentIndex = Specification.GetComponentIndex(componentType->ID);
+                var chunkIndex = entities[0].ChunkIndex;
+                var chunk = _chunks[chunkIndex];
+
+                ref var e = ref entities[0];
+                var index = e.Index;
+                var length = 1;
+                for (; length < entities.Length; length++)
+                {
+                    ref var e1 = ref entities[length];
+                    Assert.EqualTo(e1.SpecIndex, specIndex);
+
+                    if (e1.ChunkIndex != e.ChunkIndex || e1.Index != ++index)
+                        break;
+                }
+
+                chunk.PackedArray.Copy(componentIndex, ref src, e.Index, length, incrementSource);
+                entities = entities.Slice(length);
+            }
         }
 
 
