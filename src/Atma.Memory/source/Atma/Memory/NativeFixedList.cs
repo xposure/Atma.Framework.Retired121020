@@ -183,10 +183,9 @@
         public Span<T> Slice(int start, int length)
         {
             Assert.EqualTo(IsValid, true);
-            Assert.GreatherThanEqualTo(start, 0);
-            Assert.GreatherThanEqualTo(length, 0);
-            Assert.LessThanEqualTo(start + length, Length);
-            return new Span<T>(&RawPointer[start], length);
+            Assert.Range(start, 0, Length);
+            Assert.Range(start + length - 1, start, Length);
+            return new Span<T>(RawPointer + start, length);
         }
 
         public System.Span<T> AsSpan()
