@@ -33,7 +33,7 @@ namespace Atma.Entities
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
 
-        public ReadOnlySpan<uint> Entities => _entities.Span;
+        public NativeReadOnlySlice<uint> Entities => _entities.Slice();
 
         public EntitySpec Specification { get; }
         public ComponentPackedArray PackedArray => _packedArray;

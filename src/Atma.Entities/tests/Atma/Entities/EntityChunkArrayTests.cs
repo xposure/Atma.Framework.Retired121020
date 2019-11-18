@@ -75,7 +75,7 @@
             //act
             var index0 = chunkArray.Create(1, out var chunkIndex0);
             var index1 = chunkArray.Create(2, out var chunkIndex1);
-            var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentSpan<Position>();
+            var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentData<Position>();
             span[index1] = new Position(10, 20);
             chunkArray.Delete(chunkIndex0, index0);
 
@@ -124,7 +124,7 @@
             var index = chunkArray.Create(entity, out var chunkIndex);
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
-            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentSpan<Position>();
+            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentData<Position>();
 
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
             var src = (void*)ptr;
@@ -163,7 +163,7 @@
 
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
-            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentSpan<Position>();
+            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentData<Position>();
 
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
             var src = (void*)ptr;
@@ -181,7 +181,7 @@
             var attempts = 4;//make sure we don't get in a inifinite loop
             while (slice.Length > 0 && attempts-- > 0)
             {
-                slice = chunkArray.Copy(componentType, ref src, slice, false);
+                slice = chunkArray.Copy(componentType, ref src, slice, true);
             }
 
             //assert

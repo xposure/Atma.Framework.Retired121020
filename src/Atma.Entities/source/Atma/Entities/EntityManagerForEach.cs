@@ -2,13 +2,14 @@ namespace Atma
 {
     using System;
     using Atma.Entities;
+    using Atma.Memory;
     public static class ForEachExtensions
     {
         public delegate void ForEachEntity<T0>(uint entity, ref T0 t0) where T0 : unmanaged;
         public unsafe static void ForEntity<T0>(this EntityManager em, ForEachEntity<T0> view)
           where T0 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i]);
@@ -18,7 +19,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1>(this EntityManager em, ForEachEntity<T0, T1> view)
           where T0 : unmanaged where T1 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i]);
@@ -28,7 +29,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2>(this EntityManager em, ForEachEntity<T0, T1, T2> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i]);
@@ -38,7 +39,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3>(this EntityManager em, ForEachEntity<T0, T1, T2, T3> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i]);
@@ -48,7 +49,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3, T4>(this EntityManager em, ForEachEntity<T0, T1, T2, T3, T4> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i], ref t4[i]);
@@ -58,7 +59,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3, T4, T5>(this EntityManager em, ForEachEntity<T0, T1, T2, T3, T4, T5> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i], ref t4[i], ref t5[i]);
@@ -68,7 +69,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3, T4, T5, T6>(this EntityManager em, ForEachEntity<T0, T1, T2, T3, T4, T5, T6> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i], ref t4[i], ref t5[i], ref t6[i]);
@@ -78,7 +79,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3, T4, T5, T6, T7>(this EntityManager em, ForEachEntity<T0, T1, T2, T3, T4, T5, T6, T7> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6, Span<T7> t7) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6, NativeSlice<T7> t7) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i], ref t4[i], ref t5[i], ref t6[i], ref t7[i]);
@@ -88,7 +89,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3, T4, T5, T6, T7, T8>(this EntityManager em, ForEachEntity<T0, T1, T2, T3, T4, T5, T6, T7, T8> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6, Span<T7> t7, Span<T8> t8) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6, NativeSlice<T7> t7, NativeSlice<T8> t8) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i], ref t4[i], ref t5[i], ref t6[i], ref t7[i], ref t8[i]);
@@ -98,7 +99,7 @@ namespace Atma
         public unsafe static void ForEntity<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>(this EntityManager em, ForEachEntity<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> view)
           where T0 : unmanaged where T1 : unmanaged where T2 : unmanaged where T3 : unmanaged where T4 : unmanaged where T5 : unmanaged where T6 : unmanaged where T7 : unmanaged where T8 : unmanaged where T9 : unmanaged
         {
-            em.ForChunk((int length, ReadOnlySpan<uint> entities, Span<T0> t0, Span<T1> t1, Span<T2> t2, Span<T3> t3, Span<T4> t4, Span<T5> t5, Span<T6> t6, Span<T7> t7, Span<T8> t8, Span<T9> t9) =>
+            em.ForChunk((int length, NativeReadOnlySlice<uint> entities, NativeSlice<T0> t0, NativeSlice<T1> t1, NativeSlice<T2> t2, NativeSlice<T3> t3, NativeSlice<T4> t4, NativeSlice<T5> t5, NativeSlice<T6> t6, NativeSlice<T7> t7, NativeSlice<T8> t8, NativeSlice<T9> t9) =>
             {
                 for (var i = 0; i < length; i++)
                     view(entities[i], ref t0[i], ref t1[i], ref t2[i], ref t3[i], ref t4[i], ref t5[i], ref t6[i], ref t7[i], ref t8[i], ref t9[i]);

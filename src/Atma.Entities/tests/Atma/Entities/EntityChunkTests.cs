@@ -114,7 +114,7 @@ namespace Atma.Entities
             var specification = new EntitySpec(ComponentType<Position>.Type);
 
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
-            var span = entityChunk.PackedArray.GetComponentSpan<Position>(0);
+            var span = entityChunk.PackedArray.GetComponentData<Position>(0);
 
             //act
             span[0] = new Position(1);
@@ -148,7 +148,7 @@ namespace Atma.Entities
 
             var created = entityChunk.Create(ids);
 
-            var span = entityChunk.PackedArray.GetComponentSpan<Position>(0);
+            var span = entityChunk.PackedArray.GetComponentData<Position>();
             for (var i = 0; i < span.Length; i++)
                 span[i] = new Position(i + 1);
 

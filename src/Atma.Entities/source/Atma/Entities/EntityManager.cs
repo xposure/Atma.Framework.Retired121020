@@ -216,7 +216,7 @@ namespace Atma.Entities
 
             var array = _entityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
-            var span = chunk.PackedArray.GetComponentSpan<T>();
+            var span = chunk.PackedArray.GetComponentData<T>();
 
             return ref span[e.Index];
         }
@@ -397,7 +397,7 @@ namespace Atma.Entities
             Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             var array = _entityArrays[entity.SpecIndex];
             var chunk = array.AllChunks[entity.ChunkIndex];
-            var span = chunk.PackedArray.GetComponentSpan<T>();
+            var span = chunk.PackedArray.GetComponentData<T>();
             span[entity.Index] = t;
         }
 
@@ -424,7 +424,7 @@ namespace Atma.Entities
             {
                 ref var e = ref slice[0];
                 var length = slice.Length;
-                slice = array.Copy(componentType, ref src, slice, oneToMany);
+                slice = array.Copy(componentType, ref src, slice, !oneToMany);
                 Assert.NotEqualTo(slice.Length, length);
             }
         }

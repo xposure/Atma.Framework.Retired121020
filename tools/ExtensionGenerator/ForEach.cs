@@ -14,6 +14,7 @@ namespace ExtensionGenerator
             Console.WriteLine("namespace Atma{");
             Console.WriteLine("using System;");
             Console.WriteLine("using Atma.Entities;");
+            Console.WriteLine("using Atma.Memory;");
             Console.WriteLine("public static class ForEachExtensions{");
             for (var i = 1; i <= 10; i++)
             {
@@ -28,7 +29,7 @@ namespace ExtensionGenerator
         protected void WriteFunction(int genericCount)
         {
             var generics = genericCount.Range().Select(i => $"T{i}").ToArray();
-            var spanGenerics = genericCount.Range().Select(i => $"Span<T{i}> t{i}");
+            var spanGenerics = genericCount.Range().Select(i => $"NativeSlice<T{i}> t{i}");
             var where = genericCount.Range().Select(i => $"where T{i}: unmanaged").ToArray();
             var spanArgs = genericCount.Range().Select(i => $"ref T{i} t{i}");
             var viewArgs = genericCount.Range().Select(i => $"ref t{i}[i]");
@@ -37,7 +38,7 @@ namespace ExtensionGenerator
             Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityManager em, ForEachEntity<{generics.Join()}> view) ");
             Console.WriteLine($"  {where.Join(" ")}");
             Console.WriteLine($"{{");
-            Console.WriteLine($"  em.ForChunk((int length, ReadOnlySpan<uint> entities, {spanGenerics.Join()}) => {{");
+            Console.WriteLine($"  em.ForChunk((int length, NativeReadOnlySlice<uint> entities, {spanGenerics.Join()}) => {{");
             Console.WriteLine($"    for (var i = 0; i < length; i++)");
             Console.WriteLine($"      view(entities[i], {viewArgs.Join()});");
             Console.WriteLine($"  }});");

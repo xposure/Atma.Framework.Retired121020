@@ -32,16 +32,9 @@ namespace Atma.Entities
             => Specification.GetComponentIndex(ComponentType<T>.Type);
 
 
-        internal void Copy(ComponentType* componentType, void* src, int dstIndex)
+        internal void Copy(int componentIndex, ref void* src, int dstIndex, int length, bool incrementSrc)
         {
-            var index = Specification.GetComponentIndex(componentType->ID);
-            Assert.GreatherThan(index, -1);
-            _componentData[index].Copy(src, dstIndex);
-        }
-
-        internal void Copy(int componentIndex, ref void* src, int dstIndex, int length, bool oneToMany)
-        {
-            _componentData[componentIndex].Copy(ref src, dstIndex, length, oneToMany);
+            _componentData[componentIndex].Copy(ref src, dstIndex, length, incrementSrc);
         }
 
         //TODO: Add a group lock here and implement internal no lock moves in ComponentDataArray
@@ -75,7 +68,7 @@ namespace Atma.Entities
             _componentData[index].Reset(dst);
         }
 
-        public Span<T> GetComponentSpan<T>(int index = -1, ComponentType componentType = default)
+        public NativeSlice<T> GetComponentData<T>(int index = -1, ComponentType componentType = default)
             where T : unmanaged
         {
             if (index == -1)
@@ -87,20 +80,20 @@ namespace Atma.Entities
             Assert.Range(index, 0, _componentData.Length);
 
             var componentDataArray = _componentData[index];
-            return componentDataArray.AsSpanInternal<T>(componentType);
+            return componentDataArray.AsSlice<T>(componentType);
         }
 
-        public unsafe T* GetComponentPointer<T>(int index = -1)
-                   where T : unmanaged
-        {
-            if (index < 0)
-                index = GetComponentIndex<T>();
+        // public unsafe T* GetComponentPointer<T>(int index = -1)
+        //            where T : unmanaged
+        // {
+        //     if (index < 0)
+        //         index = GetComponentIndex<T>();
 
-            Assert.Range(index, 0, _componentData.Length);
+        //     Assert.Range(index, 0, _componentData.Length);
 
-            var componentDataArray = _componentData[index];
-            return componentDataArray.AsPointer<T>();
-        }
+        //     var componentDataArray = _componentData[index];
+        //     return componentDataArray.AsPointer<T>();
+        // }
 
         protected override void OnManagedDispose()
         {

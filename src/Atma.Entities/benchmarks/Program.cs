@@ -119,8 +119,8 @@ namespace Atma.Entities.Benchmarks
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
 
-                        var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
-                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        var t0 = chunk.PackedArray.GetComponentData<Position>(t0i, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentData<Velocity>(t1i, componentTypes[1]);
                         for (var j = 0; j < length; j++)
                         {
                             ref var position = ref t0[j];
@@ -274,8 +274,8 @@ namespace Atma.Entities.Benchmarks
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
 
-                        var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
-                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        var t0 = chunk.PackedArray.GetComponentData<Position>(t0i, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentData<Velocity>(t1i, componentTypes[1]);
                         for (var j = 0; j < length; j++)
                         {
                             ref var position = ref t0[j];
@@ -326,8 +326,8 @@ namespace Atma.Entities.Benchmarks
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
 
-                        var t0 = chunk.PackedArray.GetComponentSpan<Position>(t0i, componentTypes[0]);
-                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        var t0 = chunk.PackedArray.GetComponentData<Position>(t0i, componentTypes[0]);
+                        var t1 = chunk.PackedArray.GetComponentData<Velocity>(t1i, componentTypes[1]);
                         for (var j = 0; j < length; j++)
                         {
                             ref var position = ref t0[j];
@@ -350,7 +350,7 @@ namespace Atma.Entities.Benchmarks
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var t1 = chunk.PackedArray.GetComponentSpan<Velocity>(t1i, componentTypes[1]);
+                        var t1 = chunk.PackedArray.GetComponentData<Velocity>(t1i, componentTypes[1]);
                         for (var j = 0; j < length; j++)
                         {
                             ref var velocity = ref t1[j];

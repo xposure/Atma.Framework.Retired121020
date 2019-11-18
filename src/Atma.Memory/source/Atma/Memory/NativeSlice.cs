@@ -86,6 +86,9 @@
 
         public NativeSlice<T> Slice(int start, int length)
         {
+            if (length == 0)
+                return Empty;
+
             Assert.Range(start, 0, Length);
             Assert.Range(start + length - 1, start, Length);
             var addr = (T*)_rawAddress;

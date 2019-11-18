@@ -32,19 +32,25 @@
             _memoryHandle = allocator.Take(componentType.Size * length);
         }
 
-        public Span<T> AsSpan<T>()
+        public NativeSlice<T> AsSlice<T>(int start = 0, int length = -1)
             where T : unmanaged
         {
             var componentType = ComponentType<T>.Type;
             Contract.EqualTo(componentType.ID, _componentType.ID);
-            return new Span<T>((void*)_memoryHandle.Address, Length);
+            return AsSlice<T>(componentType, start, length);
         }
 
-        public Span<T> AsSpanInternal<T>(ComponentType componentType)
+        internal NativeSlice<T> AsSlice<T>(ComponentType componentType, int start = 0, int length = -1)
             where T : unmanaged
         {
+            if (length == -1)
+                length = Length;
+
+            Assert.Range(start, 0, Length);
+            Assert.Range(start + length - 1, start, Length);
             Assert.EqualTo(componentType.ID, _componentType.ID);
-            return new Span<T>((void*)_memoryHandle.Address, Length);
+            var src = (T*)_memoryHandle.Address;
+            return new NativeSlice<T>((void*)(src + start), length);
         }
 
         public T* AsPointer<T>()
@@ -86,13 +92,13 @@
 #endif
         }
 
-        internal void Copy(ref void* ptr, int dstIndex, int length, bool oneToMany)
+        internal void Copy(ref void* ptr, int dstIndex, int length, bool incrementSrc)
         {
             Assert.Range(dstIndex, 0, Length - length + 1);
             var addr = (byte*)_memoryHandle.Address;
             var dst = (void*)(addr + dstIndex * ElementSize);
 
-            if (oneToMany)
+            if (!incrementSrc)
             {
                 while (length-- > 0)
                 {
@@ -103,12 +109,7 @@
             else
             {
                 while (length-- > 0)
-                {
-                    //var ss = ptr;
-                    //var dd = dst;
                     _componentHelper.CopyAndMoveNext(ref ptr, ref dst);
-                    //_logger.LogDebug($"Assigned {new IntPtr(ss)} to {new IntPtr(dd)}, now src is {new IntPtr(ptr)} and dst is {new IntPtr(dd)} ");
-                }
             }
         }
 

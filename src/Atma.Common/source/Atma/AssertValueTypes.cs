@@ -3,6 +3,7 @@ namespace Atma
 {
     using System.Diagnostics;
 
+    [DebuggerStepThrough]
     public static partial class Contract
     {
         public static void EqualTo(bool actual, bool expected) { if (!(actual == expected)) throw ContractException.GenerateException(actual, expected); }
@@ -58,6 +59,7 @@ namespace Atma
 
     }
 
+    [DebuggerStepThrough]
     public static partial class Assert
     {
         [Conditional("DEBUG"), Conditional("ASSERT")] public static void EqualTo(bool actual, bool expected) { if (!(actual == expected)) throw ContractException.GenerateException(actual, expected); }

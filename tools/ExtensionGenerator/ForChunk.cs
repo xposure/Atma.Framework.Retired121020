@@ -14,6 +14,7 @@ namespace ExtensionGenerator
             Console.WriteLine("namespace Atma{");
             Console.WriteLine("using System;");
             Console.WriteLine("using Atma.Entities;");
+            Console.WriteLine("using Atma.Memory;");
             Console.WriteLine("public static class ForChunkExtensions{");
             for (var i = 1; i <= 10; i++)
             {
@@ -28,14 +29,14 @@ namespace ExtensionGenerator
         protected void WriteFunction(int genericCount)
         {
             var generics = genericCount.Range().Select(i => $"T{i}").ToArray();
-            var spanGenerics = genericCount.Range().Select(i => $"Span<T{i}> t{i}");
+            var spanGenerics = genericCount.Range().Select(i => $"NativeSlice<T{i}> t{i}");
             var where = genericCount.Range().Select(i => $"where T{i}: unmanaged").ToArray();
             var componentType = genericCount.Range().Select(i => $"ComponentType<T{i}>.Type").ToArray();
             var componentIndicies = genericCount.Range().Select(i => $"      var c{i} = array.Specification.GetComponentIndex(componentTypes[{i}]);").ToArray();
-            var componentArrays = genericCount.Range().Select(i => $"        var t{i} = chunk.PackedArray.GetComponentSpan<T{i}>(c{i}, componentTypes[{i}]);").ToArray();
+            var componentArrays = genericCount.Range().Select(i => $"        var t{i} = chunk.PackedArray.GetComponentData<T{i}>(c{i}, componentTypes[{i}]);").ToArray();
             var viewArgs = genericCount.Range().Select(i => $"t{i}");
 
-            Console.WriteLine($"public delegate void ForEachChunk<{generics.Join()}>(int length, ReadOnlySpan<uint> entities, {spanGenerics.Join()}){where.Join(" ")};");
+            Console.WriteLine($"public delegate void ForEachChunk<{generics.Join()}>(int length, NativeReadOnlySlice<uint> entities, {spanGenerics.Join()}){where.Join(" ")};");
             Console.WriteLine($"public unsafe static void ForChunk<{generics.Join()}>(this EntityManager em, ForEachChunk<{generics.Join()}> view) ");
             Console.WriteLine($"  {where.Join(" ")}");
             Console.WriteLine($"{{");
@@ -48,7 +49,7 @@ namespace ExtensionGenerator
             Console.WriteLine($"      for (var k = 0; k < array.AllChunks.Count; k++) {{");
             Console.WriteLine($"        var chunk = array.AllChunks[k];");
             Console.WriteLine($"        var length = chunk.Count;");
-            Console.WriteLine($"        var entities = chunk.Entities.AsSpan();");
+            Console.WriteLine($"        var entities = chunk.Entities;");
             Console.WriteLine($"{componentArrays.Join("\n")}");
             Console.WriteLine($"        view(length,entities,{viewArgs.Join()}); ");
             Console.WriteLine($"      }}");
