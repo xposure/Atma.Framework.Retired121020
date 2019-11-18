@@ -76,7 +76,7 @@
 //             span.Sort(comparer);
 //         }
 
-//         public System.Span<T> AsSpan() => new System.Span<T>(RawPointer, Length);
+//         public Span<T> AsSpan() => new Span<T>(RawPointer, Length);
 
 //         public Span<T> Slice() => Slice(0, Length);
 

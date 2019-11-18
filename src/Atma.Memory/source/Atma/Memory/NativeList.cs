@@ -279,10 +279,10 @@
             return new Span<T>(&RawPointer[start], length);
         }
 
-        public System.Span<T> AsSpan()
+        public Span<T> AsSpan()
         {
             Assert.EqualTo(Handle.IsValid, true);
-            return new System.Span<T>(RawPointer, Length);
+            return new Span<T>(RawPointer, Length);
         }
 
         public override string ToString()

@@ -119,16 +119,16 @@
             return new Span<T>(RawPointer + start, length);
         }
 
-        public System.Span<T> Span
+        public Span<T> Span
         {
             get
             {
                 Assert.EqualTo(Handle.IsValid, true);
-                return new System.Span<T>(RawPointer, Length);
+                return new Span<T>(RawPointer, Length);
             }
         }
 
-        public static implicit operator System.Span<T>(NativeArray<T> it) => it.Span;
+        public static implicit operator Span<T>(NativeArray<T> it) => it.Span;
 
         public override string ToString()
         {
