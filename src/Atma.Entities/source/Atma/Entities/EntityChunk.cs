@@ -1,7 +1,44 @@
 namespace Atma.Entities
 {
+    using System;
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
+
+    internal interface IEntityChunk
+    {
+        int Count { get; }
+        int Free { get; }
+        ReadOnlySpan<uint> Entities { get; }
+        EntitySpec Specification { get; }
+        EntityPackedArray PackedArray { get; }
+
+        uint Get(int index);
+        int Create(uint entity);
+
+        //entities are always appended, therefore we can assume the indicies
+        int Create(NativeSlice<uint> entities/*, NativeSlice<int> indices*/);
+        MovedEntity Delete(int index);
+
+        //void Delete(NativeSlice<int> indicies, EntityPool entityPool);
+        void Delete(NativeSlice<int> indicies, NativeSlice<MovedEntity> movedEntities);
+
+    }
+
+    [System.Diagnostics.DebuggerStepThrough]
+    public readonly struct MovedEntity
+    {
+        public readonly uint ID;
+        public readonly int Index;
+
+        public bool DidMove => ID > 0;
+
+        public MovedEntity(uint id, int index)
+        {
+            ID = id;
+            Index = index;
+        }
+
+    }
 
     public sealed class EntityChunk : UnmanagedDispose
     {
@@ -16,7 +53,7 @@ namespace Atma.Entities
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
 
-        public NativeSlice<uint> Entities => _entities.Slice();
+        public ReadOnlySpan<uint> Entities => _entities.Span;
 
         public EntitySpec Specification { get; }
         public EntityPackedArray PackedArray => _packedArray;
@@ -31,7 +68,7 @@ namespace Atma.Entities
             _entities = new NativeArray<uint>(_allocator, _packedArray.Length);
         }
 
-        public uint GetEntity(int index)
+        public uint Get(int index)
         {
             Assert.Range(index, 0, _entityCount);
             return _entities[index];
@@ -46,26 +83,13 @@ namespace Atma.Entities
             return index;
         }
 
-        public void Create(NativeSlice<uint> entities)
+        public int Create(NativeSlice<uint> entities)
         {
-            Assert.GreatherThanEqualTo(Free, entities.Length);
-            for (var i = 0; i < entities.Length; i++)
-            {
-                var index = _entityCount++;
-                _entities[index] = entities[i];
-            }
+            var amountToCreate = entities.Length > Free ? Free : entities.Length;
+            for (var i = 0; i < amountToCreate; i++)
+                _entities[_entityCount++] = entities[i];
+            return amountToCreate;
         }
-
-        // internal unsafe NativeSlice<Entity> Copy(ComponentType* componentType, ref void* src, in NativeSlice<Entity> entities)
-        // {
-        //     for (var i = 0; i < entities.Length; i++)
-        //     {
-
-        //     }
-
-
-        //     return entities;
-        // }
 
         public unsafe MovedEntity Delete(int index)
         {
@@ -79,8 +103,7 @@ namespace Atma.Entities
             return moved[0];
         }
 
-
-        internal void Delete(NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        internal void Delete(NativeSlice<int> indicies, EntityPool entityPool)
         {
             for (var index = 0; index < indicies.Length; index++)
             {
@@ -89,10 +112,29 @@ namespace Atma.Entities
 
                 if (index < _entityCount) //removing the last element, no need to patch
                 {
-                    var movedIndex = index;
                     _packedArray.Move(_entityCount, index);
                     _entities[index] = _entities[_entityCount];
-                    movedEntities.Add(new MovedEntity(_entities[movedIndex], movedIndex));
+                    ref var entity = ref entityPool[_entities[index]];
+                    entity.Index = index;
+                }
+
+                _entities[_entityCount] = 0;
+            }
+        }
+
+        internal void Delete(NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        {
+            for (var i = 0; i < indicies.Length; i++)
+            {
+                var index = indicies[i];
+                Assert.Range(index, 0, _entityCount);
+                _entityCount--;
+
+                if (index < _entityCount) //removing the last element, no need to patch
+                {
+                    _packedArray.Move(_entityCount, index);
+                    _entities[index] = _entities[_entityCount];
+                    movedEntities.Add(new MovedEntity(_entities[_entityCount], index));
                 }
 
                 _entities[_entityCount] = 0;
@@ -101,13 +143,13 @@ namespace Atma.Entities
 
         protected override void OnManagedDispose()
         {
-            _entities.Dispose();
+            _packedArray.Dispose();
             _packedArray = null;
         }
 
         protected override void OnUnmanagedDispose()
         {
-            _packedArray.Dispose();
+            _entities.Dispose();
         }
     }
 }

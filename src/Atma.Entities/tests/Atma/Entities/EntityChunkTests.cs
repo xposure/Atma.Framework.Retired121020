@@ -1,6 +1,8 @@
 namespace Atma.Entities
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using Atma.Memory;
     using Divergic.Logging.Xunit;
     using Microsoft.Extensions.Logging;
@@ -10,18 +12,30 @@ namespace Atma.Entities
 
     public class EntityChunkTests
     {
-        private struct Position
+        [System.Diagnostics.DebuggerStepThrough]
+        private struct Position : IEquatable<Position>
         {
             public int X;
             public int Y;
+
+            public Position(int v)
+            {
+                X = v;
+                Y = v;
+            }
 
             public Position(int x, int y)
             {
                 X = x;
                 Y = y;
             }
+
+            public bool Equals([AllowNull] Position other) => X == other.X && Y == other.Y;
+
+            public override string ToString() => $"{{ X: {X}, Y: {Y} }}";
         }
 
+        [System.Diagnostics.DebuggerStepThrough]
         private struct Velocity
         {
             public int VX;
@@ -42,7 +56,7 @@ namespace Atma.Entities
         }
 
         [Fact]
-        public void ShouldCreateEntity()
+        public void ShouldCreateOneEntity()
         {
             //arrange
             using var memory = new DynamicAllocator(_logFactory);
@@ -59,13 +73,12 @@ namespace Atma.Entities
 
             //assert
             index.ShouldBe(0);
-            entityChunk.GetEntity(index).ShouldBe(1u);
+            entityChunk.Get(index).ShouldBe(1u);
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
         }
 
-        [Fact]
-        public void ShouldDeleteEntity()
+        public unsafe void ShouldCreateManyEntities()
         {
             //arrange
             using var memory = new DynamicAllocator(_logFactory);
@@ -76,7 +89,37 @@ namespace Atma.Entities
 
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
 
+            var stackIds = stackalloc uint[entityChunk.Free + 1];
+            var ids = new NativeSlice<uint>(stackIds, entityChunk.Free + 1);
+            for (var i = 0; i < ids.Length; i++)
+                ids[i] = (uint)i + 1u;
+
+
             //act
+            var created = entityChunk.Create(ids);
+
+            //assert
+            entityChunk.Get(0).ShouldBe(1u);
+            entityChunk.Get(created - 1).ShouldBe(ids[created - 1]);
+            entityChunk.Count.ShouldBe(created);
+            entityChunk.Free.ShouldBe(0);
+            created.ShouldBe(Entity.ENTITY_MAX);
+        }
+
+        [Fact]
+        public void ShouldDeleteOneEntity()
+        {
+            //arrange
+            using var memory = new DynamicAllocator(_logFactory);
+            var specification = new EntitySpec(ComponentType<Position>.Type);
+
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            var span = entityChunk.PackedArray.GetComponentSpan<Position>(0);
+
+            //act
+            span[0] = new Position(1);
+            span[1] = new Position(2);
+
             var free = entityChunk.Free;
             var index0 = entityChunk.Create(1);
             var index1 = entityChunk.Create(2);
@@ -85,31 +128,78 @@ namespace Atma.Entities
             //assert
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
-            entityChunk.GetEntity(0).ShouldBe(2u);
+            entityChunk.Get(0).ShouldBe(2u);
+            span[0].ShouldBe(new Position(2));
         }
 
         [Fact]
-        public void ShouldCopyToOtherChunk()
+        public unsafe void ShouldDeleteManyEntities()
         {
             //arrange
             using var memory = new DynamicAllocator(_logFactory);
-            var specification = new EntitySpec(
-                ComponentType<Position>.Type,
-                ComponentType<Velocity>.Type
-            );
+            var specification = new EntitySpec(ComponentType<Position>.Type);
 
-            using var chunk0 = new EntityChunk(_logFactory, memory, specification);
-            using var chunk1 = new EntityChunk(_logFactory, memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
 
+            var stackIds = stackalloc uint[entityChunk.Free + 1];
+            var ids = new NativeSlice<uint>(stackIds, entityChunk.Free + 1);
+            for (var i = 0; i < ids.Length; i++)
+                ids[i] = (uint)i + 1u;
+
+            var created = entityChunk.Create(ids);
+
+            var span = entityChunk.PackedArray.GetComponentSpan<Position>(0);
+            for (var i = 0; i < span.Length; i++)
+                span[i] = new Position(i + 1);
 
             //act
-            var free = chunk0.Free;
-            var index = chunk0.Create(1);
+            var stackDeleteIndicies = stackalloc uint[128];
+            var deleteIndicies = new NativeSlice<int>(stackDeleteIndicies, 128);
+            for (var i = 0; i < deleteIndicies.Length; i++)
+                deleteIndicies[i] = i + 128;
+
+            var stackMoveIds = stackalloc MovedEntity[deleteIndicies.Length];
+            var moveIds = new NativeFixedList<MovedEntity>(stackMoveIds, deleteIndicies.Length);
+            entityChunk.Delete(deleteIndicies, ref moveIds);
 
             //assert
-            index.ShouldBe(0);
-            chunk0.Count.ShouldBe(1);
-            chunk0.Free.ShouldBe(free - 1);
+            var first = Enumerable.Range(0, 128).Select(x => (uint)x + 1).ToArray();
+            var second = Enumerable.Range(0, 128).Select(x => (uint)(Entity.ENTITY_MAX - x)).ToArray();
+            var third = Enumerable.Range(256, Entity.ENTITY_MAX - 256 - 128).Select(x => (uint)x + 1).ToArray();
+            var fourth = Enumerable.Range(0, 128).Select(x => 0).Select(x => (uint)x).ToArray();
+
+            var firstSet = entityChunk.Entities.Slice(0, 128).ToArray();
+            var secondSet = entityChunk.Entities.Slice(128, 128).ToArray();
+            var thirdSet = entityChunk.Entities.Slice(256, Entity.ENTITY_MAX - 256 - 128).ToArray();
+            var fourthSet = entityChunk.Entities.Slice(Entity.ENTITY_MAX - 128, 128).ToArray();
+
+            firstSet.ShouldBe(first);
+            secondSet.ShouldBe(second);
+            thirdSet.ShouldBe(third);
+            fourthSet.ShouldBe(fourth);
+
+            var firstPosition = Enumerable.Range(0, 128).Select(x => new Position(x + 1)).ToArray();
+            var secondPosition = Enumerable.Range(0, 128).Select(x => new Position(Entity.ENTITY_MAX - x)).ToArray();
+            var thirdPosition = Enumerable.Range(256, Entity.ENTITY_MAX - 256 - 128).Select(x => new Position(x + 1)).ToArray();
+
+            var firstSetPosition = span.Slice(0, 128).ToArray();
+            var secondSetPosition = span.Slice(128, 128).ToArray();
+            var thirdSetPosition = span.Slice(256, Entity.ENTITY_MAX - 256 - 128).ToArray();
+
+            firstSetPosition.ShouldBe(firstPosition);
+            secondSetPosition.ShouldBe(secondPosition);
+            thirdSetPosition.ShouldBe(thirdPosition);
+
+#if DEBUG
+            //we only reset the data in debug mode for performance reasons
+            var fourthPosition = Enumerable.Range(0, 128).Select(x => new Position(0)).ToArray();
+            var fourthSetPosition = span.Slice(Entity.ENTITY_MAX - 128, 128).ToArray();
+            fourthSetPosition.ShouldBe(fourthPosition);
+#endif
+
+            entityChunk.Count.ShouldBe(Entity.ENTITY_MAX - 128);
+            entityChunk.Free.ShouldBe(128);
         }
+
     }
 }

@@ -22,7 +22,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         view(length, entities, t0);
                     }
@@ -46,7 +46,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         view(length, entities, t0, t1);
@@ -73,7 +73,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -101,7 +101,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -131,7 +131,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -163,7 +163,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -197,7 +197,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -233,7 +233,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -271,7 +271,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);
@@ -311,7 +311,7 @@ namespace Atma
                     {
                         var chunk = array.AllChunks[k];
                         var length = chunk.Count;
-                        var entities = chunk.Entities.AsSpan();
+                        var entities = chunk.Entities;
                         var t0 = chunk.PackedArray.GetComponentSpan<T0>(c0, componentTypes[0]);
                         var t1 = chunk.PackedArray.GetComponentSpan<T1>(c1, componentTypes[1]);
                         var t2 = chunk.PackedArray.GetComponentSpan<T2>(c2, componentTypes[2]);

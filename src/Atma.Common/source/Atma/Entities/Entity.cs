@@ -57,7 +57,7 @@
         public int Index
         {
             get => (int)(Key & ENTITY_MASK);
-            set
+            internal set
             {
                 var index = (uint)(value & ENTITY_MASK);
                 Key = (Key & SPECCHUNK_MASK) | index;

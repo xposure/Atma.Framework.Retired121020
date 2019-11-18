@@ -1,4 +1,4 @@
-namespace Atma.Common
+namespace Atma.Entities
 {
     using Atma.Entities;
     using Atma.Memory;
@@ -53,6 +53,16 @@ namespace Atma.Common
                 Assert.Range(index, 0, _entityMap[page].Length);
 
                 return ref _entityMap[page][index];
+            }
+        }
+
+        internal void UpdateEntities(NativeSlice<MovedEntity> movedEntities)
+        {
+            for (var i = 0; i < movedEntities.Length; i++)
+            {
+                ref var movedEntity = ref movedEntities[i];
+                ref var entity = ref this[movedEntity.ID];
+                entity.Index = movedEntity.Index;
             }
         }
 
