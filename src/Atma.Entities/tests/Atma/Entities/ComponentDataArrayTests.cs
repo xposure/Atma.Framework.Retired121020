@@ -182,7 +182,7 @@ namespace Atma.Entities
 
 
         [Fact]
-        public unsafe void ShouldCopyVoidPtr()
+        public unsafe void ShouldCopyVoidPtrWithArray()
         {
             //arrange
             var componentType = ComponentType<Position>.Type;
@@ -205,6 +205,32 @@ namespace Atma.Entities
             span[2].Y.ShouldBe(100);
             span[3].X.ShouldBe(100);
             span[3].Y.ShouldBe(400);
+        }
+
+        [Fact]
+        public unsafe void ShouldCopyVoidPtrWithSingle()
+        {
+            //arrange
+            var componentType = ComponentType<Position>.Type;
+            using IAllocator allocator = new DynamicAllocator(_logFactory);
+            using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
+
+            var span = data.AsSpan<Position>();
+            var ptr = stackalloc[] { new Position(100, 100) };
+            var src = (void*)ptr;
+
+            //act
+            data.Copy(ref src, 0, 4, true);
+
+            //assert
+            span[0].X.ShouldBe(100);
+            span[0].Y.ShouldBe(100);
+            span[1].X.ShouldBe(100);
+            span[1].Y.ShouldBe(100);
+            span[2].X.ShouldBe(100);
+            span[2].Y.ShouldBe(100);
+            span[3].X.ShouldBe(100);
+            span[3].Y.ShouldBe(100);
         }
     }
 }
