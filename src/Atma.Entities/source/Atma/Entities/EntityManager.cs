@@ -562,7 +562,7 @@ namespace Atma.Entities
                 var srcChunk = src.AllChunks[srcChunkIndex];
                 var dstChunk = dst.AllChunks[dstChunkIndex];
 
-                EntityPackedArray.CopyTo(srcChunk.PackedArray, srcIndex, dstChunk.PackedArray, dstIndex);
+                ComponentPackedArray.CopyTo(srcChunk.PackedArray, srcIndex, dstChunk.PackedArray, dstIndex);
 
                 //this internal function will swap the entity at the end of the array
                 //without returning the id to the pool

@@ -4,7 +4,7 @@ namespace Atma.Entities
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
 
-    public unsafe sealed class EntityPackedArray : UnmanagedDispose
+    public unsafe sealed class ComponentPackedArray : UnmanagedDispose
     {
         private ComponentDataArray[] _componentData;
         private ILogger _logger;
@@ -14,10 +14,10 @@ namespace Atma.Entities
         public EntitySpec Specification { get; }
         public int Length => Entity.ENTITY_MAX;
 
-        public EntityPackedArray(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
+        public ComponentPackedArray(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
         {
             _logFactory = logFactory;
-            _logger = _logFactory.CreateLogger<EntityPackedArray>();
+            _logger = _logFactory.CreateLogger<ComponentPackedArray>();
             _allocator = allocator;
 
             Specification = specification;
@@ -113,13 +113,13 @@ namespace Atma.Entities
             _componentData.DisposeAll();
         }
 
-        internal static void CopyTo(EntityPackedArray srcArray, int srcIndex, EntityPackedArray dstArray, int dstIndex)
+        internal static void CopyTo(ComponentPackedArray srcArray, int srcIndex, ComponentPackedArray dstArray, int dstIndex)
         {
             SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray.CopyTo(src, srcIndex, dst, dstIndex));
         }
 
         internal delegate void SharedComponentCallback(ComponentDataArray srcArray, ComponentDataArray dstArray);
-        internal static int SharedComponentArrays(EntityPackedArray srcArray, EntityPackedArray dstArray, SharedComponentCallback shareCallback)
+        internal static int SharedComponentArrays(ComponentPackedArray srcArray, ComponentPackedArray dstArray, SharedComponentCallback shareCallback)
         {
             var i0 = 0;
             var i1 = 0;

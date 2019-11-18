@@ -26,7 +26,7 @@ namespace Atma.Entities
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
         private NativeArray<uint> _entities;
-        private EntityPackedArray _packedArray;
+        private ComponentPackedArray _packedArray;
 
         private int _entityCount = 0;
 
@@ -36,7 +36,7 @@ namespace Atma.Entities
         public ReadOnlySpan<uint> Entities => _entities.Span;
 
         public EntitySpec Specification { get; }
-        public EntityPackedArray PackedArray => _packedArray;
+        public ComponentPackedArray PackedArray => _packedArray;
 
         public EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation)
         {
@@ -44,7 +44,7 @@ namespace Atma.Entities
             _logger = _logFactory.CreateLogger<EntityChunk>();
             _allocator = allocator;
             Specification = specifcation;
-            _packedArray = new EntityPackedArray(logFactory, _allocator, specifcation);
+            _packedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
             _entities = new NativeArray<uint>(_allocator, _packedArray.Length);
         }
 
