@@ -5,6 +5,7 @@
     using Atma.Common;
     using Microsoft.Extensions.Logging;
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe sealed class DynamicAllocator : UnmanagedDispose, IAllocator
     {
         private struct DynamicMemoryHandle

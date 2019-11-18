@@ -123,13 +123,12 @@ namespace Atma.Entities
 
         internal unsafe void Assign(NativeSlice<uint> entities, ComponentType* type, ref void* src, bool oneToMany)
         {
-            using var entityRefs = new NativeArray<Entity>(_allocator, entities.Length);
+            using var entityRefs = new NativeArray<EntityRef>(_allocator, entities.Length);
 
             for (var i = 0; i < entities.Length; i++)
             {
-                ref var e = ref _entityPool[entities[i]];
-                entityRefs[i] = e;
-                Assert.EqualTo(Has(ref e, type->ID), false);
+                entityRefs[i] = new EntityRef(_entityPool.GetPointer(entities[i]));
+                Assert.EqualTo(Has(ref entityRefs[i], type->ID), false);
             }
 
             Move(entityRefs, type);
@@ -138,8 +137,9 @@ namespace Atma.Entities
             SetComponentInternal(type, entities, src, oneToMany, false);
         }
 
-        internal unsafe void Move(NativeSlice<Entity> entities, ComponentType* type)
+        internal unsafe void Move(NativeSlice<EntityRef> entities, ComponentType* type)
         {
+            var lastIndex = 0;
             for (var i = 0; i < entities.Length; i++)
             {
                 ref var entityInfo = ref entities[i];
@@ -157,13 +157,21 @@ namespace Atma.Entities
                 var dstSpecIndex = GetOrCreateSpec(componentTypes);
                 //var dstSpec = _knownSpecs[specIndex];
 
-                Move(ref entityInfo, dstSpecIndex);
-                _entityPool[entityInfo.ID] = entityInfo;
+
                 while (i < entities.Length - 1 && entities[i + 1].SpecIndex == srcSpecIndex)
-                {
-                    Move(ref entities[++i], dstSpecIndex);
-                    _entityPool[entityInfo.ID] = entityInfo;
-                }
+                    i++;
+
+
+                Move(entities.Slice(lastIndex, i - lastIndex + 1), dstSpecIndex);
+                lastIndex = i + 1;
+
+                // Move(ref entityInfo, dstSpecIndex);
+                // _entityPool[entityInfo.ID] = entityInfo;
+                // while (i < entities.Length - 1 && entities[i + 1].SpecIndex == srcSpecIndex)
+                // {
+                //     Move(ref entities[++i], dstSpecIndex);
+                //     _entityPool[entityInfo.ID] = entityInfo;
+                // }
             }
         }
 
@@ -237,37 +245,94 @@ namespace Atma.Entities
             return spec.Has(componentId);
         }
 
+        private bool Has(ref EntityRef entityInfo, int componentId)
+        {
+            var spec = _entityArrays[entityInfo.SpecIndex].Specification;
+            return spec.Has(componentId);
+        }
+
         public unsafe void Remove(uint entity)
         {
             var entities = stackalloc[] { entity };
             Remove(new NativeSlice<uint>(entities, 1));
         }
 
-        public void Remove(NativeSlice<uint> entities)
+        public unsafe void Remove(NativeSlice<uint> entities)
         {
+            var temp = stackalloc EntityRef[256];
+            var entityRefs = new NativeFixedList<EntityRef>(temp, 256);
+
             for (var i = 0; i < entities.Length; i++)
             {
-                var entity = entities[i];
-                ref var e = ref _entityPool[entity];
-                Remove(ref e);
-                _entityPool.Return(entity);
+                entityRefs.Add(new EntityRef(_entityPool.GetPointer(entities[i])));
+                if (entityRefs.Free == 0)
+                {
+                    Remove(entityRefs, true);
+                    entityRefs.Reset();
+                }
             }
+
+            if (entityRefs.Length > 0)
+                Remove(entityRefs, true);
         }
 
-        private void Remove(ref Entity e)
+        private unsafe void Remove(ref EntityRef e, bool returnId)
         {
-            var array = _entityArrays[e.SpecIndex];
+            var temp = stackalloc[] { e };
+            var slice = new NativeSlice<EntityRef>(temp, 1);
+            Remove(slice, returnId);
+        }
 
-            //we are moving the last element to the element deleted
-            //we need to patch the array, but the array doesn't store ids            
-            var movedIndex = array.Delete(e.ChunkIndex, e.Index);
-            if (movedIndex > -1)
+        private unsafe void Remove(ref NativeFixedList<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
+        {
+            var array = _entityArrays[specIndex];
+            var stackIndicies = stackalloc int[removeEntities.Length];
+            var sliceIndicies = new NativeSlice<int>(stackIndicies, removeEntities.Length);
+
+            var stackMovedEntities = stackalloc MovedEntity[removeEntities.Length];
+            var movedEntities = new NativeFixedList<MovedEntity>(stackMovedEntities, removeEntities.Length);
+
+            array.Delete(chunkIndex, sliceIndicies, ref movedEntities);
+            for (var i = 0; i < movedEntities.Length; i++)
             {
-                var chunk = array.AllChunks[e.ChunkIndex];
-                var movedId = chunk.GetEntity(movedIndex);
-                ref var movedEntity = ref _entityPool[movedId];
-                movedEntity = new Entity(movedId, movedEntity.SpecIndex, movedEntity.ChunkIndex, movedIndex);
+                ref var moved = ref movedEntities[i];
+                _entityPool[moved.ID] = new Entity(moved.ID, specIndex, chunkIndex, moved.Index);
             }
+
+            if (returnId)
+            {
+                for (var i = 0; i < removeEntities.Length; i++)
+                    _entityPool.Return(removeEntities[i].ID);
+            }
+
+            removeEntities.Reset();
+        }
+
+        internal unsafe void Remove(NativeSlice<EntityRef> entities, bool returnId)
+        {
+            var tempEntities = stackalloc EntityRef[128];
+            var removeEntities = new NativeFixedList<EntityRef>(tempEntities, 128);
+
+            var specIndex = -1;
+            var chunkIndex = -1;
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref entities[i];
+                if (e.SpecIndex != specIndex || e.ChunkIndex != chunkIndex || removeEntities.Free == 0)
+                {
+                    //flush
+                    if (removeEntities.Length > 0)
+                        Remove(ref removeEntities, specIndex, chunkIndex, returnId);
+
+                    specIndex = e.SpecIndex;
+                    chunkIndex = e.ChunkIndex;
+                }
+
+                removeEntities.Add(e);
+            }
+
+            if (removeEntities.Length > 0)
+                Remove(ref removeEntities, specIndex, chunkIndex, returnId);
         }
 
         public void Remove<T>(uint entity)
@@ -276,7 +341,7 @@ namespace Atma.Entities
             Remove(entity, ComponentType<T>.Type.ID);
         }
 
-        internal bool Remove(uint entity, int componentId)
+        internal unsafe bool Remove(uint entity, int componentId)
         {
             Assert.EqualTo(Has(entity, componentId), true);
 
@@ -301,8 +366,10 @@ namespace Atma.Entities
 
                 var specId = ComponentType.CalculateId(componentTypes);
                 var dstSpecIndex = GetOrCreateSpec(componentTypes);
+                var temp = stackalloc[] { new EntityRef(_entityPool.GetPointer(entity)) };
+                var slice = new NativeSlice<EntityRef>(temp, 1);
 
-                Move(ref entityInfo, dstSpecIndex);
+                Move(slice, dstSpecIndex);
                 return true;
             }
         }
@@ -369,9 +436,8 @@ namespace Atma.Entities
             using var entityRefs = new NativeList<Entity>(_allocator, entities.Length);
 
             //TODO: come back to this
-            Assert.EqualTo(allowUpdate, false);
+            //Assert.EqualTo(allowUpdate, false);
 
-            //this whole function needs rewrote, we need to do this in a loop and group specIndices together
             var specIndex = -1;
             for (var i = 0; i < entities.Length; i++)
             {
@@ -471,34 +537,40 @@ namespace Atma.Entities
             }
         }
 
-        public void Move(uint entity, EntitySpec spec)
+        public unsafe void Move(uint entity, EntitySpec spec)
         {
-            ref var e = ref _entityPool[entity];
             var specIndex = GetOrCreateSpec(spec);
-            Move(ref e, specIndex);
+            var temp = stackalloc[] { new EntityRef(_entityPool.GetPointer(entity)) };
+            var slice = new NativeSlice<EntityRef>(temp, 1);
+
+            Move(slice, specIndex);
         }
 
-        private void Move(ref Entity entityInfo, int dstSpecIndex)
+        private void Move(NativeSlice<EntityRef> entities, int dstSpecIndex)
         {
-            var src = _entityArrays[entityInfo.SpecIndex];
-            var dst = _entityArrays[dstSpecIndex];
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var entityInfo = ref entities[i];
+                var src = _entityArrays[entityInfo.SpecIndex];
+                var dst = _entityArrays[dstSpecIndex];
 
-            //we want to create the data at the dst first
-            var srcIndex = entityInfo.Index;
-            var dstIndex = dst.Create(entityInfo.ID, out var dstChunkIndex);
-            var srcChunkIndex = entityInfo.ChunkIndex;
+                //we want to create the data at the dst first
+                var srcIndex = entityInfo.Index;
+                var dstIndex = dst.Create(entityInfo.ID, out var dstChunkIndex);
+                var srcChunkIndex = entityInfo.ChunkIndex;
 
-            var srcChunk = src.AllChunks[srcChunkIndex];
-            var dstChunk = dst.AllChunks[dstChunkIndex];
+                var srcChunk = src.AllChunks[srcChunkIndex];
+                var dstChunk = dst.AllChunks[dstChunkIndex];
 
-            EntityPackedArray.CopyTo(srcChunk.PackedArray, srcIndex, dstChunk.PackedArray, dstIndex);
+                EntityPackedArray.CopyTo(srcChunk.PackedArray, srcIndex, dstChunk.PackedArray, dstIndex);
 
-            //this internal function will swap the entity at the end of the array
-            //without returning the id to the pool
-            Remove(ref entityInfo);
+                //this internal function will swap the entity at the end of the array
+                //without returning the id to the pool
+                Remove(ref entityInfo, false);
 
-            //then we want to remap the entity to its new location
-            entityInfo = new Entity(entityInfo.ID, dstSpecIndex, dstChunkIndex, dstIndex);
+                //then we want to remap the entity to its new location
+                entityInfo.Replace(new Entity(entityInfo.ID, dstSpecIndex, dstChunkIndex, dstIndex));
+            }
         }
 
         protected override void OnUnmanagedDispose()

@@ -9,6 +9,7 @@
         public AllocationHandle Handle;
     }
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe struct NativeList<T> : IDisposable
         where T : unmanaged
     {

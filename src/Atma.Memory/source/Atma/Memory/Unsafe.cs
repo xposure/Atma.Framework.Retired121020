@@ -4,6 +4,7 @@
 
     using static Atma.Debug;
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe static class Unsafe
     {
         public const int THRASH = 0;

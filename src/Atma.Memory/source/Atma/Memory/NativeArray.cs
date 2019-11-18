@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe struct NativeArray<T> : IDisposable
         where T : unmanaged
     {

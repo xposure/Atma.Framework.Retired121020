@@ -3,6 +3,7 @@ namespace Atma.Memory
 {
     using System;
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe class StackAllocator : IAllocator
     {
         private IAllocator _allocator;

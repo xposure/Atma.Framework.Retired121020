@@ -56,6 +56,21 @@ namespace Atma.Common
             }
         }
 
+        public unsafe Entity* GetPointer(uint entity)
+        {
+            var version = entity >> 24;
+            var id = (int)(entity & 0xffffff);
+
+            var index = id & ENTITIES_MASK;
+            var page = id >> ENTITIES_BITS;
+
+            Assert.Range(page, 0, _entityMap.Count);
+            Assert.Range(index, 0, _entityMap[page].Length);
+
+            var list = _entityMap[page];
+            return list.RawPointer + index;
+        }
+
         public bool IsValid(uint id)
         {
             ref var e = ref this[id];

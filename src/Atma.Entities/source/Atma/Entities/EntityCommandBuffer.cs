@@ -169,18 +169,19 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, AssignComponentCommand* it, NativeSlice<uint> lastEntities)
             {
-                // Assert.GreatherThan(lastEntities.Length, 0);
-                // if (it->DataCount == 1)
-                // {
-                //     //assigning one piece of data to all entities
-                //     for (var i = 0; i < lastEntities.Length; i++)
-                //         entityManager.Assign(lastEntities[i], &it->ComponentType, (void*)(it + 1));
-                // }
-                // else
-                // {
-                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
-                //     entityManager.Assign(lastEntities, &it->ComponentType, it + 1);
-                // }
+                Assert.GreatherThan(lastEntities.Length, 0);
+                var dataPtr = (void*)(it + 1);
+                if (it->DataCount == 1)
+                {
+                    //assigning one piece of data to all entities
+                    for (var i = 0; i < lastEntities.Length; i++)
+                        entityManager.Assign(lastEntities, &it->ComponentType, ref dataPtr, true);
+                }
+                else
+                {
+                    Assert.EqualTo(lastEntities.Length, it->DataCount);
+                    entityManager.Assign(lastEntities, &it->ComponentType, ref dataPtr, false);
+                }
             }
         }
 

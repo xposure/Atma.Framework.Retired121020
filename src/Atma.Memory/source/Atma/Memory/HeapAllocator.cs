@@ -8,6 +8,7 @@ namespace Atma.Memory
     //using Atma.Common;
     //using static Atma.Debug;
 
+    [System.Diagnostics.DebuggerStepThrough]
     [StructLayout(LayoutKind.Sequential, Size = 32)]
     public unsafe struct HeapAllocation
     {

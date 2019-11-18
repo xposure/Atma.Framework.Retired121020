@@ -5,6 +5,7 @@
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 16)]
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe struct AllocationHandleOld
     {
         public void* Address;

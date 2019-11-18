@@ -67,21 +67,36 @@ namespace Atma.Entities
         //     return entities;
         // }
 
-        public int Delete(int index)
+        public unsafe MovedEntity Delete(int index)
         {
-            Assert.Range(index, 0, _entityCount);
-            _entityCount--;
+            var data = stackalloc int[] { index };
+            var result = stackalloc MovedEntity[1];
 
-            var movedIndex = -1;
-            if (index < _entityCount) //removing the last element, no need to patch
+            var slice = new NativeSlice<int>(data, 1);
+            var moved = new NativeFixedList<MovedEntity>(data, 1);
+
+            Delete(slice, ref moved);
+            return moved[0];
+        }
+
+
+        internal void Delete(NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        {
+            for (var index = 0; index < indicies.Length; index++)
             {
-                movedIndex = index;
-                _packedArray.Move(_entityCount, index);
-                _entities[index] = _entities[_entityCount];
-            }
+                Assert.Range(index, 0, _entityCount);
+                _entityCount--;
 
-            _entities[_entityCount] = 0;
-            return movedIndex;
+                if (index < _entityCount) //removing the last element, no need to patch
+                {
+                    var movedIndex = index;
+                    _packedArray.Move(_entityCount, index);
+                    _entities[index] = _entities[_entityCount];
+                    movedEntities.Add(new MovedEntity(_entities[movedIndex], movedIndex));
+                }
+
+                _entities[_entityCount] = 0;
+            }
         }
 
         protected override void OnManagedDispose()

@@ -1,9 +1,34 @@
 ﻿namespace Atma.Entities
 {
-    using static Atma.Debug;
+    using System;
 
-    public struct Entity //: IEquatable<Entity2>, IEquatable<int>
+    [System.Diagnostics.DebuggerStepThrough]
+    public unsafe readonly struct EntityRef
     {
+        private readonly Entity* _entity;
+        public uint ID => _entity->ID;
+        public uint Key => _entity->Key;
+        public bool IsValid => ID > 0;
+
+        public int SpecIndex => _entity->SpecIndex;
+        public int ChunkIndex => _entity->ChunkIndex;
+        public int Index { get => _entity->Index; set => _entity->Index = value; }
+
+        public EntityRef(Entity* ptr)
+        {
+            _entity = ptr;
+        }
+
+        public void Replace(in Entity entity)
+        {
+            *_entity = entity;
+        }
+    }
+
+    [System.Diagnostics.DebuggerStepThrough]
+    public struct Entity : IEquatable<Entity>, IEquatable<uint>, IComparable<Entity>, IComparable<uint>
+    {
+        public static readonly Comparison<Entity> EntityComparer = new Comparison<Entity>((x, y) => (int)(x.Key - y.Key));
         //we have 32 bits to play with here
         public const int SPEC_BITS = 12;
         public const int CHUNK_BITS = 10;
@@ -41,9 +66,9 @@
 
         public Entity(uint id, int specIndex, int chunkIndex, int index)
         {
-            Assert(specIndex < SPEC_MAX);
-            Assert(chunkIndex < CHUNK_MAX);
-            Assert(index < ENTITY_MAX);
+            Assert.Range(specIndex, 0, SPEC_MAX);
+            Assert.Range(chunkIndex, 0, CHUNK_MAX);
+            Assert.Range(index, 0, ENTITY_MAX);
 
             ID = id;//(uint)(id & 0xfffff) | (uint)version << 24;
 
@@ -51,9 +76,9 @@
                   (uint)((chunkIndex << CHUNK_SHIFT) & CHUNK_MASK) +
                   (uint)(index & ENTITY_MASK);
 
-            Assert(SpecIndex == specIndex);
-            Assert(ChunkIndex == chunkIndex);
-            Assert(Index == index);
+            // Assert(SpecIndex == specIndex);
+            // Assert(ChunkIndex == chunkIndex);
+            // Assert(Index == index);
         }
 
         // public override int GetHashCode() => ID;
@@ -70,5 +95,13 @@
         // public static bool operator !=(int left, Entity2 right) => left != right.ID;
 
         public override string ToString() => $"{{ Spec: {SpecIndex}, Chunk: {ChunkIndex}, Index: {Index}, ID: {ID}";
+
+        public bool Equals(Entity other) => this.ID == other.ID && this.Key == other.Key;
+
+        public bool Equals(uint other) => this.ID == other;
+        public int CompareTo(Entity other) => (int)(Key - other.Key);
+
+        //We want to sort on entity ID without the versioning bytes
+        public int CompareTo(uint other) => (int)((ID & 0x00ffffff) - (other & 0x00ffffff));
     }
 }

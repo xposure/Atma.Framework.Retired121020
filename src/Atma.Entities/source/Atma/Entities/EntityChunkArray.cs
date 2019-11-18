@@ -93,7 +93,7 @@
             return chunk;
         }
 
-        public int Delete(int chunkIndex, int index)
+        public MovedEntity Delete(int chunkIndex, int index)
         {
             Assert.Range(chunkIndex, 0, _chunks.Count);
 
@@ -101,6 +101,17 @@
 
             var chunk = _chunks[chunkIndex];
             return chunk.Delete(index);
+        }
+
+        internal void Delete(int chunkIndex, NativeSlice<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        {
+            Assert.Range(chunkIndex, 0, _chunks.Count);
+            Assert.GreatherThanEqualTo(_entityCount, indicies.Length);
+
+            _entityCount -= indicies.Length;
+
+            var chunk = _chunks[chunkIndex];
+            chunk.Delete(indicies, ref movedEntities);
         }
 
         protected override void OnUnmanagedDispose()

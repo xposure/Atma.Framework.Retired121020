@@ -217,6 +217,7 @@
     public unsafe delegate void Copy(void* src, void* dst);
     public unsafe delegate void Reset(void* dst);
 
+    [System.Diagnostics.DebuggerStepThrough]
     public class ComponentTypeHelper
     {
         private static ConcurrentLookupList<ComponentTypeHelper> _helpers = new ConcurrentLookupList<ComponentTypeHelper>();

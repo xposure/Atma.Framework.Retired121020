@@ -10,6 +10,7 @@
         public AllocationHandle Handle;
     }
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe struct NativeBuffer : IDisposable
     {
 

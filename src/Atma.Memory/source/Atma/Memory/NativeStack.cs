@@ -8,6 +8,7 @@
         public AllocationHandle Handle;
     }
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe struct NativeStack<T> : IDisposable
         where T : unmanaged
     {

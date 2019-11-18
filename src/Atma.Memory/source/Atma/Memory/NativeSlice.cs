@@ -4,8 +4,9 @@
     using System.Collections.Generic;
     using System.Text;
 
+    [System.Diagnostics.DebuggerStepThrough]
     public unsafe readonly ref struct NativeSlice<T>
-        where T : unmanaged
+            where T : unmanaged
     {
         private readonly T* _rawAddress;
         public readonly int Length;

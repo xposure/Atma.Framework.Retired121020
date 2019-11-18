@@ -2,6 +2,7 @@ namespace Atma.Memory
 {
     using System.Collections.Generic;
 
+    [System.Diagnostics.DebuggerStepThrough]
     public sealed class PagedObjectPool<T> : UnmanagedDispose
         where T : unmanaged
     {
