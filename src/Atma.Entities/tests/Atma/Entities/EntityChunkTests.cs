@@ -172,12 +172,14 @@ namespace Atma.Entities
             var firstSet = entityChunk.Entities.Slice(0, 128).ToArray();
             var secondSet = entityChunk.Entities.Slice(128, 128).ToArray();
             var thirdSet = entityChunk.Entities.Slice(256, Entity.ENTITY_MAX - 256 - 128).ToArray();
-            var fourthSet = entityChunk.Entities.Slice(Entity.ENTITY_MAX - 128, 128).ToArray();
+
+            //var fourthSet = entityChunk.Entities.Slice(Entity.ENTITY_MAX - 128, 128).ToArray();
 
             firstSet.ShouldBe(first.Select(x => x.ID));
             secondSet.ShouldBe(second.Select(x => x.ID));
             thirdSet.ShouldBe(third.Select(x => x.ID));
-            fourthSet.ShouldBe(fourth);
+            //fourthSet.ShouldBe(fourth);
+            entityChunk.Entities.Length.ShouldBe(Entity.ENTITY_MAX - 128);
 
             var firstPosition = Enumerable.Range(0, 128).Select(x => new Position(x + 1)).ToArray();
             var secondPosition = Enumerable.Range(0, 128).Select(x => new Position(Entity.ENTITY_MAX - x)).ToArray();

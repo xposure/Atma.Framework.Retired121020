@@ -52,16 +52,6 @@ namespace Atma.Entities
             }
         }
 
-        internal void UpdateEntities(Span<MovedEntity> movedEntities)
-        {
-            for (var i = 0; i < movedEntities.Length; i++)
-            {
-                ref var movedEntity = ref movedEntities[i];
-                ref var entity = ref this[movedEntity.ID];
-                entity.Index = movedEntity.Index;
-            }
-        }
-
         internal unsafe EntityRef GetRef(uint entity) => new EntityRef(GetPointer(entity));
 
         internal unsafe Entity* GetPointer(uint entity)

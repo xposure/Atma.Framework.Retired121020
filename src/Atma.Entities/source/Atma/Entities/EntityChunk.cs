@@ -4,36 +4,20 @@ namespace Atma.Entities
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
 
-    [System.Diagnostics.DebuggerStepThrough]
-    public readonly struct MovedEntity
-    {
-        public readonly uint ID;
-        public readonly int Index;
-
-        public bool DidMove => ID > 0;
-
-        public MovedEntity(uint id, int index)
-        {
-            ID = id;
-            Index = index;
-        }
-
-    }
-
     public sealed class EntityChunk : UnmanagedDispose
     {
         private ILogger _logger;
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
-        private NativeArray<uint> _entities;
+        private NativeList<uint> _entities2;
         private ComponentPackedArray _packedArray;
 
-        private int _entityCount = 0;
+        //private int _entityCount = 0;
 
-        public int Count => _entityCount;
-        public int Free => Entity.ENTITY_MAX - _entityCount;
+        public int Count => _entities2.Length;
+        public int Free => Entity.ENTITY_MAX - Count;
 
-        internal ReadOnlySpan<uint> Entities => _entities.Slice();
+        internal ReadOnlySpan<uint> Entities => _entities2.Slice();
 
         public EntitySpec Specification { get; }
         internal ComponentPackedArray PackedArray => _packedArray;
@@ -45,7 +29,7 @@ namespace Atma.Entities
             _allocator = allocator;
             Specification = specifcation;
             _packedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
-            _entities = new NativeArray<uint>(_allocator, _packedArray.Length);
+            _entities2 = new NativeList<uint>(_allocator, _packedArray.Length);
         }
 
         internal void Create(int specIndex, int chunkIndex, EntityRef entity)
@@ -61,8 +45,9 @@ namespace Atma.Entities
             {
                 ref var entity = ref entities[i];
                 var id = entity.ID;
-                _entities[_entityCount] = id;
-                entity.Replace(new Entity(id, specIndex, chunkIndex, _entityCount++));
+
+                entity.Replace(new Entity(id, specIndex, chunkIndex, _entities2.Length));
+                _entities2.Add(id);
             }
             return amountToCreate;
         }
@@ -82,20 +67,14 @@ namespace Atma.Entities
             {
                 ref var entity = ref entities[i];
                 var index = entity.Index;
-                //Assert.Range(index, 0, _entityCount);
-                _entityCount--;
-
-                if (index < _entityCount) //removing the last element, no need to patch
+                //_entityCount--;
+                if (_entities2.RemoveAtWithSwap(index, true))
                 {
-                    _packedArray.Move(_entityCount, index);
-                    _entities[index] = _entities[_entityCount];
-
+                    _packedArray.Move(_entities2.Length, index);
                     //update the moved entity so that EntityRefs reflect the change
-                    ref var movedEntity = ref entityPool[_entities[_entityCount]];
+                    ref var movedEntity = ref entityPool[_entities2[index]];
                     movedEntity.Index = index;
                 }
-
-                _entities[_entityCount] = 0;
             }
         }
 
@@ -109,7 +88,7 @@ namespace Atma.Entities
 
         protected override void OnUnmanagedDispose()
         {
-            _entities.Dispose();
+            _entities2.Dispose();
         }
     }
 }

@@ -9,7 +9,7 @@
         public AllocationHandle Handle;
     }
 
-    [System.Diagnostics.DebuggerStepThrough]
+    //[System.Diagnostics.DebuggerStepThrough]
     public unsafe struct NativeList<T> : IDisposable
         where T : unmanaged
     {
@@ -154,16 +154,24 @@
         /// <summary>
         /// removes the item at the given index from the list but does NOT maintain list order
         /// </summary>
-        /// <param name="index">Index.</param>
-        public void RemoveAtWithSwap(int index)
+        /// <param name="index"></param>
+        /// <returns>True if a swap actually happened, false if it was the last element</returns>
+        public bool RemoveAtWithSwap(int index, bool clear = false)
         {
             Assert.EqualTo(Handle.IsValid, true);
             Assert.LessThan(index, Length);
 
-            var len = Length--;
-            RawPointer[index] = RawPointer[len];
-            //RawPointer[Length - 1] = default;
-            //--Length;
+            var len = --Length;
+            var data = &RawPointer[len];
+            if (len != index)
+            {
+                RawPointer[index] = *data;
+                if (clear) *data = default;
+                return true;
+            }
+
+            if (clear) *data = default;
+            return false;
         }
 
         /// <summary>
