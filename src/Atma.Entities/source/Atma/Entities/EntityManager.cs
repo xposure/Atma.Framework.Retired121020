@@ -105,16 +105,6 @@ namespace Atma.Entities
             }
         }
 
-        // internal unsafe void Assign(uint entity, ComponentType* type, ref void* src, bool oneToMany)
-        // {
-        //     ref var e = ref _entityPool[entity];
-        //     var entities = stackalloc Entity[] { e };
-        //     var slice = new NativeSlice<Entity>(entities, 1);
-
-        //     Move(slice, type);
-        //     Replace(entity, type, ref src, oneToMany);
-        // }
-
         internal unsafe void Assign(Span<uint> entities, ComponentType* type, ref void* src, bool incrementSource)
         {
             Move(entities, type);
@@ -383,18 +373,6 @@ namespace Atma.Entities
             SetComponentInternal(componentType, entities, t.RawPointer, true, false);
         }
 
-        // internal unsafe void SetComponentInternal(EntityChunkList array, Span<Entity> slice, ComponentType* componentType, ref void* src, bool oneToMany)
-        // {
-        //     while (slice.Length > 0)
-        //     {
-        //         ref var e = ref slice[0];
-        //         //TODO: sort array first 
-        //         var length = slice.Length;
-        //         slice = array.Copy(componentType, ref src, slice, oneToMany);
-        //         Assert.NotEqualTo(slice.Length, length);
-        //     }
-        // }
-
         internal unsafe void SetComponentInternal(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource, bool allowUpdate)
         {
             //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
@@ -468,16 +446,6 @@ namespace Atma.Entities
             else
                 Assign<T>(entity, t);
         }
-
-        // internal unsafe void Update(ComponentType* type, uint entity, ref void* ptr, bool oneToMany)
-        // {
-        //     ref var e = ref _entityPool[entity];
-        //     var spec = _entityArrays[e.SpecIndex].Specification;
-        //     if (spec.Has(type->ID))
-        //         Replace(entity, type, ref ptr, oneToMany);
-        //     else
-        //         Assign(entity, type, ref ptr, oneToMany);
-        // }
 
         internal unsafe void UpdateInternal(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource)
         {
