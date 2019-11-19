@@ -11,10 +11,10 @@ namespace Atma.Entities
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
 
-        public EntitySpec Specification { get; }
+        public readonly EntitySpec Specification;
         public int Length => Entity.ENTITY_MAX;
 
-        public ComponentPackedArray(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
+        internal ComponentPackedArray(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<ComponentPackedArray>();
@@ -28,17 +28,13 @@ namespace Atma.Entities
                 _componentData[i] = new ComponentDataArray(_logFactory, _allocator, _componentTypes[i], Entity.ENTITY_MAX);
         }
 
-        public int GetComponentIndex<T>() where T : unmanaged
-            => Specification.GetComponentIndex(ComponentType<T>.Type);
-
-
         internal void Copy(int componentIndex, ref void* src, int dstIndex, int length, bool incrementSrc)
         {
             _componentData[componentIndex].Copy(ref src, dstIndex, length, incrementSrc);
         }
 
         //TODO: Add a group lock here and implement internal no lock moves in ComponentDataArray
-        public void Move(int src, int dst)
+        internal void Move(int src, int dst)
         {
             if (src == dst)
                 return;
@@ -50,7 +46,7 @@ namespace Atma.Entities
                 _componentData[i].Move(src, dst);
         }
 
-        public void Reset(int dst)
+        internal void Reset(int dst)
         {
             Assert.Range(dst, 0, Length);
 
@@ -58,7 +54,7 @@ namespace Atma.Entities
                 _componentData[i].Reset(dst);
         }
 
-        public void Reset<T>(int dst)
+        internal void Reset<T>(int dst)
             where T : unmanaged
         {
             Assert.Range(dst, 0, Length);
@@ -68,7 +64,10 @@ namespace Atma.Entities
             _componentData[index].Reset(dst);
         }
 
-        public Span<T> GetComponentData<T>(int index = -1, ComponentType componentType = default)
+        internal int GetComponentIndex<T>() where T : unmanaged
+         => Specification.GetComponentIndex(ComponentType<T>.Type);
+
+        internal Span<T> GetComponentData<T>(int index = -1, ComponentType componentType = default)
             where T : unmanaged
         {
             if (index == -1)
@@ -82,18 +81,6 @@ namespace Atma.Entities
             var componentDataArray = _componentData[index];
             return componentDataArray.AsSpan<T>(componentType);
         }
-
-        // public unsafe T* GetComponentPointer<T>(int index = -1)
-        //            where T : unmanaged
-        // {
-        //     if (index < 0)
-        //         index = GetComponentIndex<T>();
-
-        //     Assert.Range(index, 0, _componentData.Length);
-
-        //     var componentDataArray = _componentData[index];
-        //     return componentDataArray.AsPointer<T>();
-        // }
 
         protected override void OnManagedDispose()
         {

@@ -113,7 +113,7 @@
 
             var array = _entityArrays[entityRef.SpecIndex];
             var chunk = array.AllChunks[entityRef.ChunkIndex];
-            var span = chunk.PackedArray.GetComponentData<T>();
+            var span = chunk.GetComponentData<T>();
             span[entityRef.Index] = t;
         }
 
@@ -156,7 +156,7 @@
 
             var array = _entityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
-            var span = chunk.PackedArray.GetComponentData<T>();
+            var span = chunk.GetComponentData<T>();
 
             return ref span[e.Index];
         }
@@ -322,7 +322,7 @@
             Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             var array = _entityArrays[entity.SpecIndex];
             var chunk = array.AllChunks[entity.ChunkIndex];
-            var span = chunk.PackedArray.GetComponentData<T>();
+            var span = chunk.GetComponentData<T>();
             span[entity.Index] = t;
         }
 

@@ -99,7 +99,7 @@ namespace Atma.Entities
             }
         }
 
-        public Span<T> GetComponentData<T>() where T : unmanaged => _packedArray.GetComponentData<T>();
+        public Span<T> GetComponentData<T>(int index = -1) where T : unmanaged => _packedArray.GetComponentData<T>(index);
 
         protected override void OnManagedDispose()
         {

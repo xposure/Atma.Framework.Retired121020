@@ -4,7 +4,7 @@
     using Microsoft.Extensions.Logging;
     using System;
 
-    public sealed unsafe class ComponentDataArray : UnmanagedDispose//, IComponentDataArray2
+    public sealed unsafe class ComponentDataArray : UnmanagedDispose
     {
         public int ElementSize { get; }
 
@@ -17,7 +17,7 @@
         private readonly ComponentType _componentType;
         private readonly ComponentTypeHelper _componentHelper;
 
-        public ComponentDataArray(ILoggerFactory logFactory, IAllocator allocator, ComponentType componentType, int length)
+        internal ComponentDataArray(ILoggerFactory logFactory, IAllocator allocator, ComponentType componentType, int length)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<ComponentDataArray>();
@@ -48,7 +48,7 @@
 
             Assert.Range(start, 0, Length);
             Assert.Range(start + length - 1, start, Length);
-            Assert.EqualTo(componentType.ID, _componentType.ID);
+            Contract.EqualTo(componentType.ID, _componentType.ID);
             var src = (T*)_memoryHandle.Address;
             return new Span<T>((void*)(src + start), length);
         }
