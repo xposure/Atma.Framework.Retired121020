@@ -54,12 +54,15 @@
             Specification = specification;
         }
 
-        [Obsolete("We want to remove this in favor of bulk create below")]
         public int Create(uint entity, out int chunkIndex)
         {
-            _entityCount++;
-            var chunk = GetOrCreateFreeChunk(out chunkIndex);
-            return chunk.Create(entity);
+            Span<uint> entities = stackalloc[] { entity };
+            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[1];
+
+            Create(entities, createdEntities);
+            ref var createdEntity = ref createdEntities[0];
+            chunkIndex = createdEntity.ChunkIndex;
+            return createdEntity.Index;
         }
 
 
