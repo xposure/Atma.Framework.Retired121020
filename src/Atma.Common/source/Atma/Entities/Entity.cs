@@ -12,14 +12,14 @@
 
         public int SpecIndex => _entity->SpecIndex;
         public int ChunkIndex => _entity->ChunkIndex;
-        public int Index { get => _entity->Index; set => _entity->Index = value; }
+        public int Index { get => _entity->Index; internal set => _entity->Index = value; }
 
-        public EntityRef(Entity* ptr)
+        internal EntityRef(Entity* ptr)
         {
             _entity = ptr;
         }
 
-        public void Replace(in Entity entity)
+        internal void Replace(in Entity entity)
         {
             *_entity = entity;
         }

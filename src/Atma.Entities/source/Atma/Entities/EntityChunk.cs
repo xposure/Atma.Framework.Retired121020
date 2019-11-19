@@ -9,9 +9,9 @@ namespace Atma.Entities
         private ILogger _logger;
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
-        private NativeList<uint> _entities2;
+        private NativeList<EntityRef> _entities2;
 
-        internal ReadOnlySpan<uint> Entities => _entities2.Slice();
+        internal ReadOnlySpan<EntityRef> Entities => _entities2.Slice();
         internal readonly ComponentPackedArray PackedArray;
 
         public int Count => _entities2.Length;
@@ -30,7 +30,7 @@ namespace Atma.Entities
             _allocator = allocator;
             Specification = specifcation;
             PackedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
-            _entities2 = new NativeList<uint>(_allocator, PackedArray.Length);
+            _entities2 = new NativeList<EntityRef>(_allocator, PackedArray.Length);
             SpecIndex = specIndex;
             ChunkIndex = chunkIndex;
         }
@@ -50,7 +50,7 @@ namespace Atma.Entities
                 var id = entity.ID;
 
                 entity.Replace(new Entity(id, SpecIndex, ChunkIndex, _entities2.Length));
-                _entities2.Add(id);
+                _entities2.Add(entity);
             }
             return amountToCreate;
         }
@@ -74,9 +74,10 @@ namespace Atma.Entities
                 if (_entities2.RemoveAtWithSwap(index, true))
                 {
                     PackedArray.Move(_entities2.Length, index);
+                    _entities2[index].Index = index;
                     //update the moved entity so that EntityRefs reflect the change
-                    ref var movedEntity = ref entityPool[_entities2[index]];
-                    movedEntity.Index = index;
+                    //ref var movedEntity = ref entityPool[_entities2[index]];
+                    //movedEntity.Index = index;
                 }
             }
         }

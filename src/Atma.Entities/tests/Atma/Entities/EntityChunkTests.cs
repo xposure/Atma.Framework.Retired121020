@@ -76,7 +76,7 @@ namespace Atma.Entities
 
             //assert
             id0.Index.ShouldBe(0);
-            entityChunk.Entities[0].ShouldBe(id0.ID);
+            entityChunk.Entities[0].ShouldBe(id0);
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
         }
@@ -100,8 +100,8 @@ namespace Atma.Entities
             var created = entityChunk.Create(ids);
 
             //assert
-            entityChunk.Entities[0].ShouldBe(1u);
-            entityChunk.Entities[created - 1].ShouldBe(ids[created - 1].ID);
+            entityChunk.Entities[0].ShouldBe(ids[0]);
+            entityChunk.Entities[created - 1].ShouldBe(ids[created - 1]);
             entityChunk.Count.ShouldBe(created);
             entityChunk.Free.ShouldBe(0);
             created.ShouldBe(Entity.ENTITY_MAX);
@@ -175,9 +175,9 @@ namespace Atma.Entities
 
             //var fourthSet = entityChunk.Entities.Slice(Entity.ENTITY_MAX - 128, 128).ToArray();
 
-            firstSet.ShouldBe(first.Select(x => x.ID));
-            secondSet.ShouldBe(second.Select(x => x.ID));
-            thirdSet.ShouldBe(third.Select(x => x.ID));
+            firstSet.ShouldBe(first);
+            secondSet.ShouldBe(second);
+            thirdSet.ShouldBe(third);
             //fourthSet.ShouldBe(fourth);
             entityChunk.Entities.Length.ShouldBe(Entity.ENTITY_MAX - 128);
 
