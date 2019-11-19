@@ -126,7 +126,7 @@
             MoveInternal(entities, componentType, true);
 
             var data = stackalloc[] { t };
-            UpdateInternal(componentType, entities, data, false, false);
+            SetComponentData(componentType, entities, data, false, false);
         }
 
         public unsafe void Assign<T>(Span<uint> entities, NativeArray<T> array)
@@ -139,12 +139,7 @@
             MoveInternal(entities, componentType, true);
 
             var data = array.RawPointer;
-            UpdateInternal(componentType, entities, data, true, false);
-        }
-
-        internal unsafe void AssignInternal(Span<uint> entities, ComponentType* type, ref void* src, bool incrementSource)
-        {
-            UpdateInternal(type, entities, src, incrementSource, true);
+            SetComponentData(componentType, entities, data, true, false);
         }
 
         public ref T Get<T>(uint entity)
@@ -304,35 +299,25 @@
         public void Replace<T>(uint entity, in T t)
             where T : unmanaged
         {
-            ref var e = ref _entityPool[entity];
-            ReplaceInternal<T>(ref e, t);
+            Span<uint> entities = stackalloc[] { entity };
+            Replace<T>(entities, t);
         }
 
-        public unsafe void Replace<T>(NativeArray<uint> entities, in T t)
+        public unsafe void Replace<T>(Span<uint> entities, in T t)
             where T : unmanaged
         {
             var data = stackalloc[] { t };
             var componentType = stackalloc[] { ComponentType<T>.Type };
-            UpdateInternal(componentType, entities, data, false, false);
+            SetComponentData(componentType, entities, data, false, false);
         }
 
-        public unsafe void Replace<T>(NativeArray<uint> entities, in NativeArray<T> t)
+        public unsafe void Replace<T>(Span<uint> entities, in NativeArray<T> t)
             where T : unmanaged
         {
             Assert.EqualTo(entities.Length, t.Length);
 
             var componentType = stackalloc[] { ComponentType<T>.Type };
-            UpdateInternal(componentType, entities, t.RawPointer, true, false);
-        }
-
-        internal void ReplaceInternal<T>(ref Entity entity, in T t)
-          where T : unmanaged
-        {
-            Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
-            var array = _entityArrays[entity.SpecIndex];
-            var chunk = array.AllChunks[entity.ChunkIndex];
-            var span = chunk.GetComponentData<T>();
-            span[entity.Index] = t;
+            SetComponentData(componentType, entities, t.RawPointer, true, false);
         }
 
         public unsafe void Move(uint entity, in EntitySpec spec)
@@ -525,19 +510,32 @@
         {
             var componentType = stackalloc[] { ComponentType<T>.Type };
             var data = stackalloc[] { default(T) };
-            UpdateInternal(componentType, entities, data, false, false);
+            SetComponentData(componentType, entities, data, false, false);
         }
 
         public unsafe void Update<T>(uint entity, in T t)
             where T : unmanaged
         {
             Span<uint> entities = stackalloc[] { entity };
-            var componentType = stackalloc[] { ComponentType<T>.Type };
-            var data = stackalloc[] { t };
-            UpdateInternal(componentType, entities, data, false, true);
+            Update<T>(entities, t);
         }
 
-        internal unsafe void UpdateInternal(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource, bool allowMove)
+        public unsafe void Update<T>(Span<uint> entities, in T t)
+            where T : unmanaged
+        {
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            var data = stackalloc[] { t };
+            SetComponentData(componentType, entities, data, false, true);
+        }
+
+        public unsafe void Update<T>(Span<uint> entities, NativeArray<T> data)
+            where T : unmanaged
+        {
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            SetComponentData(componentType, entities, data.RawPointer, true, true);
+        }
+
+        internal unsafe void SetComponentData(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource, bool allowMove)
         {
             SpanList<EntityRef> entityRefs = stackalloc EntityRef[BATCH_SIZE];
 

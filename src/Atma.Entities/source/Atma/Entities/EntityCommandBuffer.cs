@@ -67,8 +67,8 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, CreateEntityCommand* it, Span<uint> lastEntities)
             {
-                System.Span<ComponentType> componentTypes = new System.Span<ComponentType>(it + 1, it->ComponentCount);
-                entityManager.Create(componentTypes, lastEntities);
+                // System.Span<ComponentType> componentTypes = new System.Span<ComponentType>(it + 1, it->ComponentCount);
+                // entityManager.Create(componentTypes, lastEntities);
             }
         }
 
@@ -86,8 +86,8 @@ namespace Atma.Entities
             public static void Process(EntityManager entityManager, RemoveEntityCommand* it, Span<uint> lastEntities)
             {
                 //TODO: bulk remove entity
-                Assert.GreatherThan(lastEntities.Length, 0);
-                entityManager.Remove(lastEntities);
+                // Assert.GreatherThan(lastEntities.Length, 0);
+                // entityManager.Remove(lastEntities);
             }
         }
 
@@ -169,19 +169,19 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, AssignComponentCommand* it, Span<uint> lastEntities)
             {
-                Assert.GreatherThan(lastEntities.Length, 0);
-                var dataPtr = (void*)(it + 1);
-                if (it->DataCount == 1)
-                {
-                    //assigning one piece of data to all entities
-                    for (var i = 0; i < lastEntities.Length; i++)
-                        entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, true);
-                }
-                else
-                {
-                    Assert.EqualTo(lastEntities.Length, it->DataCount);
-                    entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, false);
-                }
+                // Assert.GreatherThan(lastEntities.Length, 0);
+                // var dataPtr = (void*)(it + 1);
+                // if (it->DataCount == 1)
+                // {
+                //     //assigning one piece of data to all entities
+                //     for (var i = 0; i < lastEntities.Length; i++)
+                //         entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, true);
+                // }
+                // else
+                // {
+                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
+                //     entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, false);
+                // }
             }
         }
 

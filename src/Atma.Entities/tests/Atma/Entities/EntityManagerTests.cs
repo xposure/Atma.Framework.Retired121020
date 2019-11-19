@@ -115,12 +115,15 @@
             using var entities = new EntityManager(_logFactory, memory);
 
             var spec = EntitySpec.Create<Position, Velocity>();
-            var id = entities.Create(spec);
+            var id0 = entities.Create(spec);
+            var id1 = entities.Create(spec.ComponentTypes);
 
-            id.ShouldNotBe(0u);
+            id0.ShouldNotBe(0u);
+            id1.ShouldNotBe(0u);
+            id0.ShouldNotBe(id1);
 
-            entities.EntityCount.ShouldBe(1);
-            entities.EntityArrays[0].EntityCount.ShouldBe(1);
+            entities.EntityCount.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(2);
         }
 
         [Fact]
@@ -249,6 +252,108 @@
             entities.EntityArrays[0].EntityCount.ShouldBe(8192 - 1024);
             for (var i = 0; i < ids.Length; i++)
                 entities.Has(ids[i]).ShouldBe((i >= 1024 && i < 2048) ? false : true);
+        }
+
+        [Fact]
+        public void ShouldRemoveComponent()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec = EntitySpec.Create<Position, Velocity>();
+            var id = entities.Create(spec);
+
+            entities.Remove<Velocity>(id);
+
+            entities.EntityCount.ShouldBe(1);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public void ShouldRemoveComponentBySpan()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec = EntitySpec.Create<Position, Velocity>();
+
+            var ids = Enumerable.Range(0, 8192).Select(x => 0u).ToArray();
+            entities.Create(spec, ids);
+
+            var removeIds = Enumerable.Range(1024, 1024).Select(x => ids[x]).ToArray();
+            entities.Remove<Velocity>(removeIds);
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays[0].EntityCount.ShouldBe(8192 - 1024);
+            entities.EntityArrays[1].EntityCount.ShouldBe(1024);
+            for (var i = 0; i < ids.Length; i++)
+                entities.Has<Velocity>(ids[i]).ShouldBe((i >= 1024 && i < 2048) ? false : true);
+        }
+
+
+        [Fact]
+        public void ShouldReplaceOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            //var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var id0 = entities.Create(spec0);
+            entities.Replace(id0, new Position(20));
+
+            entities.EntityCount.ShouldBe(1);
+            entities.EntityArrays.Count.ShouldBe(1);
+            entities.EntityArrays[0].EntityCount.ShouldBe(1);
+            entities.Get<Position>(id0).ShouldBe(new Position(20));
+        }
+
+        [Fact]
+        public void ShouldReplaceManyWithOneValue()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec = EntitySpec.Create<Position>();
+
+            var ids = Enumerable.Range(0, 8192).Select(x => 0u).ToArray();
+            entities.Create(spec, ids);
+
+            entities.Replace<Position>(ids, new Position(10));
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays.Count.ShouldBe(1);
+            entities.EntityArrays[0].EntityCount.ShouldBe(8192);
+
+            for (var i = 0; i < ids.Length; i++)
+                entities.Get<Position>(ids[i]).ShouldBe(new Position(10));
+        }
+
+        [Fact]
+        public void ShouldReplaceManyWithManyValues()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec = EntitySpec.Create<Position>();
+
+            var ids = Enumerable.Range(0, 8192).Select(x => 0u).ToArray();
+            entities.Create(spec, ids);
+
+            var positions = Enumerable.Range(0, ids.Length).Select(x => new Position(x)).ToArray();
+            using var array = new NativeArray<Position>(memory, ids.Length);
+            positions.CopyTo(array);
+
+            entities.Replace<Position>(ids, array);
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays.Count.ShouldBe(1);
+            entities.EntityArrays[0].EntityCount.ShouldBe(8192);
+
+            for (var i = 0; i < ids.Length; i++)
+                entities.Get<Position>(ids[i]).ShouldBe(positions[i]);
         }
 
 
@@ -469,28 +574,6 @@
             em.EntityArrays.Count.ShouldBe(1);
             em.EntityArrays[0].EntityCount.ShouldBe(0);
             em.EntityCount.ShouldBe(0);
-        }
-
-        [Fact]
-        public void ShouldRemoveComponent()
-        {
-            //arrange
-            using var memory = new DynamicAllocator(_logFactory);
-            using var em = new EntityManager(_logFactory, memory);
-            var spec = new EntitySpec(
-                ComponentType<Position>.Type,
-                ComponentType<Velocity>.Type
-            );
-
-            //act
-            var id0 = em.Create(spec);
-            em.Remove<Position>(id0);
-
-            //assert
-            em.EntityArrays.Count.ShouldBe(2);
-            em.EntityArrays[0].EntityCount.ShouldBe(0);
-            em.EntityArrays[1].EntityCount.ShouldBe(1);
-            em.EntityCount.ShouldBe(1);
         }
 
         [Fact]
