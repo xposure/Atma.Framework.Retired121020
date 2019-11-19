@@ -5,22 +5,6 @@
     using System;
     using System.Collections.Generic;
 
-    public readonly struct CreatedEntity : IEquatable<CreatedEntity>
-    {
-        public readonly int ChunkIndex;
-        public readonly int Index;
-
-        public CreatedEntity(int chunkIndex, int index)
-        {
-            ChunkIndex = chunkIndex;
-            Index = index;
-        }
-
-        public bool Equals(CreatedEntity other) => ChunkIndex == other.ChunkIndex && Index == other.Index;
-
-        public override string ToString() => $"{{ ChunkIndex: {ChunkIndex}, Index: {Index} }}";
-    }
-
     public sealed class EntityChunkList : UnmanagedDispose//, IEntityArray //IEquatable<EntityArchetype>
     {
         private ILogger _logger;
@@ -36,15 +20,6 @@
         public readonly int SpecIndex;
 
         public IReadOnlyList<EntityChunk> AllChunks => _chunks;
-        public IEnumerable<EntityChunk> ActiveChunks
-        {
-            get
-            {
-                for (var i = 0; i < _chunks.Count; i++)
-                    if (_chunks[i].Count > 0)
-                        yield return _chunks[i];
-            }
-        }
         public EntitySpec Specification { get; }
 
         public EntityChunkList(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification, int specIndex)
@@ -106,7 +81,6 @@
         }
 
 
-        //TODO: Remove the chunk index out param
         private EntityChunk GetOrCreateFreeChunk()
         {
             var chunkIndex = 0;
@@ -129,14 +103,40 @@
             chunk.Delete(entity);
         }
 
-        internal void Delete(int chunkIndex, Span<EntityRef> indicies)
+        internal void Delete(Span<EntityRef> entities)
         {
-            Assert.Range(chunkIndex, 0, _chunks.Count);
+            if (entities.Length == 0)
+                return;
+            var chunkIndex = entities[0].ChunkIndex;
+            var lastIndex = 0;
 
-            var chunk = _chunks[chunkIndex];
-            chunk.Delete(indicies);
+            Assert.EqualTo(entities[0].SpecIndex, SpecIndex);
+            for (var i = 1; i < entities.Length; i++)
+            {
+                ref var e = ref entities[i];
+                if (e.ChunkIndex != chunkIndex)
+                {
+                    //flush
+                    var amountToRemove = i - lastIndex - 1;
+                    if (amountToRemove > 0)
+                    {
+                        var chunk = _chunks[chunkIndex];
+                        chunk.Delete(entities.Slice(lastIndex, amountToRemove));
+                    }
 
-            _entityCount -= indicies.Length;
+                    chunkIndex = e.ChunkIndex;
+                    lastIndex = i + 1;
+                }
+
+                Assert.EqualTo(e.SpecIndex, SpecIndex);
+            }
+
+            if (entities.Length - lastIndex > 0)
+            {
+                var chunk = _chunks[chunkIndex];
+                chunk.Delete(entities.Slice(lastIndex, entities.Length - lastIndex));
+            }
+            _entityCount -= entities.Length;
         }
 
         protected override void OnUnmanagedDispose()

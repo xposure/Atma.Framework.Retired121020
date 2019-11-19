@@ -72,7 +72,7 @@ namespace Atma.Entities
         public bool IsValid(uint entity)
         {
             GetLocation(entity, out var page, out var index, out var version);
-            return page[index].ID == entity;
+            return page[index].ID != 0 && page[index].ID == entity;
         }
 
         private void GetLocation(uint entity, out NativeArray<Entity> page, out int index, out uint version)
@@ -111,6 +111,12 @@ namespace Atma.Entities
             e = new Entity(0, 0, 0, 0);
             _freeIds.Push(id & 0xffffff);
             _free++;
+        }
+
+        public void Return(Span<EntityRef> entities)
+        {
+            for (var i = 0; i < entities.Length; i++)
+                Return(entities[i].ID);
         }
 
         //TODO: I don't really see a need for this method since everything else is now using refs

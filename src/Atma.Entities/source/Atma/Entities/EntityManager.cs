@@ -200,20 +200,6 @@
 
         public unsafe void Remove(Span<uint> entities) => RemoveInternal(entities, true);
 
-        private unsafe void RemoveInternal(ref SpanList<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
-        {
-            var array = _entityArrays[specIndex];
-            array.Delete(chunkIndex, removeEntities);
-
-            if (returnId)
-            {
-                for (var i = 0; i < removeEntities.Length; i++)
-                    _entityPool.Return(removeEntities[i].ID);
-            }
-
-            removeEntities.Reset();
-        }
-
         internal unsafe void RemoveInternal(Span<uint> entities, bool returnId)
         {
             Span<EntityRef> batch = stackalloc EntityRef[BATCH_SIZE];
@@ -233,28 +219,44 @@
 
         internal unsafe void RemoveInternal(Span<EntityRef> entities, bool returnId)
         {
-            SpanList<EntityRef> removeEntities = stackalloc EntityRef[BATCH_SIZE];
+            if (entities.Length == 0)
+                return;
 
-            var specIndex = -1;
-            var chunkIndex = -1;
-            for (var i = 0; i < entities.Length; i++)
+            var specIndex = entities[0].SpecIndex;
+            var chunkIndex = entities[0].ChunkIndex;
+            var lastIndex = 0;
+            for (var i = 1; i < entities.Length; i++)
             {
                 ref var e = ref entities[i];
-                if (e.SpecIndex != specIndex || e.ChunkIndex != chunkIndex || removeEntities.Free == 0)
+                if (e.SpecIndex != specIndex || e.ChunkIndex != chunkIndex)
                 {
                     //flush
-                    if (removeEntities.Length > 0)
-                        RemoveInternal(ref removeEntities, specIndex, chunkIndex, returnId);
+                    var amountToRemove = i - lastIndex - 1;
+                    if (amountToRemove > 0)
+                    {
+                        var array = _entityArrays[specIndex];
+                        var workingEntities = entities.Slice(lastIndex, amountToRemove);
+                        array.Delete(workingEntities);
+
+                        if (returnId)
+                            _entityPool.Return(workingEntities);
+                    }
 
                     specIndex = e.SpecIndex;
                     chunkIndex = e.ChunkIndex;
+                    lastIndex = i + 1;
                 }
 
-                removeEntities.Add(e);
             }
 
-            if (removeEntities.Length > 0)
-                RemoveInternal(ref removeEntities, specIndex, chunkIndex, returnId);
+            if (entities.Length - lastIndex > 0)
+            {
+                var array = _entityArrays[specIndex];
+                var workingEntities = entities.Slice(lastIndex, entities.Length - lastIndex);
+                array.Delete(workingEntities);
+                if (returnId)
+                    _entityPool.Return(workingEntities);
+            }
         }
 
 
