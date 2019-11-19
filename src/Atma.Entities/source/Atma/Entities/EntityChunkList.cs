@@ -131,7 +131,7 @@
             return chunk.Delete(index);
         }
 
-        internal void Delete(int chunkIndex, Span<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        internal void Delete(int chunkIndex, Span<int> indicies, ref SpanList<MovedEntity> movedEntities)
         {
             Assert.Range(chunkIndex, 0, _chunks.Count);
 

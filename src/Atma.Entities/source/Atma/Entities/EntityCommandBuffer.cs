@@ -175,12 +175,12 @@ namespace Atma.Entities
                 {
                     //assigning one piece of data to all entities
                     for (var i = 0; i < lastEntities.Length; i++)
-                        entityManager.Assign(lastEntities, &it->ComponentType, ref dataPtr, true);
+                        entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, true);
                 }
                 else
                 {
                     Assert.EqualTo(lastEntities.Length, it->DataCount);
-                    entityManager.Assign(lastEntities, &it->ComponentType, ref dataPtr, false);
+                    entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, false);
                 }
             }
         }
@@ -204,7 +204,7 @@ namespace Atma.Entities
                 //TODO: bulk remove
                 Assert.GreatherThan(lastEntities.Length, 0);
                 for (var i = 0; i < lastEntities.Length; i++)
-                    entityManager.Remove(lastEntities[i], it->ComponentId);
+                    entityManager.RemoveInternal(lastEntities[i], it->ComponentId);
             }
         }
 

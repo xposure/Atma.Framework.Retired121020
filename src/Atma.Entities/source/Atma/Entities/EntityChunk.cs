@@ -73,11 +73,8 @@ namespace Atma.Entities
 
         public unsafe MovedEntity Delete(int index)
         {
-            var data = stackalloc int[] { index };
-            var result = stackalloc MovedEntity[1];
-
-            var slice = new Span<int>(data, 1);
-            var moved = new NativeFixedList<MovedEntity>(data, 1);
+            Span<int> slice = stackalloc int[] { index };
+            SpanList<MovedEntity> moved = stackalloc MovedEntity[1];
 
             Delete(slice, ref moved);
             if (moved.Length == 0)
@@ -106,7 +103,7 @@ namespace Atma.Entities
         //     }
         // }
 
-        internal void Delete(Span<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
+        internal void Delete(Span<int> indicies, ref SpanList<MovedEntity> movedEntities)
         {
             for (var i = 0; i < indicies.Length; i++)
             {

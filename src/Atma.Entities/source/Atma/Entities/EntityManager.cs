@@ -10,6 +10,7 @@ namespace Atma.Entities
 
     public sealed partial class EntityManager : UnmanagedDispose//, IEntityManager2
     {
+        private const int BATCH_SIZE = 256;
 
         public int EntityCount { get => _entityArrays.Sum(x => x.EntityCount); }
         public int SpecCount { get => _knownSpecs.Count; }
@@ -105,55 +106,7 @@ namespace Atma.Entities
             }
         }
 
-        internal unsafe void Assign(Span<uint> entities, ComponentType* type, ref void* src, bool incrementSource)
-        {
-            Move(entities, type);
 
-            //TODO: pass the entity ref array in instead of looking it up again
-            SetComponentInternal(type, entities, src, incrementSource, false);
-        }
-
-        private unsafe void Move(ref NativeFixedList2<uint> entities, int srcSpecIndex, ComponentType* type)
-        {
-            var srcSpec = _entityArrays[srcSpecIndex].Specification;
-
-            //we need to move the entity to the new spec
-            Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
-            srcSpec.ComponentTypes.CopyTo(componentTypes);
-
-            componentTypes[srcSpec.ComponentTypes.Length] = *type;
-
-            var specId = ComponentType.CalculateId(componentTypes);
-            var dstSpecIndex = GetOrCreateSpec(componentTypes);
-            Move(entities.Slice(), srcSpecIndex, dstSpecIndex);
-            entities.Reset();
-        }
-
-        internal unsafe void Move(Span<uint> entities, ComponentType* type)
-        {
-            NativeFixedList2<uint> batch = stackalloc uint[128];
-
-            var srcSpecIndex = -1;
-            for (var i = 0; i < entities.Length; i++)
-            {
-                ref var entityInfo = ref _entityPool[entities[i]];
-                Assert.EqualTo(Has(ref entityInfo, type->ID), false);
-
-                //var srcSpecIndex = entityInfo.SpecIndex;
-                if (entityInfo.SpecIndex != srcSpecIndex || batch.Free == 0)
-                {
-                    if (batch.Length > 0)
-                        Move(ref batch, srcSpecIndex, type);
-
-                    srcSpecIndex = entityInfo.SpecIndex;
-                }
-
-                batch.Add(entities[i]);
-            }
-
-            if (batch.Length > 0)
-                Move(ref batch, srcSpecIndex, type);
-        }
 
         public unsafe void Assign<T>(uint entity, in T t)
            where T : unmanaged
@@ -161,30 +114,17 @@ namespace Atma.Entities
             //assign has too move logic with moving data around so we are just going to put things on the stack and call a single function
             var componentType = stackalloc[] { ComponentType<T>.Type };
             void* data = stackalloc[] { t };
-            var entities = stackalloc[] { entity };
-            Assign(new Span<uint>(entities, 1), componentType, ref data, true);
-
-            // Assert.EqualTo(Has<T>(entity), false);
-
-            // ref var entityInfo = ref _entityPool[entity];
-            // var srcSpec = _entityArrays[entityInfo.SpecIndex].Specification;
-
-            // //we need to move the entity to the new spec
-            // Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
-            // srcSpec.ComponentTypes.CopyTo(componentTypes);
-
-            // var newComponentType = ComponentType<T>.Type;
-            // componentTypes[srcSpec.ComponentTypes.Length] = newComponentType;
-
-            // var specId = ComponentType.CalculateId(componentTypes);
-            // var dstSpecIndex = GetOrCreateSpec(componentTypes);
-            // //var dstSpec = _knownSpecs[specIndex];
-
-            // Move(ref entityInfo, dstSpecIndex);
-            // //Move(entity, dstSpec);
-            // Replace<T>(ref entityInfo, t);
+            Span<uint> entities = stackalloc[] { entity };
+            AssignInternal(entities, componentType, ref data, true);
         }
 
+        internal unsafe void AssignInternal(Span<uint> entities, ComponentType* type, ref void* src, bool incrementSource)
+        {
+            MoveInternal(entities, type);
+
+            //TODO: pass the entity ref array in instead of looking it up again
+            SetComponentInternal(type, entities, src, incrementSource, false);
+        }
 
         public ref T Get<T>(uint entity)
             where T : unmanaged
@@ -224,6 +164,13 @@ namespace Atma.Entities
             return spec.Has(componentId);
         }
 
+
+        public void Remove<T>(uint entity)
+            where T : unmanaged
+        {
+            RemoveInternal(entity, ComponentType<T>.Type.ID);
+        }
+
         public unsafe void Remove(uint entity)
         {
             Span<uint> entities = stackalloc[] { entity };
@@ -232,14 +179,12 @@ namespace Atma.Entities
 
         public unsafe void Remove(Span<uint> entities) => RemoveInternal(entities, true);
 
-        private unsafe void Remove(ref NativeFixedList2<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
+        private unsafe void RemoveInternal(ref SpanList<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
         {
             var array = _entityArrays[specIndex];
-            var stackIndicies = stackalloc int[removeEntities.Length];
-            var sliceIndicies = new Span<int>(stackIndicies, removeEntities.Length);
 
-            var stackMovedEntities = stackalloc MovedEntity[removeEntities.Length];
-            var movedEntities = new NativeFixedList<MovedEntity>(stackMovedEntities, removeEntities.Length);
+            Span<int> sliceIndicies = stackalloc int[removeEntities.Length];
+            SpanList<MovedEntity> movedEntities = stackalloc MovedEntity[removeEntities.Length];
 
             array.Delete(chunkIndex, sliceIndicies, ref movedEntities);
             for (var i = 0; i < movedEntities.Length; i++)
@@ -259,7 +204,7 @@ namespace Atma.Entities
 
         internal unsafe void RemoveInternal(Span<uint> entities, bool returnId)
         {
-            Span<EntityRef> batch = stackalloc EntityRef[128];
+            Span<EntityRef> batch = stackalloc EntityRef[BATCH_SIZE];
             var index = 0;
             while (index < entities.Length)
             {
@@ -269,14 +214,14 @@ namespace Atma.Entities
                 for (var i = 0; i < count; i++)
                     batch[i] = new EntityRef(_entityPool.GetPointer(entities[index + i]));
 
-                Remove(batch.Slice(0, count), returnId);
+                RemoveInternal(batch.Slice(0, count), returnId);
                 index += batch.Length;
             }
         }
 
-        internal unsafe void Remove(Span<EntityRef> entities, bool returnId)
+        internal unsafe void RemoveInternal(Span<EntityRef> entities, bool returnId)
         {
-            NativeFixedList2<EntityRef> removeEntities = stackalloc EntityRef[128];
+            SpanList<EntityRef> removeEntities = stackalloc EntityRef[BATCH_SIZE];
 
             var specIndex = -1;
             var chunkIndex = -1;
@@ -287,7 +232,7 @@ namespace Atma.Entities
                 {
                     //flush
                     if (removeEntities.Length > 0)
-                        Remove(ref removeEntities, specIndex, chunkIndex, returnId);
+                        RemoveInternal(ref removeEntities, specIndex, chunkIndex, returnId);
 
                     specIndex = e.SpecIndex;
                     chunkIndex = e.ChunkIndex;
@@ -297,16 +242,12 @@ namespace Atma.Entities
             }
 
             if (removeEntities.Length > 0)
-                Remove(ref removeEntities, specIndex, chunkIndex, returnId);
+                RemoveInternal(ref removeEntities, specIndex, chunkIndex, returnId);
         }
 
-        public void Remove<T>(uint entity)
-          where T : unmanaged
-        {
-            Remove(entity, ComponentType<T>.Type.ID);
-        }
 
-        internal unsafe bool Remove(uint entity, int componentId)
+
+        internal unsafe bool RemoveInternal(uint entity, int componentId)
         {
             Assert.EqualTo(Has(entity, componentId), true);
 
@@ -377,7 +318,7 @@ namespace Atma.Entities
         {
             //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
             //we are going to put replaces in front of the array and assigns in the back if we are allowed
-            NativeFixedList2<Entity> entityRefs = stackalloc Entity[128];
+            SpanList<Entity> entityRefs = stackalloc Entity[BATCH_SIZE];
 
             //TODO: come back to this
             //Assert.EqualTo(allowUpdate, false);
@@ -406,7 +347,7 @@ namespace Atma.Entities
                 }
 
                 if (!hasComponent)
-                    Move(entities.Slice(i, 1), componentType);
+                    MoveInternal(entities.Slice(i, 1), componentType);
 
                 entityRefs.Add(e);
             }
@@ -418,69 +359,6 @@ namespace Atma.Entities
             }
         }
 
-        public void Reset(uint entity)
-        {
-            ref var e = ref _entityPool[entity];
-            var array = _entityArrays[e.SpecIndex];
-            var chunk = array.AllChunks[e.ChunkIndex];
-            chunk.PackedArray.Reset(e.Index);
-        }
-
-        public void Reset<T>(uint entity)
-            where T : unmanaged
-        {
-            ref var e = ref _entityPool[entity];
-            var array = _entityArrays[e.SpecIndex];
-            var chunk = array.AllChunks[e.ChunkIndex];
-            chunk.PackedArray.Reset<T>(e.Index);
-        }
-
-        public void Update<T>(uint entity, in T t)
-            where T : unmanaged
-        {
-            ref var e = ref _entityPool[entity];
-            var spec = _entityArrays[e.SpecIndex].Specification;
-            var componentType = ComponentType<T>.Type;
-            if (spec.Has(componentType))
-                Replace<T>(ref e, t);
-            else
-                Assign<T>(entity, t);
-        }
-
-        internal unsafe void UpdateInternal(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource)
-        {
-            //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
-
-            NativeFixedList2<Entity> entityRefs = stackalloc Entity[128];
-            //Move(entities, componentType);
-
-            var specIndex = -1;
-            for (var i = 0; i < entities.Length; i++)
-            {
-                ref var e = ref _entityPool[entities[i]];
-                Assert.Equals(Has(ref e, componentType->ID), true);
-                if (e.SpecIndex != specIndex)
-                {
-                    //flush
-                    if (entityRefs.Length > 0 || entityRefs.Free == 0)
-                    {
-                        var array = _entityArrays[specIndex];
-                        array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
-                        //SetComponentInternal(array, entityRefs.Slice(), componentType, ref src, incrementSource);
-                        entityRefs.Reset();
-                    }
-                    specIndex = e.SpecIndex;
-                }
-
-                entityRefs.Add(e);
-            }
-
-            if (entityRefs.Length > 0)
-            {
-                var array = _entityArrays[specIndex];
-                array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
-            }
-        }
 
         public unsafe void Move(uint entity, in EntitySpec spec)
         {
@@ -497,7 +375,7 @@ namespace Atma.Entities
             var src = _entityArrays[srcSpecIndex];
             var dst = _entityArrays[dstSpecIndex];
 
-            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[1024];
+            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[BATCH_SIZE];
             while (index < entities.Length)
             {
                 //var segment = index * createdEntities.Length;
@@ -532,6 +410,113 @@ namespace Atma.Entities
                 }
 
                 index += count;
+            }
+        }
+
+        private unsafe void Move(ref SpanList<uint> entities, int srcSpecIndex, ComponentType* type)
+        {
+            var srcSpec = _entityArrays[srcSpecIndex].Specification;
+
+            //we need to move the entity to the new spec
+            Span<ComponentType> componentTypes = stackalloc ComponentType[srcSpec.ComponentTypes.Length + 1];
+            srcSpec.ComponentTypes.CopyTo(componentTypes);
+
+            componentTypes[srcSpec.ComponentTypes.Length] = *type;
+
+            var specId = ComponentType.CalculateId(componentTypes);
+            var dstSpecIndex = GetOrCreateSpec(componentTypes);
+            Move(entities.Slice(), srcSpecIndex, dstSpecIndex);
+            entities.Reset();
+        }
+
+        internal unsafe void MoveInternal(Span<uint> entities, ComponentType* type)
+        {
+            SpanList<uint> batch = stackalloc uint[BATCH_SIZE];
+
+            var srcSpecIndex = -1;
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var entityInfo = ref _entityPool[entities[i]];
+                Assert.EqualTo(Has(ref entityInfo, type->ID), false);
+
+                //var srcSpecIndex = entityInfo.SpecIndex;
+                if (entityInfo.SpecIndex != srcSpecIndex || batch.Free == 0)
+                {
+                    if (batch.Length > 0)
+                        Move(ref batch, srcSpecIndex, type);
+
+                    srcSpecIndex = entityInfo.SpecIndex;
+                }
+
+                batch.Add(entities[i]);
+            }
+
+            if (batch.Length > 0)
+                Move(ref batch, srcSpecIndex, type);
+        }
+
+
+        public void Reset(uint entity)
+        {
+            ref var e = ref _entityPool[entity];
+            var array = _entityArrays[e.SpecIndex];
+            var chunk = array.AllChunks[e.ChunkIndex];
+            chunk.PackedArray.Reset(e.Index);
+        }
+
+        public void Reset<T>(uint entity)
+            where T : unmanaged
+        {
+            ref var e = ref _entityPool[entity];
+            var array = _entityArrays[e.SpecIndex];
+            var chunk = array.AllChunks[e.ChunkIndex];
+            chunk.PackedArray.Reset<T>(e.Index);
+        }
+
+        public void Update<T>(uint entity, in T t)
+            where T : unmanaged
+        {
+            ref var e = ref _entityPool[entity];
+            var spec = _entityArrays[e.SpecIndex].Specification;
+            var componentType = ComponentType<T>.Type;
+            if (spec.Has(componentType))
+                Replace<T>(ref e, t);
+            else
+                Assign<T>(entity, t);
+        }
+
+        internal unsafe void UpdateInternal(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource)
+        {
+            //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
+
+            SpanList<Entity> entityRefs = stackalloc Entity[BATCH_SIZE];
+            //Move(entities, componentType);
+
+            var specIndex = -1;
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref _entityPool[entities[i]];
+                Assert.Equals(Has(ref e, componentType->ID), true);
+                if (e.SpecIndex != specIndex)
+                {
+                    //flush
+                    if (entityRefs.Length > 0 || entityRefs.Free == 0)
+                    {
+                        var array = _entityArrays[specIndex];
+                        array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
+                        //SetComponentInternal(array, entityRefs.Slice(), componentType, ref src, incrementSource);
+                        entityRefs.Reset();
+                    }
+                    specIndex = e.SpecIndex;
+                }
+
+                entityRefs.Add(e);
+            }
+
+            if (entityRefs.Length > 0)
+            {
+                var array = _entityArrays[specIndex];
+                array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
             }
         }
 

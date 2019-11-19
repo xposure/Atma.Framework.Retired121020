@@ -158,8 +158,7 @@ namespace Atma.Entities
             for (var i = 0; i < deleteIndicies.Length; i++)
                 deleteIndicies[i] = i + 128;
 
-            var stackMoveIds = stackalloc MovedEntity[deleteIndicies.Length];
-            var moveIds = new NativeFixedList<MovedEntity>(stackMoveIds, deleteIndicies.Length);
+            SpanList<MovedEntity> moveIds = stackalloc MovedEntity[deleteIndicies.Length];
             entityChunk.Delete(deleteIndicies, ref moveIds);
 
             //assert
