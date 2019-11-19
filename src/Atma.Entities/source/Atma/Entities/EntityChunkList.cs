@@ -80,7 +80,6 @@
             }
         }
 
-
         private EntityChunk GetOrCreateFreeChunk()
         {
             var chunkIndex = 0;
@@ -150,5 +149,48 @@
             _chunks.Clear();
             _chunks = null;
         }
+
+        internal static void CopyTo(EntityChunkList src, Span<EntityRef> srcEntities, EntityChunkList dst, Span<EntityRef> dstEntities)
+        {
+            //SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray.CopyTo(src, srcIndex, dst, dstIndex));
+
+            Contract.EqualTo(srcEntities.Length, dstEntities.Length);
+            if (srcEntities.Length == 0)
+                return;
+
+            var count = srcEntities.Length;
+
+            var i0 = 0;
+            var i1 = 0;
+
+            Span<ComponentType> a = src.Specification.ComponentTypes;
+            Span<ComponentType> b = dst.Specification.ComponentTypes;
+            while (i0 < a.Length && i1 < b.Length)
+            {
+                var aType = a[i0];
+                var bType = b[i1];
+                if (aType.ID > bType.ID) i1++;
+                else if (bType.ID > aType.ID) i0++;
+                else
+                {
+                    var srcComponentIndex = src.Specification.GetComponentIndex(aType);
+                    var dstComponentIndex = dst.Specification.GetComponentIndex(bType);
+
+                    //TODO: batch this bitch
+                    for (var i = 0; i < count; i++)
+                    {
+                        ref var srcEntity = ref srcEntities[i];
+                        ref var dstEntity = ref dstEntities[i];
+                        var srcChunk = src.AllChunks[srcEntity.ChunkIndex];
+                        var dstChunk = dst.AllChunks[dstEntity.ChunkIndex];
+                        ComponentPackedArray.CopyTo(srcChunk.PackedArray, srcComponentIndex, srcEntity.Index, dstChunk.PackedArray, dstComponentIndex, dstEntity.Index);
+                    }
+
+                    i0++;
+                    i1++;
+                }
+            }
+        }
+
     }
 }

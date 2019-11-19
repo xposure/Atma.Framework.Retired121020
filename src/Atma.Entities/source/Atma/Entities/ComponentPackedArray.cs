@@ -92,34 +92,69 @@ namespace Atma.Entities
             _componentData.DisposeAll();
         }
 
-        internal static void CopyTo(ComponentPackedArray srcArray, int srcIndex, ComponentPackedArray dstArray, int dstIndex)
+        internal static void CopyTo(ComponentPackedArray srcArray, int srcComponentIndex, int srcIndex, ComponentPackedArray dstArray, int dstComponentIndex, int dstIndex)
         {
-            SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray.CopyTo(src, srcIndex, dst, dstIndex));
+            ComponentDataArray.CopyTo(srcArray._componentData[srcComponentIndex], srcIndex, dstArray._componentData[dstComponentIndex], dstIndex);
         }
 
-        internal delegate void SharedComponentCallback(ComponentDataArray srcArray, ComponentDataArray dstArray);
-        internal static int SharedComponentArrays(ComponentPackedArray srcArray, ComponentPackedArray dstArray, SharedComponentCallback shareCallback)
-        {
-            var i0 = 0;
-            var i1 = 0;
-            var index = 0;
+        // internal static void CopyTo(ComponentPackedArray srcArray, Span<EntityRef> srcEntities, ComponentPackedArray dstArray, Span<EntityRef> dstEntities)
+        // {
+        //     //SharedComponentArrays(srcArray, dstArray, (src, dst) => ComponentDataArray.CopyTo(src, srcIndex, dst, dstIndex));
 
-            System.Span<ComponentType> a = srcArray.Specification.ComponentTypes;
-            System.Span<ComponentType> b = dstArray.Specification.ComponentTypes;
-            while (i0 < a.Length && i1 < b.Length)
-            {
-                var aType = a[i0];
-                var bType = b[i1];
-                if (aType.ID > bType.ID) i1++;
-                else if (bType.ID > aType.ID) i0++;
-                else
-                {
-                    shareCallback(srcArray._componentData[i0], dstArray._componentData[i1]);
-                    i0++;
-                    i1++;
-                }
-            }
-            return index;
-        }
+        //     Contract.EqualTo(srcEntities.Length, dstEntities.Length);
+        //     if (srcEntities.Length == 0)
+        //         return;
+
+        //     var count = srcEntities.Length;
+
+        //     var i0 = 0;
+        //     var i1 = 0;
+
+        //     Span<ComponentType> a = srcArray.Specification.ComponentTypes;
+        //     Span<ComponentType> b = dstArray.Specification.ComponentTypes;
+        //     while (i0 < a.Length && i1 < b.Length)
+        //     {
+        //         var aType = a[i0];
+        //         var bType = b[i1];
+        //         if (aType.ID > bType.ID) i1++;
+        //         else if (bType.ID > aType.ID) i0++;
+        //         else
+        //         {
+        //             var srcData = srcArray._componentData[i0];
+        //             var dstData = dstArray._componentData[i1];
+        //             for (var i = 0; i < count; i++)
+        //             {
+
+        //             }
+
+        //             shareCallback(srcArray._componentData[i0], dstArray._componentData[i1]);
+        //             i0++;
+        //             i1++;
+        //         }
+        //     }
+        // }
+
+        // internal delegate void SharedComponentCallback(ComponentDataArray srcArray, ComponentDataArray dstArray);
+        // internal static void SharedComponentArrays(ComponentPackedArray srcArray, ComponentPackedArray dstArray, SharedComponentCallback shareCallback)
+        // {
+        //     var i0 = 0;
+        //     var i1 = 0;
+
+        //     System.Span<ComponentType> a = srcArray.Specification.ComponentTypes;
+        //     System.Span<ComponentType> b = dstArray.Specification.ComponentTypes;
+        //     while (i0 < a.Length && i1 < b.Length)
+        //     {
+        //         var aType = a[i0];
+        //         var bType = b[i1];
+        //         if (aType.ID > bType.ID) i1++;
+        //         else if (bType.ID > aType.ID) i0++;
+        //         else
+        //         {
+        //             shareCallback(srcArray._componentData[i0], dstArray._componentData[i1]);
+        //             i0++;
+        //             i1++;
+        //         }
+        //     }
+        // }
     }
 }

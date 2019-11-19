@@ -201,10 +201,10 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, RemoveComponentCommand* it, Span<uint> lastEntities)
             {
-                //TODO: bulk remove
-                Assert.GreatherThan(lastEntities.Length, 0);
-                for (var i = 0; i < lastEntities.Length; i++)
-                    entityManager.RemoveInternal(lastEntities[i], it->ComponentId);
+                // //TODO: bulk remove
+                // Assert.GreatherThan(lastEntities.Length, 0);
+                // for (var i = 0; i < lastEntities.Length; i++)
+                //     entityManager.RemoveInternal(lastEntities[i], it->ComponentId);
             }
         }
 
