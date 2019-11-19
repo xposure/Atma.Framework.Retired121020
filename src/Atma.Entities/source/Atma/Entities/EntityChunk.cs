@@ -55,13 +55,13 @@ namespace Atma.Entities
             return amountToCreate;
         }
 
-        internal unsafe void Delete(EntityRef entity, EntityPool entityPool)
+        internal unsafe void Delete(EntityRef entity)
         {
             Span<EntityRef> slice = stackalloc[] { entity };
-            Delete(slice, entityPool);
+            Delete(slice);
         }
 
-        internal void Delete(Span<EntityRef> entities, EntityPool entityPool)
+        internal void Delete(Span<EntityRef> entities)
         {
             //originally I didn't want the entity pool in here because it crosses the boundaries
             //but I realize its required due to bulk deleting shifting entities in the same chunk around

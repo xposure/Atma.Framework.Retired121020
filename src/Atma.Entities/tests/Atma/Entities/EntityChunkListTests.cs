@@ -117,7 +117,7 @@
             chunkArray.Create(id1, out var chunkIndex1);
             var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentData<Position>();
             span[id1.Index] = new Position(10, 20);
-            chunkArray.Delete(id0, entityPool);
+            chunkArray.Delete(id0);
 
             //assert
             span[id0.Index].X.ShouldBe(10);

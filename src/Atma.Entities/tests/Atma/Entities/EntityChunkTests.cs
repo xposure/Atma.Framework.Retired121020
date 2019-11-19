@@ -129,7 +129,7 @@ namespace Atma.Entities
             var free = entityChunk.Free;
             entityChunk.Create(id0);
             entityChunk.Create(id1);
-            entityChunk.Delete(id0, entityPool);
+            entityChunk.Delete(id0);
 
             //assert
             entityChunk.Count.ShouldBe(1);
@@ -161,7 +161,7 @@ namespace Atma.Entities
             for (var i = 0; i < deleteIndicies.Length; i++)
                 deleteIndicies[i] = ids[i + 128];
 
-            entityChunk.Delete(deleteIndicies, entityPool);
+            entityChunk.Delete(deleteIndicies);
 
             //assert
             var first = Enumerable.Range(0, 128).Select(x => ids[x]).ToArray();

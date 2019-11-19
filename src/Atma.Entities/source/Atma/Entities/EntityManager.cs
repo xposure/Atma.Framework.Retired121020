@@ -203,7 +203,7 @@
         private unsafe void RemoveInternal(ref SpanList<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
         {
             var array = _entityArrays[specIndex];
-            array.Delete(chunkIndex, removeEntities, _entityPool);
+            array.Delete(chunkIndex, removeEntities);
 
             if (returnId)
             {
@@ -420,7 +420,7 @@
                     //dst will be linear but could span chunks
                     ComponentPackedArray.CopyTo(srcChunk.PackedArray, entity.Index, dstChunk.PackedArray, createdEntity.Index);
 
-                    src.Delete(entity, _entityPool);
+                    src.Delete(entity);
 
                     entity.Replace(new Entity(createdEntity.ID, dstSpecIndex, createdEntity.ChunkIndex, createdEntity.Index));
                 }
