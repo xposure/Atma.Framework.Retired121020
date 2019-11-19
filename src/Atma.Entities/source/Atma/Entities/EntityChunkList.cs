@@ -56,7 +56,7 @@
             SpecIndex = specIndex;
         }
 
-        internal void Create(EntityRef entity, out int chunkIndex)
+        internal void Create(in EntityRef entity, out int chunkIndex)
         {
             Span<EntityRef> entities = stackalloc[] { entity };
             var chunk = GetOrCreateFreeChunk(out chunkIndex);
@@ -119,7 +119,7 @@
             return chunk;
         }
 
-        public void Delete(EntityRef entity)
+        public void Delete(in EntityRef entity)
         {
             Assert.Range(entity.ChunkIndex, 0, _chunks.Count);
 

@@ -35,7 +35,7 @@ namespace Atma.Entities
             ChunkIndex = chunkIndex;
         }
 
-        internal void Create(EntityRef entity)
+        internal void Create(in EntityRef entity)
         {
             Span<EntityRef> entities = stackalloc[] { entity };
             Create(entities);
@@ -55,7 +55,7 @@ namespace Atma.Entities
             return amountToCreate;
         }
 
-        internal unsafe void Delete(EntityRef entity)
+        internal unsafe void Delete(in EntityRef entity)
         {
             Span<EntityRef> slice = stackalloc[] { entity };
             Delete(slice);
