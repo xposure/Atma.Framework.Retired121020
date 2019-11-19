@@ -356,6 +356,138 @@
                 entities.Get<Position>(ids[i]).ShouldBe(positions[i]);
         }
 
+        [Fact]
+        public void ShouldUpdateOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var id0 = entities.Create(spec0);
+            var id1 = entities.Create(spec1);
+            entities.Update(id0, new Velocity(10));
+            entities.Update(id1, new Velocity(20));
+
+            entities.EntityCount.ShouldBe(2);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(2);
+            entities.Get<Velocity>(id0).ShouldBe(new Velocity(10));
+            entities.Get<Velocity>(id1).ShouldBe(new Velocity(20));
+
+        }
+
+        [Fact]
+        public void ShouldUpdateManyWithOneValue()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var ids0 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            var ids1 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            entities.Create(spec0, ids0);
+            entities.Create(spec1, ids1);
+
+            entities.Update<Velocity>(ids0, new Velocity(10));
+            entities.Update<Velocity>(ids1, new Velocity(20));
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(8192);
+
+            for (var i = 0; i < ids0.Length; i++)
+                entities.Get<Velocity>(ids0[i]).ShouldBe(new Velocity(10));
+            for (var i = 0; i < ids1.Length; i++)
+                entities.Get<Velocity>(ids1[i]).ShouldBe(new Velocity(20));
+        }
+
+        [Fact]
+        public void ShouldUpdateManyWithManyValues()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var ids0 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            var ids1 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            entities.Create(spec0, ids0);
+            entities.Create(spec1, ids1);
+
+            var velocities0 = Enumerable.Range(0, ids0.Length).Select(x => new Velocity(x)).ToArray();
+            var velocities1 = Enumerable.Range(0, ids1.Length).Select(x => new Velocity(x + 4096)).ToArray();
+            using var array0 = new NativeArray<Velocity>(memory, ids0.Length);
+            using var array1 = new NativeArray<Velocity>(memory, ids1.Length);
+            velocities0.CopyTo(array0);
+            velocities1.CopyTo(array1);
+
+            entities.Update<Velocity>(ids0, array0);
+            entities.Update<Velocity>(ids1, array1);
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(8192);
+
+            for (var i = 0; i < ids0.Length; i++)
+                entities.Get<Velocity>(ids0[i]).ShouldBe(velocities0[i]);
+            for (var i = 0; i < ids1.Length; i++)
+                entities.Get<Velocity>(ids1[i]).ShouldBe(velocities1[i]);
+        }
+
+        [Fact]
+        public void ShouldUpdateManyWithManyValuesInterleaved()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var ids0 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            var ids1 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            entities.Create(spec0, ids0);
+            entities.Create(spec1, ids1);
+
+            var velocities0 = Enumerable.Range(0, ids0.Length).Select(x => new Velocity(x)).ToArray();
+            var velocities1 = Enumerable.Range(0, ids1.Length).Select(x => new Velocity(x + 4096)).ToArray();
+            using var array = new NativeArray<Velocity>(memory, ids0.Length + ids1.Length);
+            using var ids = new NativeArray<uint>(memory, ids0.Length + ids1.Length);
+            var index0 = 0;
+            var index1 = 0;
+            for (var i = 0; i < array.Length; i++)
+            {
+                if ((i % 2) == 0)
+                {
+                    ids[i] = ids0[index0];
+                    array[i] = velocities0[index0++];
+                }
+                else
+                {
+                    ids[i] = ids1[index1];
+                    array[i] = velocities1[index1++];
+                }
+            }
+
+            entities.Update<Velocity>(ids, array);
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(8192);
+
+            for (var i = 0; i < ids0.Length; i++)
+                entities.Get<Velocity>(ids0[i]).ShouldBe(velocities0[i]);
+            for (var i = 0; i < ids1.Length; i++)
+                entities.Get<Velocity>(ids1[i]).ShouldBe(velocities1[i]);
+        }
 
         [Fact]
         public void ShouldCreateEntityManager()
