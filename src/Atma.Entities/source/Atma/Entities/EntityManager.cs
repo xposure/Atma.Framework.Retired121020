@@ -74,14 +74,16 @@ namespace Atma.Entities
             return createdEntities[0];
         }
 
-        public unsafe void Create(in EntitySpec spec, Span<uint> createEntities)
+        public unsafe void Create(in EntitySpec spec, Span<uint> createdEntities)
         {
-
+            var specIndex = GetOrCreateSpec(spec);
+            CreateInternal(specIndex, createdEntities);
         }
 
-        public unsafe void Create(Span<ComponentType> componentTypes, Span<uint> entities)
+        public unsafe void Create(Span<ComponentType> componentTypes, Span<uint> createdEntities)
         {
-
+            var specIndex = GetOrCreateSpec(componentTypes);
+            CreateInternal(specIndex, createdEntities);
         }
 
         internal unsafe void CreateInternal(int specIndex, Span<uint> entities)
@@ -113,12 +115,12 @@ namespace Atma.Entities
         //     Replace(entity, type, ref src, oneToMany);
         // }
 
-        internal unsafe void Assign(Span<uint> entities, ComponentType* type, ref void* src, bool oneToMany)
+        internal unsafe void Assign(Span<uint> entities, ComponentType* type, ref void* src, bool incrementSource)
         {
             MoveSlow(entities, type);
 
             //TODO: pass the entity ref array in instead of looking it up again
-            SetComponentInternal(type, entities, src, oneToMany, false);
+            SetComponentInternal(type, entities, src, incrementSource, false);
         }
 
         [Obsolete]
@@ -144,7 +146,6 @@ namespace Atma.Entities
                 Move(entity, srcSpecIndex, dstSpecIndex);
             }
         }
-
 
         public unsafe void Assign<T>(uint entity, in T t)
            where T : unmanaged
@@ -223,35 +224,11 @@ namespace Atma.Entities
 
         public unsafe void Remove(uint entity)
         {
-            var entities = stackalloc[] { entity };
-            Remove(new Span<uint>(entities, 1));
+            Span<uint> entities = stackalloc[] { entity };
+            Remove(entities);
         }
 
-        public unsafe void Remove(Span<uint> entities)
-        {
-            var temp = stackalloc EntityRef[256];
-            var entityRefs = new NativeFixedList<EntityRef>(temp, 256);
-
-            for (var i = 0; i < entities.Length; i++)
-            {
-                entityRefs.Add(new EntityRef(_entityPool.GetPointer(entities[i])));
-                if (entityRefs.Free == 0)
-                {
-                    Remove(entityRefs, true);
-                    entityRefs.Reset();
-                }
-            }
-
-            if (entityRefs.Length > 0)
-                Remove(entityRefs, true);
-        }
-
-        private unsafe void Remove(ref EntityRef e, bool returnId)
-        {
-            var temp = stackalloc[] { e };
-            var slice = new Span<EntityRef>(temp, 1);
-            Remove(slice, returnId);
-        }
+        public unsafe void Remove(Span<uint> entities) => RemoveInternal(entities, true);
 
         private unsafe void Remove(ref NativeFixedList2<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
         {
@@ -284,14 +261,14 @@ namespace Atma.Entities
             var index = 0;
             while (index < entities.Length)
             {
-                var segment = index * batch.Length;
-                var remaining = entities.Length - segment;
+                var remaining = entities.Length - index;
                 var count = remaining > batch.Length ? batch.Length : remaining;
 
                 for (var i = 0; i < count; i++)
-                    batch[i] = new EntityRef(_entityPool.GetPointer(entities[segment + i]));
+                    batch[i] = new EntityRef(_entityPool.GetPointer(entities[index + i]));
 
-                Remove(batch, returnId);
+                Remove(batch.Slice(0, count), returnId);
+                index += batch.Length;
             }
         }
 
@@ -537,9 +514,18 @@ namespace Atma.Entities
             }
         }
 
-        public unsafe void Move(uint entity, EntitySpec spec)
+        public unsafe void Move(uint entity, in EntitySpec spec)
         {
             var dstSpecIndex = GetOrCreateSpec(spec);
+            ref var e = ref _entityPool[entity];
+            Span<uint> entities = stackalloc[] { entity };
+
+            Move(entities, e.SpecIndex, dstSpecIndex);
+        }
+
+        public unsafe void Move(uint entity, Span<ComponentType> componentTypes)
+        {
+            var dstSpecIndex = GetOrCreateSpec(componentTypes);
             ref var e = ref _entityPool[entity];
             Span<uint> entities = stackalloc[] { entity };
 
@@ -555,28 +541,35 @@ namespace Atma.Entities
             Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[1024];
             while (index < entities.Length)
             {
-                var segment = index * createdEntities.Length;
+                //var segment = index * createdEntities.Length;
                 var remaining = entities.Length - index;
                 var count = remaining > createdEntities.Length ? createdEntities.Length : remaining;
 
-                var workingEntities = entities.Slice(segment, count);
-                RemoveInternal(workingEntities, false);
+                var workingEntities = entities.Slice(index, count);
 
                 dst.Create(workingEntities, createdEntities);
 
                 for (var i = 0; i < count; i++)
                 {
                     ref var createdEntity = ref createdEntities[i];
-                    ref var entity = ref _entityPool[entities[segment + i]];
+                    ref var entity = ref _entityPool[entities[index + i]];
+
                     var srcChunk = src.AllChunks[entity.ChunkIndex];
-                    var dstChunk = src.AllChunks[createdEntity.ChunkIndex];
+                    var dstChunk = dst.AllChunks[createdEntity.ChunkIndex];
 
                     //TODO: see if we can batch this? it would require both src and dst to be linear
                     //src can be anywhere and unordered
                     //dst will be linear but could span chunks
                     ComponentPackedArray.CopyTo(srcChunk.PackedArray, entity.Index, dstChunk.PackedArray, createdEntity.Index);
 
-                    entity = new Entity(entity.ID, srcSpecIndex, createdEntity.ChunkIndex, createdEntity.Index);
+                    var moved = src.Delete(entity.ChunkIndex, entity.Index);
+                    if (moved.DidMove)
+                    {
+                        ref var movedEntity = ref _entityPool[moved.ID];
+                        movedEntity = new Entity(moved.ID, srcSpecIndex, movedEntity.ChunkIndex, moved.Index);
+                    }
+
+                    entity = new Entity(entity.ID, dstSpecIndex, createdEntity.ChunkIndex, createdEntity.Index);
                 }
 
                 index += count;

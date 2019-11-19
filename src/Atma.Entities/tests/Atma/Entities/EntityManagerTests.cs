@@ -13,6 +13,7 @@
 
     public class EntityManagerTests
     {
+        [System.Diagnostics.DebuggerStepThrough]
         private struct Position
         {
             public int X;
@@ -25,6 +26,7 @@
             }
         }
 
+        [System.Diagnostics.DebuggerStepThrough]
         private struct Velocity
         {
             public int VX;

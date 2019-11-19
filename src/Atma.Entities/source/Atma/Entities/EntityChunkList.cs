@@ -69,9 +69,9 @@
             while (i < entity.Length)
             {
                 var chunk = GetOrCreateFreeChunk(out var chunkIndex);
+                var startIndex = chunk.Count;
                 var created = chunk.Create(entity.Slice(i));
 
-                var startIndex = Entity.ENTITY_MAX - created;
                 for (var j = 0; j < created; ++j)
                     createdEntities[i++] = new CreatedEntity(chunkIndex, startIndex + j);
 
@@ -131,12 +131,11 @@
         internal void Delete(int chunkIndex, Span<int> indicies, ref NativeFixedList<MovedEntity> movedEntities)
         {
             Assert.Range(chunkIndex, 0, _chunks.Count);
-            Assert.GreatherThanEqualTo(_entityCount, indicies.Length);
-
-            _entityCount -= indicies.Length;
 
             var chunk = _chunks[chunkIndex];
             chunk.Delete(indicies, ref movedEntities);
+
+            _entityCount -= indicies.Length;
         }
 
         protected override void OnUnmanagedDispose()

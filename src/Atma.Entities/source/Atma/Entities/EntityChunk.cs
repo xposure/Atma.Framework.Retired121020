@@ -80,6 +80,9 @@ namespace Atma.Entities
             var moved = new NativeFixedList<MovedEntity>(data, 1);
 
             Delete(slice, ref moved);
+            if (moved.Length == 0)
+                return new MovedEntity(0, 0);
+
             return moved[0];
         }
 
