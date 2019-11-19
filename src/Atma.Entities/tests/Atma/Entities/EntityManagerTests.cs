@@ -29,6 +29,8 @@
                 X = x;
                 Y = y;
             }
+
+            public override string ToString() => $"X:{X}, Y:{Y}";
         }
 
         [System.Diagnostics.DebuggerStepThrough]
@@ -47,6 +49,7 @@
                 VX = vx;
                 VY = vy;
             }
+            public override string ToString() => $"VX:{VX}, VY:{VY}";
         }
 
         private readonly ILoggerFactory _logFactory;
@@ -538,6 +541,57 @@
                 entities.Get<Velocity>(ids[i]).ShouldBe(new Velocity(0));
             }
         }
+
+        [Fact]
+        public void ShouldResetOneComponent()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position, Velocity>();
+
+            var id0 = entities.Create(spec0);
+            entities.Replace(id0, new Position(20));
+            entities.Replace(id0, new Velocity(10));
+            entities.Reset<Position>(id0);
+
+            entities.EntityCount.ShouldBe(1);
+            entities.EntityArrays.Count.ShouldBe(1);
+            entities.EntityArrays[0].EntityCount.ShouldBe(1);
+            entities.Get<Position>(id0).ShouldBe(new Position(0));
+            entities.Get<Velocity>(id0).ShouldBe(new Velocity(10));
+        }
+
+        [Fact]
+        public void ShouldResetManyComponents()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec = EntitySpec.Create<Position, Velocity>();
+
+            var ids = Enumerable.Range(0, 16).Select(x => 0u).ToArray();
+            entities.Create(spec, ids);
+
+            for (var i = 0; i < ids.Length; i++)
+            {
+                entities.Replace<Position>(ids[i], new Position(10 * i));
+                entities.Replace<Velocity>(ids[i], new Velocity(20 * i));
+            }
+
+            entities.Reset<Position>(ids);
+
+            entities.EntityCount.ShouldBe(16);
+            entities.EntityArrays.Count.ShouldBe(1);
+            entities.EntityArrays[0].EntityCount.ShouldBe(16);
+
+            for (var i = 0; i < ids.Length; i++)
+            {
+                entities.Get<Position>(ids[i]).ShouldBe(new Position(0));
+                entities.Get<Velocity>(ids[i]).ShouldBe(new Velocity(20 * i));
+            }
+        }
+
 
 
         [Fact]
