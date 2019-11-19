@@ -466,6 +466,18 @@
             chunk.PackedArray.Reset(e.Index);
         }
 
+        public void Reset(Span<uint> entities)
+        {
+            //TODO: Reset needs optimized to try and batch reset same spec entities using updateinternal
+            for (var i = 0; i < entities.Length; i++)
+            {
+                ref var e = ref _entityPool[entities[i]];
+                var array = _entityArrays[e.SpecIndex];
+                var chunk = array.AllChunks[e.ChunkIndex];
+                chunk.PackedArray.Reset(e.Index);
+            }
+        }
+
         public void Reset<T>(uint entity)
             where T : unmanaged
         {
@@ -473,6 +485,14 @@
             var array = _entityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
             chunk.PackedArray.Reset<T>(e.Index);
+        }
+
+        public unsafe void Reset<T>(Span<uint> entities)
+           where T : unmanaged
+        {
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            var data = stackalloc[] { default(T) };
+            UpdateInternal(componentType, entities, data, false, false);
         }
 
         public unsafe void Update<T>(uint entity, in T t)
