@@ -82,7 +82,7 @@
             }
         }
 
-        internal unsafe void Copy(int specIndex, ComponentType* componentType, ref void* src, Span<Entity> entities, bool incrementSource)
+        internal unsafe void Copy(int specIndex, ComponentType* componentType, ref void* src, Span<EntityRef> entities, bool incrementSource)
         {
             while (entities.Length > 0)
             {

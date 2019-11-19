@@ -1,5 +1,3 @@
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Atma.Entities")]
-
 namespace Atma
 {
     public static class Utils

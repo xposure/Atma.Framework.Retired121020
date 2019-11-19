@@ -161,9 +161,10 @@
 
             using var entities = new NativeArray<Entity>(memory, 4);
             entities[0] = new Entity(entity, specIndex, chunkIndex, index);
+            Span<EntityRef> entityRefs = stackalloc[] { new EntityRef(entities.RawPointer) };
 
             //act
-            chunkArray.Copy(specIndex, componentType, ref src, entities.Slice(), false);
+            chunkArray.Copy(specIndex, componentType, ref src, entityRefs, false);
 
             //assert
             span[0].X.ShouldBe(100);
@@ -204,9 +205,14 @@
             //swapping 2 and 3 to see if we can resume correctly
             entities[2] = new Entity(entity3, specIndex, chunkIndex, index3);
             entities[3] = new Entity(entity2, specIndex, chunkIndex, index2);
-
+            Span<EntityRef> entityRefs = stackalloc[] {
+                new EntityRef(entities.RawPointer),
+                new EntityRef(entities.RawPointer + 1),
+                new EntityRef(entities.RawPointer + 2),
+                new EntityRef(entities.RawPointer + 3)
+            };
             //act
-            chunkArray.Copy(specIndex, componentType, ref src, entities, true);
+            chunkArray.Copy(specIndex, componentType, ref src, entityRefs, true);
 
             //assert
             span[0].X.ShouldBe(100);

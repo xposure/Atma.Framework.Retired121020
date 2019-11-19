@@ -108,16 +108,16 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, Span<uint> lastEntities)
             {
-                Assert.GreatherThan(lastEntities.Length, 0);
-                if (it->DataCount == 1)
-                {
-                    entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, true, false);
-                }
-                else
-                {
-                    Assert.EqualTo(lastEntities.Length, it->DataCount);
-                    entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, false, true);
-                }
+                // Assert.GreatherThan(lastEntities.Length, 0);
+                // if (it->DataCount == 1)
+                // {
+                //     entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, true, false);
+                // }
+                // else
+                // {
+                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
+                //     entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, false, true);
+                // }
             }
         }
 
@@ -139,16 +139,16 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, UpdateComponentCommand* it, Span<uint> lastEntities)
             {
-                Assert.GreatherThan(lastEntities.Length, 0);
-                if (it->DataCount == 1)
-                {
-                    entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, true);
-                }
-                else
-                {
-                    Assert.EqualTo(lastEntities.Length, it->DataCount);
-                    entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, false);
-                }
+                // Assert.GreatherThan(lastEntities.Length, 0);
+                // if (it->DataCount == 1)
+                // {
+                //     entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, true);
+                // }
+                // else
+                // {
+                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
+                //     entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, false);
+                // }
             }
         }
 

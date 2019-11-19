@@ -142,7 +142,7 @@
         /// </summary>
         public void Sort(IComparer<T> comparer) => Slice().Sort(comparer);
 
-        public static implicit operator Span<T>(SpanList<T> it) => it._span;
+        public static implicit operator Span<T>(SpanList<T> it) => it.Slice();
 
         public static implicit operator SpanList<T>(Span<T> it) => new SpanList<T>(it);
 
