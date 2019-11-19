@@ -65,14 +65,14 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification, 0, 0);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var id0 = entityPool.TakeRef();
 
             //act
             var free = entityChunk.Free;
-            entityChunk.Create(0, 0, id0);
+            entityChunk.Create(id0);
 
             //assert
             id0.Index.ShouldBe(0);
@@ -90,14 +90,14 @@ namespace Atma.Entities
                 ComponentType<Velocity>.Type
             );
 
-            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification, 0, 0);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             Span<EntityRef> ids = stackalloc EntityRef[entityChunk.Free + 1];
             entityPool.Take(ids);
 
             //act
-            var created = entityChunk.Create(0, 0, ids);
+            var created = entityChunk.Create(ids);
 
             //assert
             entityChunk.Entities[0].ShouldBe(1u);
@@ -114,7 +114,7 @@ namespace Atma.Entities
             using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(ComponentType<Position>.Type);
 
-            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification, 0, 0);
             var span = entityChunk.PackedArray.GetComponentData<Position>(0);
 
             using var entityPool = new EntityPool(_logFactory, memory);
@@ -127,8 +127,8 @@ namespace Atma.Entities
             var id1 = entityPool.TakeRef();
 
             var free = entityChunk.Free;
-            entityChunk.Create(0, 0, id0);
-            entityChunk.Create(0, 0, id1);
+            entityChunk.Create(id0);
+            entityChunk.Create(id1);
             entityChunk.Delete(id0, entityPool);
 
             //assert
@@ -145,13 +145,13 @@ namespace Atma.Entities
             using var memory = new DynamicAllocator(_logFactory);
             var specification = new EntitySpec(ComponentType<Position>.Type);
 
-            using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityChunk = new EntityChunk(_logFactory, memory, specification, 0, 0);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var ids = new EntityRef[entityChunk.Free + 1];
             entityPool.Take(ids);
 
-            var created = entityChunk.Create(0, 0, ids);
+            var created = entityChunk.Create(ids);
             var span = entityChunk.PackedArray.GetComponentData<Position>();
             for (var i = 0; i < span.Length; i++)
                 span[i] = new Position(i + 1);

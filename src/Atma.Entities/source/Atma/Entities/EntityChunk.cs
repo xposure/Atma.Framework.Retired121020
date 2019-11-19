@@ -19,8 +19,11 @@ namespace Atma.Entities
 
         public readonly EntitySpec Specification;
 
+        public readonly int SpecIndex;
+        public readonly int ChunkIndex;
 
-        internal EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation)
+
+        internal EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation, int specIndex, int chunkIndex)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<EntityChunk>();
@@ -28,15 +31,17 @@ namespace Atma.Entities
             Specification = specifcation;
             PackedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
             _entities2 = new NativeList<uint>(_allocator, PackedArray.Length);
+            SpecIndex = specIndex;
+            ChunkIndex = chunkIndex;
         }
 
-        internal void Create(int specIndex, int chunkIndex, EntityRef entity)
+        internal void Create(EntityRef entity)
         {
             Span<EntityRef> entities = stackalloc[] { entity };
-            Create(specIndex, chunkIndex, entities);
+            Create(entities);
         }
 
-        internal int Create(int specIndex, int chunkIndex, Span<EntityRef> entities)
+        internal int Create(Span<EntityRef> entities)
         {
             var amountToCreate = entities.Length > Free ? Free : entities.Length;
             for (var i = 0; i < amountToCreate; i++)
@@ -44,7 +49,7 @@ namespace Atma.Entities
                 ref var entity = ref entities[i];
                 var id = entity.ID;
 
-                entity.Replace(new Entity(id, specIndex, chunkIndex, _entities2.Length));
+                entity.Replace(new Entity(id, SpecIndex, ChunkIndex, _entities2.Length));
                 _entities2.Add(id);
             }
             return amountToCreate;

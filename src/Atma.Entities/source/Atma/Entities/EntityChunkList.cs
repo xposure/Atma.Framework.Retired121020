@@ -33,6 +33,7 @@
         public int Capacity => _chunks.Count * Entity.ENTITY_MAX;
         public int Free => Capacity - _entityCount;
         public int ChunkCount => _chunks.Count;
+        public readonly int SpecIndex;
 
         public IReadOnlyList<EntityChunk> AllChunks => _chunks;
         public IEnumerable<EntityChunk> ActiveChunks
@@ -46,31 +47,32 @@
         }
         public EntitySpec Specification { get; }
 
-        public EntityChunkList(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification)
+        public EntityChunkList(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specification, int specIndex)
         {
             _logFactory = logFactory;
             _logger = logFactory.CreateLogger<EntityChunkList>();
             _allocator = allocator;
             Specification = specification;
+            SpecIndex = specIndex;
         }
 
-        internal void Create(int specIndex, EntityRef entity, out int chunkIndex)
+        internal void Create(EntityRef entity, out int chunkIndex)
         {
             Span<EntityRef> entities = stackalloc[] { entity };
             var chunk = GetOrCreateFreeChunk(out chunkIndex);
-            chunk.Create(specIndex, chunkIndex, entities);
+            chunk.Create(entities);
             _entityCount++;
         }
 
 
-        internal void Create(int specIndex, Span<EntityRef> entity)
+        internal void Create(Span<EntityRef> entity)
         {
             var i = 0;
             while (i < entity.Length)
             {
                 var chunk = GetOrCreateFreeChunk(out var chunkIndex);
                 var startIndex = chunk.Count;
-                var created = chunk.Create(specIndex, chunkIndex, entity.Slice(i));
+                var created = chunk.Create(entity.Slice(i));
 
                 _entityCount += created;
                 i += created;
@@ -105,13 +107,14 @@
         }
 
 
+        //TODO: Remove the chunk index out param
         private EntityChunk GetOrCreateFreeChunk(out int chunkIndex)
         {
             for (chunkIndex = 0; chunkIndex < _chunks.Count; chunkIndex++)
                 if (_chunks[chunkIndex].Free > 0)
                     return _chunks[chunkIndex];
 
-            var chunk = new EntityChunk(_logFactory, _allocator, Specification);
+            var chunk = new EntityChunk(_logFactory, _allocator, Specification, SpecIndex, chunkIndex);
             _chunks.Add(chunk);
             return chunk;
         }

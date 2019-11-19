@@ -41,7 +41,7 @@
                 specIndex = _knownSpecs.Count;
                 Assert.LessThan(specIndex, Entity.SPEC_MAX);
                 _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkList(_logFactory, _allocator, spec));
+                _entityArrays.Add(new EntityChunkList(_logFactory, _allocator, spec, specIndex));
             }
             return specIndex;
         }
@@ -93,7 +93,7 @@
                 var take = remaining > BATCH_SIZE ? BATCH_SIZE : remaining;
                 Span<EntityRef> entityRefs = stackalloc EntityRef[take];
                 _entityPool.Take(entityRefs);
-                array.Create(specIndex, entityRefs);
+                array.Create(entityRefs);
                 for (var j = 0; j < take; j++)
                     entities[i + j] = entityRefs[j].ID;
                 i += take;
@@ -405,7 +405,7 @@
                 for (var i = 0; i < workingEntities.Length; i++)
                     entityData[i] = _entityPool[workingEntities[i]];
 
-                dst.Create(dstSpecIndex, entityRefs.Slice(0, count));
+                dst.Create(entityRefs.Slice(0, count));
 
                 for (var i = 0; i < count; i++)
                 {

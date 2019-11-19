@@ -49,15 +49,15 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation, 0);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var id0 = entityPool.TakeRef();
             var id1 = entityPool.TakeRef();
 
             //act
-            chunkArray.Create(0, id0, out var chunkIndex);
-            chunkArray.Create(0, id1, out chunkIndex);
+            chunkArray.Create(id0, out var chunkIndex);
+            chunkArray.Create(id1, out chunkIndex);
 
             //assert
             chunkArray.EntityCount.ShouldBe(2);
@@ -73,14 +73,14 @@
             using var memory = new DynamicAllocator(_logFactory);
             var specifcation = new EntitySpec(ComponentType<Position>.Type);
 
-            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation, 0);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var entities = new EntityRef[Entity.ENTITY_MAX * 2];
             entityPool.Take(entities);
 
             //act
-            chunkArray.Create(0, entities);
+            chunkArray.Create(entities);
 
             // //assert
             // var created = createdEntities.ToArray();
@@ -106,15 +106,15 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation, 0);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var id0 = entityPool.TakeRef();
             var id1 = entityPool.TakeRef();
 
             //act
-            chunkArray.Create(0, id0, out var chunkIndex0);
-            chunkArray.Create(0, id1, out var chunkIndex1);
+            chunkArray.Create(id0, out var chunkIndex0);
+            chunkArray.Create(id1, out var chunkIndex1);
             var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentData<Position>();
             span[id1.Index] = new Position(10, 20);
             chunkArray.Delete(id0, entityPool);
@@ -158,12 +158,12 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            var specIndex = 0;
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation, specIndex);
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var entity = entityPool.TakeRef(); ;
-            var specIndex = 0;
-            chunkArray.Create(specIndex, entity, out var chunkIndex);
+            chunkArray.Create(entity, out var chunkIndex);
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
             var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentData<Position>();
@@ -189,17 +189,17 @@
                 ComponentType<Position>.Type
             );
 
-            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            var specIndex = 0;
+            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation, specIndex);
             using var entityPool = new EntityPool(_logFactory, memory);
             var entity0 = entityPool.TakeRef();
             var entity1 = entityPool.TakeRef();
             var entity2 = entityPool.TakeRef();
             var entity3 = entityPool.TakeRef();
-            var specIndex = 0;
-            chunkArray.Create(specIndex, entity0, out var chunkIndex);
-            chunkArray.Create(specIndex, entity1, out var _);
-            chunkArray.Create(specIndex, entity2, out var _);
-            chunkArray.Create(specIndex, entity3, out var _);
+            chunkArray.Create(entity0, out var chunkIndex);
+            chunkArray.Create(entity1, out var _);
+            chunkArray.Create(entity2, out var _);
+            chunkArray.Create(entity3, out var _);
 
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
