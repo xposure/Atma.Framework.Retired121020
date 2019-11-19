@@ -63,21 +63,14 @@ namespace Atma.Entities
 
         internal void Delete(Span<EntityRef> entities)
         {
-            //originally I didn't want the entity pool in here because it crosses the boundaries
-            //but I realize its required due to bulk deleting shifting entities in the same chunk around
-            //and we need real time entity location updates for EntityRef reflection
             for (var i = 0; i < entities.Length; i++)
             {
                 ref var entity = ref entities[i];
                 var index = entity.Index;
-                //_entityCount--;
                 if (_entities2.RemoveAtWithSwap(index, true))
                 {
                     PackedArray.Move(_entities2.Length, index);
                     _entities2[index].Index = index;
-                    //update the moved entity so that EntityRefs reflect the change
-                    //ref var movedEntity = ref entityPool[_entities2[index]];
-                    //movedEntity.Index = index;
                 }
             }
         }
