@@ -54,31 +54,26 @@
             Specification = specification;
         }
 
-        public int Create(uint entity, out int chunkIndex)
+        internal void Create(int specIndex, EntityRef entity, out int chunkIndex)
         {
-            Span<uint> entities = stackalloc[] { entity };
-            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[1];
-
-            Create(entities, createdEntities);
-            ref var createdEntity = ref createdEntities[0];
-            chunkIndex = createdEntity.ChunkIndex;
-            return createdEntity.Index;
+            Span<EntityRef> entities = stackalloc[] { entity };
+            var chunk = GetOrCreateFreeChunk(out chunkIndex);
+            chunk.Create(specIndex, chunkIndex, entities);
+            _entityCount++;
         }
 
 
-        internal void Create(Span<uint> entity, Span<CreatedEntity> createdEntities)
+        internal void Create(int specIndex, Span<EntityRef> entity)
         {
             var i = 0;
             while (i < entity.Length)
             {
                 var chunk = GetOrCreateFreeChunk(out var chunkIndex);
                 var startIndex = chunk.Count;
-                var created = chunk.Create(entity.Slice(i));
-
-                for (var j = 0; j < created; ++j)
-                    createdEntities[i++] = new CreatedEntity(chunkIndex, startIndex + j);
+                var created = chunk.Create(specIndex, chunkIndex, entity.Slice(i));
 
                 _entityCount += created;
+                i += created;
             }
         }
 

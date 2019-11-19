@@ -63,13 +63,13 @@ namespace Atma.Entities
             return index;
         }
 
-        public int Create(Span<uint> entities)
-        {
-            var amountToCreate = entities.Length > Free ? Free : entities.Length;
-            for (var i = 0; i < amountToCreate; i++)
-                _entities[_entityCount++] = entities[i];
-            return amountToCreate;
-        }
+        // public int Create(Span<uint> entities)
+        // {
+        //     var amountToCreate = entities.Length > Free ? Free : entities.Length;
+        //     for (var i = 0; i < amountToCreate; i++)
+        //         _entities[_entityCount++] = entities[i];
+        //     return amountToCreate;
+        // }
 
         public int Create(int specIndex, int chunkIndex, Span<EntityRef> entities)
         {

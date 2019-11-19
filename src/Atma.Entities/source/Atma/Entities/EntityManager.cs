@@ -87,19 +87,16 @@
         internal unsafe void CreateInternal(int specIndex, Span<uint> entities)
         {
             var array = _entityArrays[specIndex];
-
-            //TODO: we should work with entity refs here so we aren't looking these up again
-            _entityPool.Take(entities);
-
-            var stackCreated = stackalloc CreatedEntity[entities.Length];
-            var created = new Span<CreatedEntity>(stackCreated, entities.Length);
-
-            array.Create(entities, created);
-            for (var i = 0; i < entities.Length; i++)
+            for (var i = 0; i < entities.Length;)
             {
-                ref var entity = ref _entityPool[entities[i]];
-                ref var createdEntity = ref created[i];
-                entity = new Entity(entities[i], specIndex, createdEntity.ChunkIndex, createdEntity.Index);
+                var remaining = entities.Length - i;
+                var take = remaining > BATCH_SIZE ? BATCH_SIZE : remaining;
+                Span<EntityRef> entityRefs = stackalloc EntityRef[take];
+                _entityPool.Take(entityRefs);
+                array.Create(specIndex, entityRefs);
+                for (var j = 0; j < take; j++)
+                    entities[i + j] = entityRefs[j].ID;
+                i += take;
             }
         }
 
@@ -227,7 +224,7 @@
                 var count = remaining > batch.Length ? batch.Length : remaining;
 
                 for (var i = 0; i < count; i++)
-                    batch[i] = new EntityRef(_entityPool.GetPointer(entities[index + i]));
+                    batch[i] = _entityPool.GetRef(entities[index + i]);
 
                 RemoveInternal(batch.Slice(0, count), returnId);
                 index += batch.Length;
@@ -390,21 +387,30 @@
             var src = _entityArrays[srcSpecIndex];
             var dst = _entityArrays[dstSpecIndex];
 
-            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[BATCH_SIZE];
+            //Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[BATCH_SIZE];
+            var entityPtr = stackalloc Entity[BATCH_SIZE];
+            var entityData = new Span<Entity>(entityPtr, BATCH_SIZE);
+            Span<EntityRef> entityRefs = stackalloc EntityRef[BATCH_SIZE];
+            for (var i = 0; i < BATCH_SIZE; i++)
+                entityRefs[i] = new EntityRef(&entityPtr[i]);
+
             while (index < entities.Length)
             {
                 //var segment = index * createdEntities.Length;
                 var remaining = entities.Length - index;
-                var count = remaining > createdEntities.Length ? createdEntities.Length : remaining;
+                var count = remaining > BATCH_SIZE ? BATCH_SIZE : remaining;
 
+                //we need to make a copy of the data because Create has side effects
                 var workingEntities = entities.Slice(index, count);
+                for (var i = 0; i < workingEntities.Length; i++)
+                    entityData[i] = _entityPool[workingEntities[i]];
 
-                dst.Create(workingEntities, createdEntities);
+                dst.Create(dstSpecIndex, entityRefs.Slice(0, count));
 
                 for (var i = 0; i < count; i++)
                 {
-                    ref var createdEntity = ref createdEntities[i];
-                    var entity = new EntityRef(_entityPool.GetPointer(entities[index + i]));
+                    ref var createdEntity = ref entityRefs[i];
+                    var entity = _entityPool.GetRef(entities[index + i]);
 
                     var srcChunk = src.AllChunks[entity.ChunkIndex];
                     var dstChunk = dst.AllChunks[createdEntity.ChunkIndex];
@@ -415,7 +421,8 @@
                     ComponentPackedArray.CopyTo(srcChunk.PackedArray, entity.Index, dstChunk.PackedArray, createdEntity.Index);
 
                     src.Delete(entity, _entityPool);
-                    entity.Replace(new Entity(entity.ID, dstSpecIndex, createdEntity.ChunkIndex, createdEntity.Index));
+
+                    entity.Replace(new Entity(createdEntity.ID, dstSpecIndex, createdEntity.ChunkIndex, createdEntity.Index));
                 }
 
                 index += count;

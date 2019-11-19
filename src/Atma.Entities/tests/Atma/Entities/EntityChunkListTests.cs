@@ -50,14 +50,19 @@
             );
 
             using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            using var entityPool = new EntityPool(_logFactory, memory);
+
+            var id0 = entityPool.TakeRef();
+            var id1 = entityPool.TakeRef();
 
             //act
-            var index0 = chunkArray.Create(1, out var chunkIndex);
-            var index1 = chunkArray.Create(2, out chunkIndex);
+            chunkArray.Create(0, id0, out var chunkIndex);
+            chunkArray.Create(0, id1, out chunkIndex);
 
             //assert
-            index0.ShouldBe(0);
-            index1.ShouldBe(1);
+            chunkArray.EntityCount.ShouldBe(2);
+            id0.Index.ShouldBe(0);
+            id1.Index.ShouldBe(1);
             chunkIndex.ShouldBe(0);
         }
 
@@ -69,22 +74,23 @@
             var specifcation = new EntitySpec(ComponentType<Position>.Type);
 
             using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            using var entityPool = new EntityPool(_logFactory, memory);
 
-            var entities = Enumerable.Range(0, Entity.ENTITY_MAX * 2).Select(x => (uint)x + 1).ToArray();
-            Span<CreatedEntity> createdEntities = stackalloc CreatedEntity[entities.Length];
+            var entities = new EntityRef[Entity.ENTITY_MAX * 2];
+            entityPool.Take(entities);
 
             //act
-            chunkArray.Create(entities, createdEntities);
+            chunkArray.Create(0, entities);
 
-            //assert
-            var created = createdEntities.ToArray();
-            var first = created.Take(Entity.ENTITY_MAX).ToArray();
-            var firstSet = Enumerable.Range(0, Entity.ENTITY_MAX).Select(x => new CreatedEntity(0, x)).ToArray();
-            first.ShouldBe(firstSet);
+            // //assert
+            // var created = createdEntities.ToArray();
+            // var first = created.Take(Entity.ENTITY_MAX).ToArray();
+            // var firstSet = Enumerable.Range(0, Entity.ENTITY_MAX).Select(x => new CreatedEntity(0, x)).ToArray();
+            // first.ShouldBe(firstSet);
 
-            var second = created.Skip(Entity.ENTITY_MAX).Take(Entity.ENTITY_MAX).ToArray();
-            var secondSet = Enumerable.Range(0, Entity.ENTITY_MAX).Select(x => new CreatedEntity(1, x)).ToArray();
-            second.ShouldBe(secondSet);
+            // var second = created.Skip(Entity.ENTITY_MAX).Take(Entity.ENTITY_MAX).ToArray();
+            // var secondSet = Enumerable.Range(0, Entity.ENTITY_MAX).Select(x => new CreatedEntity(1, x)).ToArray();
+            // second.ShouldBe(secondSet);
 
             chunkArray.ChunkCount.ShouldBe(2);
             chunkArray.EntityCount.ShouldBe(entities.Length);
@@ -103,45 +109,45 @@
             using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
             using var entityPool = new EntityPool(_logFactory, memory);
 
-            var id0 = entityPool.Take();
-            var id1 = entityPool.Take();
+            var id0 = entityPool.TakeRef();
+            var id1 = entityPool.TakeRef();
 
             //act
-            var index0 = chunkArray.Create(id0, out var chunkIndex0);
-            var index1 = chunkArray.Create(id1, out var chunkIndex1);
+            chunkArray.Create(0, id0, out var chunkIndex0);
+            chunkArray.Create(0, id1, out var chunkIndex1);
             var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentData<Position>();
-            span[index1] = new Position(10, 20);
-            chunkArray.Delete(entityPool.GetRef(id0), entityPool);
+            span[id1.Index] = new Position(10, 20);
+            chunkArray.Delete(id0, entityPool);
 
             //assert
-            span[index0].X.ShouldBe(10);
-            span[index0].Y.ShouldBe(20);
+            span[id0.Index].X.ShouldBe(10);
+            span[id0.Index].Y.ShouldBe(20);
 
         }
 
 
 
-        [Fact]
-        public void ShouldExpand()
-        {
-            //arrange
-            using var memory = new DynamicAllocator(_logFactory);
-            var specifcation = new EntitySpec(
-                ComponentType<Position>.Type
-            );
+        // [Fact]
+        // public void ShouldExpand()
+        // {
+        //     //arrange
+        //     using var memory = new DynamicAllocator(_logFactory);
+        //     var specifcation = new EntitySpec(
+        //         ComponentType<Position>.Type
+        //     );
 
-            using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+        //     using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
 
-            //act
-            for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)
-                chunkArray.Create(1, out var chunkIndex);
+        //     //act
+        //     for (var i = 0; i < Entity.ENTITY_MAX + 1; i++)
+        //         chunkArray.Create(1, out var chunkIndex);
 
-            //assert
-            chunkArray.Capacity.ShouldBe(Entity.ENTITY_MAX * 2);
-            chunkArray.ChunkCount.ShouldBe(2);
-            chunkArray.EntityCount.ShouldBe(Entity.ENTITY_MAX + 1);
-            chunkArray.Free.ShouldBe(Entity.ENTITY_MAX - 1);
-        }
+        //     //assert
+        //     chunkArray.Capacity.ShouldBe(Entity.ENTITY_MAX * 2);
+        //     chunkArray.ChunkCount.ShouldBe(2);
+        //     chunkArray.EntityCount.ShouldBe(Entity.ENTITY_MAX + 1);
+        //     chunkArray.Free.ShouldBe(Entity.ENTITY_MAX - 1);
+        // }
 
         [Fact]
         public unsafe void ShoudlCopyPtrData()
@@ -153,21 +159,20 @@
             );
 
             using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
-            var entity = 1u;
+            using var entityPool = new EntityPool(_logFactory, memory);
+
+            var entity = entityPool.TakeRef(); ;
             var specIndex = 0;
-            var index = chunkArray.Create(entity, out var chunkIndex);
+            chunkArray.Create(specIndex, entity, out var chunkIndex);
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
             var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentData<Position>();
 
+            //act
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
             var src = (void*)ptr;
 
-            using var entities = new NativeArray<Entity>(memory, 4);
-            entities[0] = new Entity(entity, specIndex, chunkIndex, index);
-            Span<EntityRef> entityRefs = stackalloc[] { new EntityRef(entities.RawPointer) };
-
-            //act
+            Span<EntityRef> entityRefs = stackalloc[] { entity };
             chunkArray.Copy(specIndex, componentType, ref src, entityRefs, false);
 
             //assert
@@ -185,15 +190,16 @@
             );
 
             using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
-            var entity0 = 1u;
-            var entity1 = 2u;
-            var entity2 = 3u;
-            var entity3 = 4u;
+            using var entityPool = new EntityPool(_logFactory, memory);
+            var entity0 = entityPool.TakeRef();
+            var entity1 = entityPool.TakeRef();
+            var entity2 = entityPool.TakeRef();
+            var entity3 = entityPool.TakeRef();
             var specIndex = 0;
-            var index0 = chunkArray.Create(entity0, out var chunkIndex);
-            var index1 = chunkArray.Create(entity1, out var _);
-            var index2 = chunkArray.Create(entity2, out var _);
-            var index3 = chunkArray.Create(entity3, out var _);
+            chunkArray.Create(specIndex, entity0, out var chunkIndex);
+            chunkArray.Create(specIndex, entity1, out var _);
+            chunkArray.Create(specIndex, entity2, out var _);
+            chunkArray.Create(specIndex, entity3, out var _);
 
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
@@ -202,18 +208,12 @@
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
             var src = (void*)ptr;
 
-            using var entities = new NativeArray<Entity>(memory, 4);
-            entities[0] = new Entity(entity0, specIndex, chunkIndex, index0);
-            entities[1] = new Entity(entity1, specIndex, chunkIndex, index1);
-
-            //swapping 2 and 3 to see if we can resume correctly
-            entities[2] = new Entity(entity3, specIndex, chunkIndex, index3);
-            entities[3] = new Entity(entity2, specIndex, chunkIndex, index2);
             Span<EntityRef> entityRefs = stackalloc[] {
-                new EntityRef(entities.RawPointer),
-                new EntityRef(entities.RawPointer + 1),
-                new EntityRef(entities.RawPointer + 2),
-                new EntityRef(entities.RawPointer + 3)
+                entity0,
+                entity1,
+                //swapping 2 and 3 to see if we can resume correctly
+                entity3,
+                entity2,
             };
             //act
             chunkArray.Copy(specIndex, componentType, ref src, entityRefs, true);

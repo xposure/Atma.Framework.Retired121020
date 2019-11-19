@@ -88,19 +88,17 @@ namespace Atma.Entities
             );
 
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityPool = new EntityPool(_logFactory, memory);
 
-            var stackIds = stackalloc uint[entityChunk.Free + 1];
-            var ids = new Span<uint>(stackIds, entityChunk.Free + 1);
-            for (var i = 0; i < ids.Length; i++)
-                ids[i] = (uint)i + 1u;
-
+            Span<EntityRef> ids = stackalloc EntityRef[entityChunk.Free + 1];
+            entityPool.Take(ids);
 
             //act
-            var created = entityChunk.Create(ids);
+            var created = entityChunk.Create(0, 0, ids);
 
             //assert
             entityChunk.Get(0).ShouldBe(1u);
-            entityChunk.Get(created - 1).ShouldBe(ids[created - 1]);
+            entityChunk.Get(created - 1).ShouldBe(ids[created - 1].ID);
             entityChunk.Count.ShouldBe(created);
             entityChunk.Free.ShouldBe(0);
             created.ShouldBe(Entity.ENTITY_MAX);
@@ -166,7 +164,7 @@ namespace Atma.Entities
             var first = Enumerable.Range(0, 128).Select(x => ids[x]).ToArray();
             var second = Enumerable.Range(0, 128).Select(x => ids[Entity.ENTITY_MAX - x - 1]).ToArray();
             var third = Enumerable.Range(256, Entity.ENTITY_MAX - 256 - 128).Select(x => ids[x]).ToArray();
-            var fourth = Enumerable.Range(0, 128).Select(x => 0).Select(x => ids[x]).ToArray();
+            var fourth = Enumerable.Range(0, 128).Select(x => 0).Select(x => 0u).ToArray();
 
             var firstSet = entityChunk.Entities.Slice(0, 128).ToArray();
             var secondSet = entityChunk.Entities.Slice(128, 128).ToArray();
@@ -176,7 +174,7 @@ namespace Atma.Entities
             firstSet.ShouldBe(first.Select(x => x.ID));
             secondSet.ShouldBe(second.Select(x => x.ID));
             thirdSet.ShouldBe(third.Select(x => x.ID));
-            fourthSet.ShouldBe(fourth.Select(x => x.ID));
+            fourthSet.ShouldBe(fourth);
 
             var firstPosition = Enumerable.Range(0, 128).Select(x => new Position(x + 1)).ToArray();
             var secondPosition = Enumerable.Range(0, 128).Select(x => new Position(Entity.ENTITY_MAX - x)).ToArray();

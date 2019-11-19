@@ -40,20 +40,15 @@ namespace Atma.Entities
             Take();
         }
 
+        //TODO: this should be readonly to make sure versioning isn't lost?
         public ref Entity this[uint entity]
         {
             get
             {
-                var version = entity >> 24;
-                var id = (int)(entity & 0xffffff);
+                GetLocation(entity, out var page, out var index, out var version);
 
-                var index = id & ENTITIES_MASK;
-                var page = id >> ENTITIES_BITS;
-
-                Assert.Range(page, 0, _entityMap.Count);
-                Assert.Range(index, 0, _entityMap[page].Length);
-
-                return ref _entityMap[page][index];
+                Assert.EqualTo(page[index].ID >> 24, version);
+                return ref page[index];
             }
         }
 
@@ -84,10 +79,24 @@ namespace Atma.Entities
             return list.RawPointer + index;
         }
 
-        public bool IsValid(uint id)
+        public bool IsValid(uint entity)
         {
-            ref var e = ref this[id];
-            return e.ID == id;
+            GetLocation(entity, out var page, out var index, out var version);
+            return page[index].ID == entity;
+        }
+
+        private void GetLocation(uint entity, out NativeArray<Entity> page, out int index, out uint version)
+        {
+            version = entity >> 24;
+            var id = (int)(entity & 0xffffff);
+
+            index = id & ENTITIES_MASK;
+            var pageIndex = id >> ENTITIES_BITS;
+
+            Assert.Range(pageIndex, 0, _entityMap.Count);
+            page = _entityMap[pageIndex];
+
+            Assert.Range(index, 0, page.Length);
         }
 
         private void AddPage()
@@ -114,7 +123,10 @@ namespace Atma.Entities
             _free++;
         }
 
-        public uint Take()
+        //TODO: I don't really see a need for this method since everything else is now using refs
+        public unsafe uint Take() => TakeNext()->ID;
+
+        internal unsafe Entity* TakeNext()
         {
             if (_freeIds.Length == 0)
                 AddPage();
@@ -123,65 +135,25 @@ namespace Atma.Entities
 
             var id = _freeIds.Pop();
             Assert.LessThanEqualTo(id, 0xffffff);
+
+            var index = (int)(id & ENTITIES_MASK);
+            var page = (int)(id >> ENTITIES_BITS);
+
             var version = _version++;
             id |= version << 24;
 
-            return id;
+            var list = _entityMap[page];
+            var addr = list.RawPointer + index;
+            addr->ID = id;
+            return addr;
         }
 
-        public unsafe EntityRef TakeRef()
-        {
-            if (_freeIds.Length == 0)
-                AddPage();
-
-            _free--;
-
-            var id = _freeIds.Pop();
-            Assert.LessThanEqualTo(id, 0xffffff);
-            var version = _version++;
-            id |= version << 24;
-
-            return new EntityRef(GetPointer(id));
-        }
-
-        internal void Take(Span<uint> array)
-        {
-            while (_freeIds.Length < array.Length)
-                AddPage();
-
-            var version = _version++;
-            _free -= array.Length;
-
-            for (var i = 0; i < array.Length; i++)
-            {
-                var id = _freeIds.Pop();
-                Assert.LessThanEqualTo(id, 0xffffff);
-                id |= version << 24;
-                array[i] = id;
-            }
-        }
+        public unsafe EntityRef TakeRef() => new EntityRef(TakeNext());
 
         internal unsafe void Take(Span<EntityRef> array)
         {
-            while (_freeIds.Length < array.Length)
-                AddPage();
-
-            var version = _version++;
-            _free -= array.Length;
-
             for (var i = 0; i < array.Length; i++)
-            {
-                var id = _freeIds.Pop();
-                Assert.LessThanEqualTo(id, 0xffffff);
-
-                var index = id & ENTITIES_MASK;
-                var page = (int)(id >> ENTITIES_BITS);
-
-                id |= version << 24;
-                var list = _entityMap[page];
-
-                array[i] = new EntityRef(list.RawPointer + index);
-            }
+                array[i] = new EntityRef(TakeNext());
         }
 
         protected override void OnUnmanagedDispose()
