@@ -10,17 +10,15 @@ namespace Atma.Entities
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
         private NativeList<uint> _entities2;
-        private ComponentPackedArray _packedArray;
 
-        //private int _entityCount = 0;
+        internal ReadOnlySpan<uint> Entities => _entities2.Slice();
+        internal readonly ComponentPackedArray PackedArray;
 
         public int Count => _entities2.Length;
         public int Free => Entity.ENTITY_MAX - Count;
 
-        internal ReadOnlySpan<uint> Entities => _entities2.Slice();
+        public readonly EntitySpec Specification;
 
-        public EntitySpec Specification { get; }
-        internal ComponentPackedArray PackedArray => _packedArray;
 
         internal EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation)
         {
@@ -28,8 +26,8 @@ namespace Atma.Entities
             _logger = _logFactory.CreateLogger<EntityChunk>();
             _allocator = allocator;
             Specification = specifcation;
-            _packedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
-            _entities2 = new NativeList<uint>(_allocator, _packedArray.Length);
+            PackedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
+            _entities2 = new NativeList<uint>(_allocator, PackedArray.Length);
         }
 
         internal void Create(int specIndex, int chunkIndex, EntityRef entity)
@@ -70,7 +68,7 @@ namespace Atma.Entities
                 //_entityCount--;
                 if (_entities2.RemoveAtWithSwap(index, true))
                 {
-                    _packedArray.Move(_entities2.Length, index);
+                    PackedArray.Move(_entities2.Length, index);
                     //update the moved entity so that EntityRefs reflect the change
                     ref var movedEntity = ref entityPool[_entities2[index]];
                     movedEntity.Index = index;
@@ -78,12 +76,11 @@ namespace Atma.Entities
             }
         }
 
-        public Span<T> GetComponentData<T>(int index = -1) where T : unmanaged => _packedArray.GetComponentData<T>(index);
+        public Span<T> GetComponentData<T>(int index = -1) where T : unmanaged => PackedArray.GetComponentData<T>(index);
 
         protected override void OnManagedDispose()
         {
-            _packedArray.Dispose();
-            _packedArray = null;
+            PackedArray.Dispose();
         }
 
         protected override void OnUnmanagedDispose()
