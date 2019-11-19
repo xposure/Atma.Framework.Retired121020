@@ -56,14 +56,15 @@
             var id1 = entityPool.TakeRef();
 
             //act
-            chunkArray.Create(id0, out var chunkIndex);
-            chunkArray.Create(id1, out chunkIndex);
+            chunkArray.Create(id0);
+            chunkArray.Create(id1);
 
             //assert
             chunkArray.EntityCount.ShouldBe(2);
             id0.Index.ShouldBe(0);
             id1.Index.ShouldBe(1);
-            chunkIndex.ShouldBe(0);
+            id0.ChunkIndex.ShouldBe(0);
+            id1.ChunkIndex.ShouldBe(0);
         }
 
         [Fact]
@@ -113,9 +114,9 @@
             var id1 = entityPool.TakeRef();
 
             //act
-            chunkArray.Create(id0, out var chunkIndex0);
-            chunkArray.Create(id1, out var chunkIndex1);
-            var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentData<Position>();
+            chunkArray.Create(id0);
+            chunkArray.Create(id1);
+            var span = chunkArray.AllChunks[0].PackedArray.GetComponentData<Position>();
             span[id1.Index] = new Position(10, 20);
             chunkArray.Delete(id0);
 
@@ -163,10 +164,10 @@
             using var entityPool = new EntityPool(_logFactory, memory);
 
             var entity = entityPool.TakeRef(); ;
-            chunkArray.Create(entity, out var chunkIndex);
+            chunkArray.Create(entity);
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
-            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentData<Position>();
+            var span = chunkArray.AllChunks[entity.ChunkIndex].PackedArray.GetComponentData<Position>();
 
             //act
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
@@ -196,14 +197,14 @@
             var entity1 = entityPool.TakeRef();
             var entity2 = entityPool.TakeRef();
             var entity3 = entityPool.TakeRef();
-            chunkArray.Create(entity0, out var chunkIndex);
-            chunkArray.Create(entity1, out var _);
-            chunkArray.Create(entity2, out var _);
-            chunkArray.Create(entity3, out var _);
+            chunkArray.Create(entity0);
+            chunkArray.Create(entity1);
+            chunkArray.Create(entity2);
+            chunkArray.Create(entity3);
 
             var componentType = stackalloc[] { ComponentType<Position>.Type };
             var componentIndex = chunkArray.Specification.GetComponentIndex(*componentType);
-            var span = chunkArray.AllChunks[chunkIndex].PackedArray.GetComponentData<Position>();
+            var span = chunkArray.AllChunks[entity0.ChunkIndex].PackedArray.GetComponentData<Position>();
 
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
             var src = (void*)ptr;

@@ -56,10 +56,10 @@
             SpecIndex = specIndex;
         }
 
-        internal void Create(in EntityRef entity, out int chunkIndex)
+        internal void Create(in EntityRef entity)
         {
             Span<EntityRef> entities = stackalloc[] { entity };
-            var chunk = GetOrCreateFreeChunk(out chunkIndex);
+            var chunk = GetOrCreateFreeChunk();
             chunk.Create(entities);
             _entityCount++;
         }
@@ -70,8 +70,7 @@
             var i = 0;
             while (i < entity.Length)
             {
-                var chunk = GetOrCreateFreeChunk(out var chunkIndex);
-                var startIndex = chunk.Count;
+                var chunk = GetOrCreateFreeChunk();
                 var created = chunk.Create(entity.Slice(i));
 
                 _entityCount += created;
@@ -108,9 +107,10 @@
 
 
         //TODO: Remove the chunk index out param
-        private EntityChunk GetOrCreateFreeChunk(out int chunkIndex)
+        private EntityChunk GetOrCreateFreeChunk()
         {
-            for (chunkIndex = 0; chunkIndex < _chunks.Count; chunkIndex++)
+            var chunkIndex = 0;
+            for (; chunkIndex < _chunks.Count; chunkIndex++)
                 if (_chunks[chunkIndex].Free > 0)
                     return _chunks[chunkIndex];
 
