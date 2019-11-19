@@ -328,52 +328,6 @@
             span[entity.Index] = t;
         }
 
-        // internal unsafe void SetComponentInternal(ComponentType* componentType, Span<uint> entities, void* src, bool incrementSource, bool allowUpdate)
-        // {
-        //     //Assert.Equals(Has(ref entity, ComponentType<T>.Type.ID), true);
-        //     //we are going to put replaces in front of the array and assigns in the back if we are allowed
-        //     SpanList<Entity> entityRefs = stackalloc Entity[BATCH_SIZE];
-
-        //     //TODO: come back to this
-        //     //Assert.EqualTo(allowUpdate, false);
-
-        //     var specIndex = -1;
-        //     for (var i = 0; i < entities.Length; i++)
-        //     {
-        //         ref var e = ref _entityPool[entities[i]];
-        //         var hasComponent = Has(ref e, componentType->ID);
-        //         if (!allowUpdate)
-        //             Assert.EqualTo(hasComponent, true);
-
-        //         //TODO: I think we need to flush here because moving data can call remove and reorder entities
-        //         //if array is changed to work with entityrefs this could be fixed
-        //         if (e.SpecIndex != specIndex || !hasComponent || entityRefs.Free == 0)
-        //         {
-        //             //flush
-        //             if (entityRefs.Length > 0)
-        //             {
-        //                 var array = _entityArrays[specIndex];
-        //                 array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
-        //                 //SetComponentInternal(array, entityRefs.Slice(), componentType, ref src, incrementSource);
-        //                 entityRefs.Reset();
-        //             }
-        //             specIndex = e.SpecIndex;
-        //         }
-
-        //         if (!hasComponent)
-        //             MoveInternal(entities.Slice(i, 1), componentType);
-
-        //         entityRefs.Add(e);
-        //     }
-
-        //     if (entityRefs.Length > 0)
-        //     {
-        //         var array = _entityArrays[specIndex];
-        //         array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
-        //     }
-        // }
-
-
         public unsafe void Move(uint entity, in EntitySpec spec)
         {
             var dstSpecIndex = GetOrCreateSpec(spec);
