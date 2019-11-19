@@ -247,9 +247,6 @@
 
             entities.EntityCount.ShouldBe(8192 - 1024);
             entities.EntityArrays[0].EntityCount.ShouldBe(8192 - 1024);
-            entities.Has(ids[1024]).ShouldBe(false);
-            entities.Has(ids[1025]).ShouldBe(false);
-            entities.Has(ids[2048 - 1]).ShouldBe(false);
             for (var i = 0; i < ids.Length; i++)
                 entities.Has(ids[i]).ShouldBe((i >= 1024 && i < 2048) ? false : true);
         }
