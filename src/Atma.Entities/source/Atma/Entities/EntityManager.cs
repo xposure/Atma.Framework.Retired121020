@@ -30,8 +30,6 @@
             _allocator = allocator;
 
             _entityPool = new EntityPool(_logFactory, _allocator);
-            //take the first one to reserve 0 as invalid
-            _entityPool.Take();
         }
 
         internal int GetOrCreateSpec(in EntitySpec spec)
@@ -122,6 +120,31 @@
             span[entityRef.Index] = t;
         }
 
+        public unsafe void Assign<T>(Span<uint> entities, in T t)
+           where T : unmanaged
+        {
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            //we want to do move first so that it throws an exception
+            //if the entity already has the component (update won't)
+            MoveInternal(entities, componentType);
+
+            var data = stackalloc[] { t };
+            UpdateInternal(componentType, entities, data, false, false);
+        }
+
+        public unsafe void Assign<T>(Span<uint> entities, NativeArray<T> array)
+            where T : unmanaged
+        {
+            Assert.EqualTo(entities.Length, array.Length);
+            var componentType = stackalloc[] { ComponentType<T>.Type };
+            //we want to do move first so that it throws an exception
+            //if the entity already has the component (update won't)
+            MoveInternal(entities, componentType);
+
+            var data = array.RawPointer;
+            UpdateInternal(componentType, entities, data, true, false);
+        }
+
         internal unsafe void AssignInternal(Span<uint> entities, ComponentType* type, ref void* src, bool incrementSource)
         {
             UpdateInternal(type, entities, src, incrementSource, true);
@@ -183,16 +206,7 @@
         private unsafe void RemoveInternal(ref SpanList<EntityRef> removeEntities, int specIndex, int chunkIndex, bool returnId)
         {
             var array = _entityArrays[specIndex];
-
-            Span<int> sliceIndicies = stackalloc int[removeEntities.Length];
-            SpanList<MovedEntity> movedEntities = stackalloc MovedEntity[removeEntities.Length];
-
-            array.Delete(chunkIndex, sliceIndicies, ref movedEntities);
-            for (var i = 0; i < movedEntities.Length; i++)
-            {
-                ref var moved = ref movedEntities[i];
-                _entityPool[moved.ID] = new Entity(moved.ID, specIndex, chunkIndex, moved.Index);
-            }
+            array.Delete(chunkIndex, removeEntities, _entityPool);
 
             if (returnId)
             {
@@ -370,7 +384,7 @@
             MoveInternal(entities, e.SpecIndex, dstSpecIndex);
         }
 
-        private void MoveInternal(Span<uint> entities, int srcSpecIndex, int dstSpecIndex)
+        private unsafe void MoveInternal(Span<uint> entities, int srcSpecIndex, int dstSpecIndex)
         {
             var index = 0;
             var src = _entityArrays[srcSpecIndex];
@@ -390,7 +404,7 @@
                 for (var i = 0; i < count; i++)
                 {
                     ref var createdEntity = ref createdEntities[i];
-                    ref var entity = ref _entityPool[entities[index + i]];
+                    var entity = new EntityRef(_entityPool.GetPointer(entities[index + i]));
 
                     var srcChunk = src.AllChunks[entity.ChunkIndex];
                     var dstChunk = dst.AllChunks[createdEntity.ChunkIndex];
@@ -400,14 +414,8 @@
                     //dst will be linear but could span chunks
                     ComponentPackedArray.CopyTo(srcChunk.PackedArray, entity.Index, dstChunk.PackedArray, createdEntity.Index);
 
-                    var moved = src.Delete(entity.ChunkIndex, entity.Index);
-                    if (moved.DidMove)
-                    {
-                        ref var movedEntity = ref _entityPool[moved.ID];
-                        movedEntity = new Entity(moved.ID, srcSpecIndex, movedEntity.ChunkIndex, moved.Index);
-                    }
-
-                    entity = new Entity(entity.ID, dstSpecIndex, createdEntity.ChunkIndex, createdEntity.Index);
+                    src.Delete(entity, _entityPool);
+                    entity.Replace(new Entity(entity.ID, dstSpecIndex, createdEntity.ChunkIndex, createdEntity.Index));
                 }
 
                 index += count;
@@ -518,10 +526,10 @@
             for (var i = 0; i < entities.Length; i++)
             {
                 var e = new EntityRef(_entityPool.GetPointer(entities[i]));
-                if (e.SpecIndex != specIndex)
+                if (e.SpecIndex != specIndex || entityRefs.Free == 0)
                 {
                     //flush
-                    if (entityRefs.Length > 0 || entityRefs.Free == 0)
+                    if (entityRefs.Length > 0)
                     {
                         if (!hasComponent)
                             specIndex = MoveInternal(entities.Slice(lastIndex, entityRefs.Length), specIndex, componentType);

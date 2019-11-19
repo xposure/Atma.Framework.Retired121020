@@ -23,6 +23,8 @@
         {
             *_entity = entity;
         }
+
+        public override string ToString() => _entity->ToString();
     }
 
     [System.Diagnostics.DebuggerStepThrough]

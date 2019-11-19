@@ -101,13 +101,17 @@
             );
 
             using var chunkArray = new EntityChunkList(_logFactory, memory, specifcation);
+            using var entityPool = new EntityPool(_logFactory, memory);
+
+            var id0 = entityPool.Take();
+            var id1 = entityPool.Take();
 
             //act
-            var index0 = chunkArray.Create(1, out var chunkIndex0);
-            var index1 = chunkArray.Create(2, out var chunkIndex1);
+            var index0 = chunkArray.Create(id0, out var chunkIndex0);
+            var index1 = chunkArray.Create(id1, out var chunkIndex1);
             var span = chunkArray.AllChunks[chunkIndex0].PackedArray.GetComponentData<Position>();
             span[index1] = new Position(10, 20);
-            chunkArray.Delete(chunkIndex0, index0);
+            chunkArray.Delete(entityPool.GetRef(id0), entityPool);
 
             //assert
             span[index0].X.ShouldBe(10);

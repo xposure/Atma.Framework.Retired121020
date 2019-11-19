@@ -121,22 +121,22 @@
             return chunk;
         }
 
-        public MovedEntity Delete(int chunkIndex, int index)
+        public void Delete(EntityRef entity, EntityPool entityPool)
         {
-            Assert.Range(chunkIndex, 0, _chunks.Count);
+            Assert.Range(entity.ChunkIndex, 0, _chunks.Count);
 
             _entityCount--;
 
-            var chunk = _chunks[chunkIndex];
-            return chunk.Delete(index);
+            var chunk = _chunks[entity.ChunkIndex];
+            chunk.Delete(entity, entityPool);
         }
 
-        internal void Delete(int chunkIndex, Span<int> indicies, ref SpanList<MovedEntity> movedEntities)
+        internal void Delete(int chunkIndex, Span<EntityRef> indicies, EntityPool entityPool)
         {
             Assert.Range(chunkIndex, 0, _chunks.Count);
 
             var chunk = _chunks[chunkIndex];
-            chunk.Delete(indicies, ref movedEntities);
+            chunk.Delete(indicies, entityPool);
 
             _entityCount -= indicies.Length;
         }

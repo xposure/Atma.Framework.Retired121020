@@ -16,6 +16,14 @@ namespace Atma.Entities
             EntitySize = ComponentTypes.Sum(x => x.Size);
         }
 
+
+        internal EntitySpec(Span<ComponentType> componentTypes)
+        {
+            ID = ComponentType.CalculateId(componentTypes);
+            ComponentTypes = componentTypes.ToArray();
+            EntitySize = ComponentTypes.Sum(x => x.Size);
+        }
+
         public EntitySpec(params ComponentType[] componentTypes)
         {
             ComponentTypes = componentTypes;

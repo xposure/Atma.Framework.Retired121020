@@ -116,19 +116,24 @@ namespace Atma.Entities
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
             var span = entityChunk.PackedArray.GetComponentData<Position>(0);
 
+            using var entityPool = new EntityPool(_logFactory, memory);
+
             //act
             span[0] = new Position(1);
             span[1] = new Position(2);
 
+            var id0 = entityPool.Take();
+            var id1 = entityPool.Take();
+
             var free = entityChunk.Free;
-            var index0 = entityChunk.Create(1);
-            var index1 = entityChunk.Create(2);
-            entityChunk.Delete(index0);
+            var index0 = entityChunk.Create(id0);
+            var index1 = entityChunk.Create(id1);
+            entityChunk.Delete(entityPool.GetRef(id0), entityPool);
 
             //assert
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
-            entityChunk.Get(0).ShouldBe(2u);
+            entityChunk.Get(0).ShouldBe(id1);
             span[0].ShouldBe(new Position(2));
         }
 
@@ -140,11 +145,11 @@ namespace Atma.Entities
             var specification = new EntitySpec(ComponentType<Position>.Type);
 
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityPool = new EntityPool(_logFactory, memory);
 
-            var stackIds = stackalloc uint[entityChunk.Free + 1];
-            var ids = new Span<uint>(stackIds, entityChunk.Free + 1);
+            var ids = new uint[entityChunk.Free + 1];
             for (var i = 0; i < ids.Length; i++)
-                ids[i] = (uint)i + 1u;
+                ids[i] = entityPool.Take();
 
             var created = entityChunk.Create(ids);
 
@@ -152,20 +157,19 @@ namespace Atma.Entities
             for (var i = 0; i < span.Length; i++)
                 span[i] = new Position(i + 1);
 
-            //act
-            var stackDeleteIndicies = stackalloc uint[128];
-            var deleteIndicies = new Span<int>(stackDeleteIndicies, 128);
-            for (var i = 0; i < deleteIndicies.Length; i++)
-                deleteIndicies[i] = i + 128;
 
-            SpanList<MovedEntity> moveIds = stackalloc MovedEntity[deleteIndicies.Length];
-            entityChunk.Delete(deleteIndicies, ref moveIds);
+            //act
+            Span<EntityRef> deleteIndicies = stackalloc EntityRef[128];
+            for (var i = 0; i < deleteIndicies.Length; i++)
+                deleteIndicies[i] = entityPool.GetRef(ids[i + 128]);
+
+            entityChunk.Delete(deleteIndicies, entityPool);
 
             //assert
-            var first = Enumerable.Range(0, 128).Select(x => (uint)x + 1).ToArray();
-            var second = Enumerable.Range(0, 128).Select(x => (uint)(Entity.ENTITY_MAX - x)).ToArray();
-            var third = Enumerable.Range(256, Entity.ENTITY_MAX - 256 - 128).Select(x => (uint)x + 1).ToArray();
-            var fourth = Enumerable.Range(0, 128).Select(x => 0).Select(x => (uint)x).ToArray();
+            var first = Enumerable.Range(0, 128).Select(x => ids[x]).ToArray();
+            var second = Enumerable.Range(0, 128).Select(x => ids[Entity.ENTITY_MAX - x - 1]).ToArray();
+            var third = Enumerable.Range(256, Entity.ENTITY_MAX - 256 - 128).Select(x => ids[x]).ToArray();
+            var fourth = Enumerable.Range(0, 128).Select(x => 0).Select(x => ids[x]).ToArray();
 
             var firstSet = entityChunk.Entities.Slice(0, 128).ToArray();
             var secondSet = entityChunk.Entities.Slice(128, 128).ToArray();

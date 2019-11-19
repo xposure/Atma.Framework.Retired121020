@@ -71,16 +71,10 @@ namespace Atma.Entities
             return amountToCreate;
         }
 
-        public unsafe MovedEntity Delete(int index)
+        public unsafe void Delete(EntityRef entity, EntityPool entityPool)
         {
-            Span<int> slice = stackalloc int[] { index };
-            SpanList<MovedEntity> moved = stackalloc MovedEntity[1];
-
-            Delete(slice, ref moved);
-            if (moved.Length == 0)
-                return new MovedEntity(0, 0);
-
-            return moved[0];
+            Span<EntityRef> slice = stackalloc[] { entity };
+            Delete(slice, entityPool);
         }
 
         //This would be faster but exposes implementation details further up the chain :/
@@ -103,19 +97,26 @@ namespace Atma.Entities
         //     }
         // }
 
-        internal void Delete(Span<int> indicies, ref SpanList<MovedEntity> movedEntities)
+        internal void Delete(Span<EntityRef> entities, EntityPool entityPool)
         {
-            for (var i = 0; i < indicies.Length; i++)
+            //originally I didn't want the entity pool in here because it crosses the boundaries
+            //but I realize its required due to bulk deleting shifting entities in the same chunk around
+            //and we need real time entity location updates for EntityRef reflection
+            for (var i = 0; i < entities.Length; i++)
             {
-                var index = indicies[i];
-                Assert.Range(index, 0, _entityCount);
+                ref var entity = ref entities[i];
+                var index = entity.Index;
+                //Assert.Range(index, 0, _entityCount);
                 _entityCount--;
 
                 if (index < _entityCount) //removing the last element, no need to patch
                 {
                     _packedArray.Move(_entityCount, index);
                     _entities[index] = _entities[_entityCount];
-                    movedEntities.Add(new MovedEntity(_entities[_entityCount], index));
+
+                    //update the moved entity so that EntityRefs reflect the change
+                    ref var movedEntity = ref entityPool[_entities[_entityCount]];
+                    movedEntity.Index = index;
                 }
 
                 _entities[_entityCount] = 0;

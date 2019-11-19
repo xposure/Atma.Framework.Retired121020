@@ -36,7 +36,8 @@ namespace Atma.Entities
             _memory = allocator;
             _freeIds = new NativeStack<uint>(_memory, ENTITIES_PER_POOL);
             _entityMap = new List<NativeArray<Entity>>();
-            AddPage();
+            //AddPage();
+            Take();
         }
 
         public ref Entity this[uint entity]
@@ -66,7 +67,9 @@ namespace Atma.Entities
             }
         }
 
-        public unsafe Entity* GetPointer(uint entity)
+        internal unsafe EntityRef GetRef(uint entity) => new EntityRef(GetPointer(entity));
+
+        internal unsafe Entity* GetPointer(uint entity)
         {
             var version = entity >> 24;
             var id = (int)(entity & 0xffffff);
