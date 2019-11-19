@@ -325,6 +325,8 @@
 
             //act
             var id0 = em.Create(spec);
+            var span = em.EntityArrays[0].AllChunks[0].PackedArray.GetComponentData<Position>();
+
             em.Replace<Position>(id0, new Position(10, 20));
             var id1 = em.Create(spec);
             em.Replace<Position>(id1, new Position(11, 21));

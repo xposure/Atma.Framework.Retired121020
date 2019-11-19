@@ -147,7 +147,7 @@ namespace Atma.Entities.Benchmarks
         [Benchmark]
         public void ForChunk()
         {
-            _entities.ForChunk((int length, ReadOnlySpan<uint> entities, Span<Position> positions, Span<Velocity> velocities) =>
+            _entities.ForChunk((int length, ReadOnlySpan<EntityRef> entities, Span<Position> positions, Span<Velocity> velocities) =>
             {
                 for (var i = 0; i < length; i++)
                 {

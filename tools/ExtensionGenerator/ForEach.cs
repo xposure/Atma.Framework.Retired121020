@@ -29,7 +29,7 @@ namespace ExtensionGenerator
         protected void WriteFunction(int genericCount)
         {
             var generics = genericCount.Range().Select(i => $"T{i}").ToArray();
-            var spanGenerics = genericCount.Range().Select(i => $"NativeSlice<T{i}> t{i}");
+            var spanGenerics = genericCount.Range().Select(i => $"Span<T{i}> t{i}");
             var where = genericCount.Range().Select(i => $"where T{i}: unmanaged").ToArray();
             var spanArgs = genericCount.Range().Select(i => $"ref T{i} t{i}");
             var viewArgs = genericCount.Range().Select(i => $"ref t{i}[i]");
@@ -38,9 +38,9 @@ namespace ExtensionGenerator
             Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityManager em, ForEachEntity<{generics.Join()}> view) ");
             Console.WriteLine($"  {where.Join(" ")}");
             Console.WriteLine($"{{");
-            Console.WriteLine($"  em.ForChunk((int length, NativeReadOnlySlice<uint> entities, {spanGenerics.Join()}) => {{");
+            Console.WriteLine($"  em.ForChunk((int length, ReadOnlySpan<EntityRef> entities, {spanGenerics.Join()}) => {{");
             Console.WriteLine($"    for (var i = 0; i < length; i++)");
-            Console.WriteLine($"      view(entities[i], {viewArgs.Join()});");
+            Console.WriteLine($"      view(entities[i].ID, {viewArgs.Join()});");
             Console.WriteLine($"  }});");
             Console.WriteLine($"}}");
 
@@ -62,7 +62,7 @@ namespace ExtensionGenerator
             var where = genericCount.Range().Select(i => $"where T{i}: unmanaged").ToArray();
             var componentType = genericCount.Range().Select(i => $"ComponentType<T{i}>.Type").ToArray();
             var componentIndicies = genericCount.Range().Select(i => $"      var c{i} = array.Specification.GetComponentIndex(componentTypes[{i}]);").ToArray();
-            var componentArrays = genericCount.Range().Select(i => $"        var t{i} = chunk.PackedArray.GetComponentSpan<T{i}>(c{i}, componentTypes[{i}]);").ToArray();
+            var componentArrays = genericCount.Range().Select(i => $"        var t{i} = chunk.GetComponentSpan<T{i}>(c{i}, componentTypes[{i}]);").ToArray();
             var viewArgs = genericCount.Range().Select(i => $"ref t{i}[j]");
 
             Console.WriteLine($"public delegate void ForEachEntity<{generics.Join()}>(uint entity, {spanGenerics.Join()}){where.Join(" ")};");
@@ -81,7 +81,7 @@ namespace ExtensionGenerator
             Console.WriteLine($"        var entities = chunk.Entities.AsSpan();");
             Console.WriteLine($"{componentArrays.Join("\n")}");
             Console.WriteLine($"        for (var j = 0; j < length; j++)");
-            Console.WriteLine($"          view(entities[j],{viewArgs.Join()}); ");
+            Console.WriteLine($"          view(entities[j].ID,{viewArgs.Join()}); ");
             Console.WriteLine($"      }}");
             Console.WriteLine($"    }}");
             Console.WriteLine($"  }}");

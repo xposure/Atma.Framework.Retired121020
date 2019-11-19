@@ -9,12 +9,12 @@ namespace Atma.Entities
         private ILogger _logger;
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
-        private NativeList<EntityRef> _entities2;
+        private NativeList<EntityRef> _entityRefs;
 
-        internal ReadOnlySpan<EntityRef> Entities => _entities2.Slice();
+        internal ReadOnlySpan<EntityRef> Entities => _entityRefs.Slice();
         internal readonly ComponentPackedArray PackedArray;
 
-        public int Count => _entities2.Length;
+        public int Count => _entityRefs.Length;
         public int Free => Entity.ENTITY_MAX - Count;
 
         public readonly EntitySpec Specification;
@@ -30,7 +30,7 @@ namespace Atma.Entities
             _allocator = allocator;
             Specification = specifcation;
             PackedArray = new ComponentPackedArray(logFactory, _allocator, specifcation);
-            _entities2 = new NativeList<EntityRef>(_allocator, PackedArray.Length);
+            _entityRefs = new NativeList<EntityRef>(_allocator, PackedArray.Length);
             SpecIndex = specIndex;
             ChunkIndex = chunkIndex;
         }
@@ -49,8 +49,8 @@ namespace Atma.Entities
                 ref var entity = ref entities[i];
                 var id = entity.ID;
 
-                entity.Replace(new Entity(id, SpecIndex, ChunkIndex, _entities2.Length));
-                _entities2.Add(entity);
+                entity.Replace(new Entity(id, SpecIndex, ChunkIndex, _entityRefs.Length));
+                _entityRefs.Add(entity);
             }
             return amountToCreate;
         }
@@ -67,15 +67,18 @@ namespace Atma.Entities
             {
                 ref var entity = ref entities[i];
                 var index = entity.Index;
-                if (_entities2.RemoveAtWithSwap(index, true))
+                if (_entityRefs.RemoveAtWithSwap(index, true))
                 {
-                    PackedArray.Move(_entities2.Length, index);
-                    _entities2[index].Index = index;
+                    PackedArray.Move(_entityRefs.Length, index);
+                    _entityRefs[index].Index = index;
                 }
             }
         }
 
-        public Span<T> GetComponentData<T>(int index = -1) where T : unmanaged => PackedArray.GetComponentData<T>(index);
+        public Span<T> GetComponentData<T>(int index = -1)
+            where T : unmanaged => PackedArray.GetComponentData<T>(index).Slice(0, _entityRefs.Length);
+        internal Span<T> GetComponentData<T>(int index, in ComponentType componentType = default)
+            where T : unmanaged => PackedArray.GetComponentData<T>(index, componentType).Slice(0, _entityRefs.Length);
 
         protected override void OnManagedDispose()
         {
@@ -84,7 +87,7 @@ namespace Atma.Entities
 
         protected override void OnUnmanagedDispose()
         {
-            _entities2.Dispose();
+            _entityRefs.Dispose();
         }
     }
 }
