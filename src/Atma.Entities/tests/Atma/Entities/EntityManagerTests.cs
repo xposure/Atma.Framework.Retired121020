@@ -592,6 +592,61 @@
             }
         }
 
+        [Fact]
+        public void ShouldMoveOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var id0 = entities.Create(spec0);
+            var id1 = entities.Create(spec1);
+            entities.Replace(id0, new Position(10));
+            entities.Replace(id1, new Position(20));
+
+            entities.Move(id0, spec1);
+
+            entities.EntityCount.ShouldBe(2);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(2);
+            entities.Get<Position>(id0).ShouldBe(new Position(10));
+            entities.Get<Position>(id1).ShouldBe(new Position(20));
+
+        }
+
+        [Fact]
+        public void ShouldMoveMany()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var spec0 = EntitySpec.Create<Position>();
+            var spec1 = EntitySpec.Create<Position, Velocity>();
+
+            var ids0 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            var ids1 = Enumerable.Range(0, 4096).Select(x => 0u).ToArray();
+            entities.Create(spec0, ids0);
+            entities.Create(spec1, ids1);
+
+            entities.Replace<Position>(ids0, new Position(10));
+            entities.Replace<Position>(ids1, new Position(20));
+
+            entities.Move(ids0, spec1);
+
+            entities.EntityCount.ShouldBe(8192);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(8192);
+
+            for (var i = 0; i < ids0.Length; i++)
+                entities.Get<Position>(ids0[i]).ShouldBe(new Position(10));
+            for (var i = 0; i < ids1.Length; i++)
+                entities.Get<Position>(ids1[i]).ShouldBe(new Position(20));
+
+        }
 
 
         [Fact]

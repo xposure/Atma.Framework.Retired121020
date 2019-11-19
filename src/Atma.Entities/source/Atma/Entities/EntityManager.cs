@@ -328,6 +328,53 @@
             MoveInternal(entities, entities[0].SpecIndex, dstSpecIndex);
         }
 
+        internal unsafe void Move(Span<EntityRef> entities, in EntitySpec spec)
+        {
+            if (entities.Length == 0)
+                return;
+            var dstSpecIndex = GetOrCreateSpec(spec);
+
+            var srcSpecIndex = entities[0].SpecIndex;
+            var lastIndex = 0;
+            for (var i = 1; i < entities.Length; i++)
+            {
+                var remaining = entities.Length - i;
+                var count = remaining > entities.Length ? entities.Length : remaining;
+
+                ref var entity = ref entities[i];
+                if (entity.SpecIndex != srcSpecIndex)
+                {
+                    var amountToMove = i - lastIndex - 1;
+                    MoveInternal(entities.Slice(lastIndex, amountToMove), srcSpecIndex, dstSpecIndex);
+                    lastIndex = i + 1;
+                }
+
+                srcSpecIndex = entity.SpecIndex;
+            }
+
+            if (entities.Length - lastIndex > 0)
+                MoveInternal(entities.Slice(lastIndex, entities.Length - lastIndex), srcSpecIndex, dstSpecIndex);
+        }
+
+        public unsafe void Move(Span<uint> entities, in EntitySpec spec)
+        {
+            if (entities.Length == 0)
+                return;
+
+            Span<EntityRef> entityRefs = stackalloc EntityRef[BATCH_SIZE];
+            for (var i = 0; i < entities.Length;)
+            {
+                var remaining = entities.Length - i;
+                var count = remaining > entityRefs.Length ? entityRefs.Length : remaining;
+
+                for (var j = 0; j < count; j++)
+                    entityRefs[j] = _entityPool.GetRef(entities[i + j]);
+
+                Move(entityRefs.Slice(0, count), spec);
+                i += count;
+            }
+        }
+
         // private unsafe void MoveInternal(Span<uint> entities, int srcSpecIndex, int dstSpecIndex)
         // {
         //     var index = 0;
