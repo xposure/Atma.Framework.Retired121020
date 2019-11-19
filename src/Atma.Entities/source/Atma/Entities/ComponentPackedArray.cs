@@ -80,7 +80,7 @@ namespace Atma.Entities
             Assert.Range(index, 0, _componentData.Length);
 
             var componentDataArray = _componentData[index];
-            return componentDataArray.AsSlice<T>(componentType);
+            return componentDataArray.AsSpan<T>(componentType);
         }
 
         // public unsafe T* GetComponentPointer<T>(int index = -1)

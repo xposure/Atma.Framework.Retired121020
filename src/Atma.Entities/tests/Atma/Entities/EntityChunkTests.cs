@@ -66,14 +66,17 @@ namespace Atma.Entities
             );
 
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
+            using var entityPool = new EntityPool(_logFactory, memory);
+
+            var id0 = entityPool.TakeRef();
 
             //act
             var free = entityChunk.Free;
-            var index = entityChunk.Create(1);
+            entityChunk.Create(0, 0, id0);
 
             //assert
-            index.ShouldBe(0);
-            entityChunk.Get(index).ShouldBe(1u);
+            id0.Index.ShouldBe(0);
+            entityChunk.Entities[0].ShouldBe(id0.ID);
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
         }
@@ -97,8 +100,8 @@ namespace Atma.Entities
             var created = entityChunk.Create(0, 0, ids);
 
             //assert
-            entityChunk.Get(0).ShouldBe(1u);
-            entityChunk.Get(created - 1).ShouldBe(ids[created - 1].ID);
+            entityChunk.Entities[0].ShouldBe(1u);
+            entityChunk.Entities[created - 1].ShouldBe(ids[created - 1].ID);
             entityChunk.Count.ShouldBe(created);
             entityChunk.Free.ShouldBe(0);
             created.ShouldBe(Entity.ENTITY_MAX);
@@ -120,18 +123,18 @@ namespace Atma.Entities
             span[0] = new Position(1);
             span[1] = new Position(2);
 
-            var id0 = entityPool.Take();
-            var id1 = entityPool.Take();
+            var id0 = entityPool.TakeRef();
+            var id1 = entityPool.TakeRef();
 
             var free = entityChunk.Free;
-            var index0 = entityChunk.Create(id0);
-            var index1 = entityChunk.Create(id1);
-            entityChunk.Delete(entityPool.GetRef(id0), entityPool);
+            entityChunk.Create(0, 0, id0);
+            entityChunk.Create(0, 0, id1);
+            entityChunk.Delete(id0, entityPool);
 
             //assert
             entityChunk.Count.ShouldBe(1);
             entityChunk.Free.ShouldBe(free - 1);
-            entityChunk.Get(0).ShouldBe(id1);
+            //entityChunk.Get(id0).ShouldBe(id1);
             span[0].ShouldBe(new Position(2));
         }
 

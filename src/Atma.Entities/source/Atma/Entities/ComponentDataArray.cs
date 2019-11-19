@@ -32,15 +32,15 @@
             _memoryHandle = allocator.Take(componentType.Size * length);
         }
 
-        public Span<T> AsSlice<T>(int start = 0, int length = -1)
+        public Span<T> AsSpan<T>(int start = 0, int length = -1)
             where T : unmanaged
         {
             var componentType = ComponentType<T>.Type;
             Contract.EqualTo(componentType.ID, _componentType.ID);
-            return AsSlice<T>(componentType, start, length);
+            return AsSpan<T>(componentType, start, length);
         }
 
-        internal Span<T> AsSlice<T>(ComponentType componentType, int start = 0, int length = -1)
+        internal Span<T> AsSpan<T>(ComponentType componentType, int start = 0, int length = -1)
             where T : unmanaged
         {
             if (length == -1)
@@ -53,17 +53,7 @@
             return new Span<T>((void*)(src + start), length);
         }
 
-        public T* AsPointer<T>()
-            where T : unmanaged
-        {
-            var componentType = ComponentType<T>.Type;
-            if (componentType.ID != _componentType.ID)
-                throw new Exception("Invalid type.");
-
-            return (T*)_memoryHandle.Address;
-        }
-
-        public void Reset(int index)
+        internal void Reset(int index)
         {
             Assert.Range(index, 0, Length);
 
@@ -73,7 +63,7 @@
             _componentHelper.Reset(dst);
         }
 
-        public void Move(int srcIndex, int dstIndex)
+        internal void Move(int srcIndex, int dstIndex)
         {
             if (srcIndex == dstIndex)
                 return;
@@ -122,7 +112,7 @@
             _componentHelper.Copy(ptr, dst);
         }
 
-        public static void CopyTo(ComponentDataArray srcArray, int srcIndex, ComponentDataArray dstArray, int dstIndex)
+        internal static void CopyTo(ComponentDataArray srcArray, int srcIndex, ComponentDataArray dstArray, int dstIndex)
         {
             Assert.EqualTo(srcArray._componentType.ID, dstArray._componentType.ID);
             Assert.Range(srcIndex, 0, srcArray.Length);

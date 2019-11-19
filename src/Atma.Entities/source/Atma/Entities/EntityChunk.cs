@@ -33,12 +33,12 @@ namespace Atma.Entities
         public int Count => _entityCount;
         public int Free => Entity.ENTITY_MAX - _entityCount;
 
-        public ReadOnlySpan<uint> Entities => _entities.Slice();
+        internal ReadOnlySpan<uint> Entities => _entities.Slice();
 
         public EntitySpec Specification { get; }
-        public ComponentPackedArray PackedArray => _packedArray;
+        internal ComponentPackedArray PackedArray => _packedArray;
 
-        public EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation)
+        internal EntityChunk(ILoggerFactory logFactory, IAllocator allocator, EntitySpec specifcation)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<EntityChunk>();
@@ -48,30 +48,13 @@ namespace Atma.Entities
             _entities = new NativeArray<uint>(_allocator, _packedArray.Length);
         }
 
-        public uint Get(int index)
+        internal void Create(int specIndex, int chunkIndex, EntityRef entity)
         {
-            Assert.Range(index, 0, _entityCount);
-            return _entities[index];
+            Span<EntityRef> entities = stackalloc[] { entity };
+            Create(specIndex, chunkIndex, entities);
         }
 
-        public int Create(uint entity)
-        {
-            Assert.GreatherThan(Free, 0);
-
-            var index = _entityCount++;
-            _entities[index] = entity;
-            return index;
-        }
-
-        // public int Create(Span<uint> entities)
-        // {
-        //     var amountToCreate = entities.Length > Free ? Free : entities.Length;
-        //     for (var i = 0; i < amountToCreate; i++)
-        //         _entities[_entityCount++] = entities[i];
-        //     return amountToCreate;
-        // }
-
-        public int Create(int specIndex, int chunkIndex, Span<EntityRef> entities)
+        internal int Create(int specIndex, int chunkIndex, Span<EntityRef> entities)
         {
             var amountToCreate = entities.Length > Free ? Free : entities.Length;
             for (var i = 0; i < amountToCreate; i++)
@@ -84,31 +67,11 @@ namespace Atma.Entities
             return amountToCreate;
         }
 
-        public unsafe void Delete(EntityRef entity, EntityPool entityPool)
+        internal unsafe void Delete(EntityRef entity, EntityPool entityPool)
         {
             Span<EntityRef> slice = stackalloc[] { entity };
             Delete(slice, entityPool);
         }
-
-        //This would be faster but exposes implementation details further up the chain :/
-        // internal void Delete(NativeSlice<int> indicies, EntityPool entityPool)
-        // {
-        //     for (var index = 0; index < indicies.Length; index++)
-        //     {
-        //         Assert.Range(index, 0, _entityCount);
-        //         _entityCount--;
-
-        //         if (index < _entityCount) //removing the last element, no need to patch
-        //         {
-        //             _packedArray.Move(_entityCount, index);
-        //             _entities[index] = _entities[_entityCount];
-        //             ref var entity = ref entityPool[_entities[index]];
-        //             entity.Index = index;
-        //         }
-
-        //         _entities[_entityCount] = 0;
-        //     }
-        // }
 
         internal void Delete(Span<EntityRef> entities, EntityPool entityPool)
         {
@@ -135,6 +98,8 @@ namespace Atma.Entities
                 _entities[_entityCount] = 0;
             }
         }
+
+        public Span<T> GetComponentData<T>() where T : unmanaged => _packedArray.GetComponentData<T>();
 
         protected override void OnManagedDispose()
         {

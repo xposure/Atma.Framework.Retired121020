@@ -50,7 +50,7 @@ namespace Atma.Entities
             using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
-            var span = data.AsSlice<Position>();
+            var span = data.AsSpan<Position>();
             ref var p = ref span[0];
 
             //assert
@@ -67,7 +67,7 @@ namespace Atma.Entities
             using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
-            var span = data.AsSlice<Position>();
+            var span = data.AsSpan<Position>();
             ref var p0 = ref span[0];
             p0.X = 10;
             p0.Y = 20;
@@ -92,7 +92,7 @@ namespace Atma.Entities
             using var data1 = new ComponentDataArray(_logFactory, allocator0, componentType, 32);
 
             //act
-            var span0 = data0.AsSlice<Position>();
+            var span0 = data0.AsSpan<Position>();
             ref var p0 = ref span0[0];
             p0.X = 10;
             p0.Y = 20;
@@ -100,7 +100,7 @@ namespace Atma.Entities
             ComponentDataArray.CopyTo(data0, 0, data1, 1);
 
             //assert
-            var span1 = data1.AsSlice<Position>();
+            var span1 = data1.AsSpan<Position>();
             ref var p1 = ref span1[1];
             p1.X.ShouldBe(10);
             p1.Y.ShouldBe(20);
@@ -115,7 +115,7 @@ namespace Atma.Entities
             using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
-            var span = data.AsSlice<Position>();
+            var span = data.AsSpan<Position>();
             {
                 ref var p0 = ref span[0];
                 p0.X = 10;
@@ -125,7 +125,7 @@ namespace Atma.Entities
             data.Reset(0);
 
             //assert
-            var readspan = data.AsSlice<Position>();
+            var readspan = data.AsSpan<Position>();
             {
                 ref var p0 = ref readspan[0];
                 p0.X.ShouldBe(0);
@@ -148,7 +148,7 @@ namespace Atma.Entities
             //assert
             Should.Throw<Exception>(() =>
             {
-                var span = data.AsSlice<Velocity>();
+                var span = data.AsSpan<Velocity>();
             });
         }
 
@@ -161,7 +161,7 @@ namespace Atma.Entities
             using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
             //act
-            var span = data.AsSlice<Position>();
+            var span = data.AsSpan<Position>();
             {
                 ref var p0 = ref span[1];
                 p0.X = 10;
@@ -170,7 +170,7 @@ namespace Atma.Entities
 
             data.Move(1, 0);
 
-            var readspan = data.AsSlice<Position>();
+            var readspan = data.AsSpan<Position>();
             ref var p1 = ref readspan[0];
 
             //assert
@@ -189,7 +189,7 @@ namespace Atma.Entities
             using IAllocator allocator = new DynamicAllocator(_logFactory);
             using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
-            var span = data.AsSlice<Position>();
+            var span = data.AsSpan<Position>();
             var ptr = stackalloc[] { new Position(100, 100), new Position(200, 200), new Position(400, 100), new Position(100, 400) };
             var src = (void*)ptr;
 
@@ -215,7 +215,7 @@ namespace Atma.Entities
             using IAllocator allocator = new DynamicAllocator(_logFactory);
             using var data = new ComponentDataArray(_logFactory, allocator, componentType, 32);
 
-            var span = data.AsSlice<Position>();
+            var span = data.AsSpan<Position>();
             var ptr = stackalloc[] { new Position(100, 100) };
             var src = (void*)ptr;
 
