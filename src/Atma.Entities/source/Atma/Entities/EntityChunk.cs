@@ -71,6 +71,19 @@ namespace Atma.Entities
             return amountToCreate;
         }
 
+        public int Create(int specIndex, int chunkIndex, Span<EntityRef> entities)
+        {
+            var amountToCreate = entities.Length > Free ? Free : entities.Length;
+            for (var i = 0; i < amountToCreate; i++)
+            {
+                ref var entity = ref entities[i];
+                var id = entity.ID;
+                _entities[_entityCount] = id;
+                entity.Replace(new Entity(id, specIndex, chunkIndex, _entityCount++));
+            }
+            return amountToCreate;
+        }
+
         public unsafe void Delete(EntityRef entity, EntityPool entityPool)
         {
             Span<EntityRef> slice = stackalloc[] { entity };

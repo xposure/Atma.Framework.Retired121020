@@ -147,21 +147,18 @@ namespace Atma.Entities
             using var entityChunk = new EntityChunk(_logFactory, memory, specification);
             using var entityPool = new EntityPool(_logFactory, memory);
 
-            var ids = new uint[entityChunk.Free + 1];
-            for (var i = 0; i < ids.Length; i++)
-                ids[i] = entityPool.Take();
+            var ids = new EntityRef[entityChunk.Free + 1];
+            entityPool.Take(ids);
 
-            var created = entityChunk.Create(ids);
-
+            var created = entityChunk.Create(0, 0, ids);
             var span = entityChunk.PackedArray.GetComponentData<Position>();
             for (var i = 0; i < span.Length; i++)
                 span[i] = new Position(i + 1);
 
-
             //act
             Span<EntityRef> deleteIndicies = stackalloc EntityRef[128];
             for (var i = 0; i < deleteIndicies.Length; i++)
-                deleteIndicies[i] = entityPool.GetRef(ids[i + 128]);
+                deleteIndicies[i] = ids[i + 128];
 
             entityChunk.Delete(deleteIndicies, entityPool);
 
@@ -176,10 +173,10 @@ namespace Atma.Entities
             var thirdSet = entityChunk.Entities.Slice(256, Entity.ENTITY_MAX - 256 - 128).ToArray();
             var fourthSet = entityChunk.Entities.Slice(Entity.ENTITY_MAX - 128, 128).ToArray();
 
-            firstSet.ShouldBe(first);
-            secondSet.ShouldBe(second);
-            thirdSet.ShouldBe(third);
-            fourthSet.ShouldBe(fourth);
+            firstSet.ShouldBe(first.Select(x => x.ID));
+            secondSet.ShouldBe(second.Select(x => x.ID));
+            thirdSet.ShouldBe(third.Select(x => x.ID));
+            fourthSet.ShouldBe(fourth.Select(x => x.ID));
 
             var firstPosition = Enumerable.Range(0, 128).Select(x => new Position(x + 1)).ToArray();
             var secondPosition = Enumerable.Range(0, 128).Select(x => new Position(Entity.ENTITY_MAX - x)).ToArray();

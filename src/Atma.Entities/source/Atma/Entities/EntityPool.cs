@@ -161,28 +161,28 @@ namespace Atma.Entities
             }
         }
 
-        // internal unsafe void Take(NativeSlice<EntityRef> array)
-        // {
-        //     while (_freeIds.Length < array.Length)
-        //         AddPage();
+        internal unsafe void Take(Span<EntityRef> array)
+        {
+            while (_freeIds.Length < array.Length)
+                AddPage();
 
-        //     var version = _version++;
-        //     _free -= array.Length;
+            var version = _version++;
+            _free -= array.Length;
 
-        //     for (var i = 0; i < array.Length; i++)
-        //     {
-        //         var id = _freeIds.Pop();
-        //         Assert.LessThanEqualTo(id, 0xffffff);
+            for (var i = 0; i < array.Length; i++)
+            {
+                var id = _freeIds.Pop();
+                Assert.LessThanEqualTo(id, 0xffffff);
 
-        //         var index = id & ENTITIES_MASK;
-        //         var page = (int)(id >> ENTITIES_BITS);
+                var index = id & ENTITIES_MASK;
+                var page = (int)(id >> ENTITIES_BITS);
 
-        //         id |= version << 24;
-        //         var list = _entityMap[page];
+                id |= version << 24;
+                var list = _entityMap[page];
 
-        //         array[i] = new EntityRef(list.RawPointer + index);
-        //     }
-        // }
+                array[i] = new EntityRef(list.RawPointer + index);
+            }
+        }
 
         protected override void OnUnmanagedDispose()
         {
