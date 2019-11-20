@@ -4,7 +4,7 @@ namespace Atma.Entities
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
 
-    public unsafe sealed class ComponentPackedArray : UnmanagedDispose
+    internal unsafe sealed class ComponentPackedArray : UnmanagedDispose
     {
         private ComponentDataArray[] _componentData;
         private ILogger _logger;

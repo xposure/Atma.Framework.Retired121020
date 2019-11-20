@@ -4,7 +4,7 @@
     using Microsoft.Extensions.Logging;
     using System;
 
-    public sealed unsafe class ComponentDataArray : UnmanagedDispose
+    internal sealed unsafe class ComponentDataArray : UnmanagedDispose
     {
         public int ElementSize { get; }
 
