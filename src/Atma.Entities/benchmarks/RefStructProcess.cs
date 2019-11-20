@@ -253,6 +253,43 @@ namespace Atma.Entities
         }
     }
 
+
+    public unsafe struct SystemNativeArrayWithLength
+    {
+        public float dt;
+        public NativeArray<Position> position;
+        public NativeArray<Velocity> velocity;
+
+        public void Execute(int length)
+        {
+            for (var i = 0; i < length; i++)
+            {
+                ref var p = ref position[i];
+                ref readonly var v = ref velocity[i];
+                p.X += v.X * dt;
+                p.Y += v.Y * dt;
+            }
+        }
+    }
+
+    public unsafe struct SystemNativeSliceWithLength
+    {
+        public float dt;
+        public NativeSlice<Position> position;
+        public NativeSlice<Velocity> velocity;
+
+        public void Execute(int length)
+        {
+            for (var i = 0; i < length; i++)
+            {
+                ref var p = ref position[i];
+                ref readonly var v = ref velocity[i];
+                p.X += v.X * dt;
+                p.Y += v.Y * dt;
+            }
+        }
+    }
+
     //[MediumRunJob]
     public unsafe class ReadWriteStructs : Benchmark
     {
@@ -428,6 +465,28 @@ namespace Atma.Entities
             processor.velocity = (Span<Velocity>)_velocities;
             processor.Execute(N);
         }
+
+
+        [Benchmark]
+        public void NativeArrayWithLength()
+        {
+            var processor = new SystemNativeArrayWithLength();
+            processor.dt = dt;
+            processor.position = _positions;
+            processor.velocity = _velocities;
+            processor.Execute(N);
+        }
+
+        [Benchmark]
+        public void NativeSliceWithLength()
+        {
+            var processor = new SystemNativeSliceWithLength();
+            processor.dt = dt;
+            processor.position = _positions.TestSlice();
+            processor.velocity = _velocities.TestSlice();
+            processor.Execute(N);
+        }
+
     }
 
 }

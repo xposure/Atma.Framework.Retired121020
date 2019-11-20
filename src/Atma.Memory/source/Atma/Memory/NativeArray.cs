@@ -119,6 +119,8 @@
             return new Span<T>(RawPointer + start, length);
         }
 
+        public NativeSlice<T> TestSlice() => new NativeSlice<T>(this.Handle, 0, Length);
+
         public Span<T> Span
         {
             get

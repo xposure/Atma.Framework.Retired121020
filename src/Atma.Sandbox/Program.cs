@@ -8,6 +8,17 @@
     using Shouldly;
     using System.Diagnostics;
     using static Atma.Debug;
+    using Microsoft.Extensions.Logging;
+    using System.Linq.Expressions;
+
+    public static class Helpers
+    {
+        public static void WriteLine<T>(this IEnumerable<T> it)
+        {
+            foreach (var item in it)
+                Console.WriteLine(item.ToString());
+        }
+    }
 
     class Program
     {
@@ -41,31 +52,65 @@
 
         }
 
-        public ref struct Test //: ISystemProcessor
+        public struct Test //: ISystemProcessor
         {
+            // public readonly ReadOnlySpan<EntityRef> entities;
+            // public readonly Span<Position> positions;
+            // public readonly ReadOnlySpan<Velocity> velocities;
+
             public void Execute(int length)
             {
                 Console.WriteLine("hello");
             }
         }
 
-        public ref struct Test2 //: ISystemProcessor
+        public readonly ref partial struct Test2 //: ISystemProcessor
         {
-            public void Execute(int length)
+            public readonly ReadOnlySpan<EntityRef> entities;
+            public readonly Span<Position> positions;
+            public readonly ReadOnlySpan<Velocity> velocities;
+
+            partial void Execute(int length);
+        }
+
+        public readonly ref partial struct Test2
+        {
+            partial void Execute(int length)
             {
-                Console.WriteLine("world");
+                Console.WriteLine("Hello world!");
             }
         }
 
 
-
-
+        protected static ILoggerFactory _logFactory;
+        protected static ILogger _logger;
 
         static void Main(string[] args)
         {
+            _logFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            _logger = _logFactory.CreateLogger("Sandbox");
 
-            //var memory = new HeapAllocator(LoggerFactory.Null);
+            var memory = new HeapAllocator(_logFactory);
+            var em = new EntityManager(_logFactory, memory);
 
+            var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+            var e = em.Create(spec);
+
+            em.ForChunk((int length, ReadOnlySpan<EntityRef> entities, Span<Position> positions, Span<Velocity> velocities) =>
+            {
+
+            });
+
+            var test2 = new Test2();
+            //test2.Execute(1);
+
+            var type = typeof(Test);
+
+            type.GetConstructors().WriteLine();
+
+
+            em.Dispose();
+            memory.Dispose();
         }
     }
     public struct Valid
