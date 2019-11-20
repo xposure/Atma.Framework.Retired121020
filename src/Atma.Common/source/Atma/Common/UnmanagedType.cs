@@ -1,6 +1,9 @@
 ﻿namespace Atma.Common
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
     using System.Threading;
 
     public readonly struct UnmanagedType
@@ -33,6 +36,45 @@
             var size = sizeof(T);
             var type = Interlocked.Increment(ref UnmanagedType.UniqueID);
             Type = new UnmanagedType(typeof(T), size);
+        }
+    }
+
+    public sealed class UnmanagedHelper
+    {
+        private Dictionary<Type, bool> _unmanagedCache = new Dictionary<Type, bool>();
+        private Dictionary<Type, UnmanagedType> _cacheTypes = new Dictionary<Type, UnmanagedType>();
+
+        public bool IsUnManaged(Type t)
+        {
+            var result = false;
+            if (_unmanagedCache.ContainsKey(t))
+                return _unmanagedCache[t];
+            else if (t.IsPrimitive || t.IsPointer || t.IsEnum)
+                result = true;
+            else if (t.IsGenericType || !t.IsValueType)
+                result = false;
+            else
+                result = t.GetFields(BindingFlags.Public |
+                   BindingFlags.NonPublic | BindingFlags.Instance)
+                    .All(x => IsUnManaged(x.FieldType));
+            _unmanagedCache.Add(t, result);
+            return result;
+        }
+
+        public bool GetInfo(Type t, out UnmanagedType unmanagedType)
+        {
+            unmanagedType = default;
+            if (!IsUnManaged(t))
+                return false;
+
+            if (!_cacheTypes.TryGetValue(t, out var ut))
+            {
+                var size = Size.Of(t);
+                unmanagedType = new UnmanagedType(t, size);
+                _cacheTypes.Add(t, ut);
+            }
+
+            return true;
         }
     }
 }
