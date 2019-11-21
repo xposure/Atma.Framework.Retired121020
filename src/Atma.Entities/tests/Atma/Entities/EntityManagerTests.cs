@@ -228,7 +228,7 @@
 
             var spec = EntitySpec.Create<Position, Velocity>();
             var id = entities.Create(spec);
-            entities.Remove(id);
+            entities.Delete(id);
 
             id.ShouldNotBe(0u);
 
@@ -249,7 +249,7 @@
             entities.Create(spec, ids);
 
             var removeIds = Enumerable.Range(1024, 1024).Select(x => ids[x]).ToArray();
-            entities.Remove(removeIds);
+            entities.Delete(removeIds);
 
             entities.EntityCount.ShouldBe(8192 - 1024);
             entities.EntityArrays[0].EntityCount.ShouldBe(8192 - 1024);
@@ -708,7 +708,7 @@
 
             //assert
             em.Has(id0).ShouldBe(true);
-            em.Remove(id0);
+            em.Delete(id0);
             em.Has(id0).ShouldBe(false);
         }
 
@@ -729,7 +729,7 @@
             var id2 = em.Create(spec);
             em.Replace<Position>(id2, new Position(12, 22));
 
-            em.Remove(id0);
+            em.Delete(id0);
 
             //assert
             var p1 = em.Get<Position>(id1);
@@ -860,7 +860,7 @@
 
             //act
             var id0 = em.Create(spec);
-            em.Remove(id0);
+            em.Delete(id0);
 
             //assert
             em.EntityArrays.Count.ShouldBe(1);

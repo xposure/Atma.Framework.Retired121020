@@ -5,6 +5,8 @@
     [System.Diagnostics.DebuggerStepThrough]
     public unsafe readonly struct EntityRef
     {
+        public static readonly Comparison<EntityRef> KeySortDesc = new Comparison<EntityRef>((x, y) => (int)(y.Key - x.Key));
+        public static readonly Comparison<EntityRef> KeySort = new Comparison<EntityRef>((x, y) => (int)(x.Key - y.Key));
         private readonly Entity* _entity;
         public uint ID => _entity->ID;
         public uint Key => _entity->Key;

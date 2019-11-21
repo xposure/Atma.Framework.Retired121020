@@ -7,24 +7,24 @@ namespace Atma.Entities
     {
         private enum CommandTypes
         {
-            CreateEntity,
-            RemoveEntity,
-            SetEntity,
-            AssignComponent,
-            UpdateComponent,
-            ReplaceComponent,
-            RemoveComponent
+            Create,
+            Delete,
+            Set,
+            Assign,
+            Update,
+            Replace,
+            Remove
         }
 
-        private struct EntityCommand
+        private struct Command
         {
             public CommandTypes CommandType;
             public int Size;
 
-            public EntityCommand(CommandTypes type)
+            public Command(CommandTypes type)
             {
                 CommandType = type;
-                Size = sizeof(EntityCommand);
+                Size = sizeof(Command);
             }
 
             public void Process(EntityManager entityManager)
@@ -33,177 +33,147 @@ namespace Atma.Entities
             }
         }
 
-        private struct SetEntityCommand
+        private struct SetCommand
         {
             public CommandTypes CommandType;
             public int Size;
             public int EntityCount;
 
-            public SetEntityCommand(int entityCount)
+            public SetCommand(int entityCount)
             {
-                CommandType = CommandTypes.SetEntity;
-                Size = sizeof(EntityCommand);
+                CommandType = CommandTypes.Set;
+                Size = sizeof(Command);
                 EntityCount = entityCount;
             }
 
-            public static Span<uint> Process(EntityManager entityManager, SetEntityCommand* it)
+            public static Span<uint> Process(EntityManager entityManager, SetCommand* it)
             {
                 return new Span<uint>(it + 1, it->EntityCount);
             }
         }
 
-        private struct CreateEntityCommand
+        private struct CreateCommand
         {
             public CommandTypes CommandType;
             public int Size;
             public int ComponentCount;
 
-            public CreateEntityCommand(int componentCount)
+            public CreateCommand(int componentCount)
             {
-                CommandType = CommandTypes.CreateEntity;
+                CommandType = CommandTypes.Create;
                 Size = 0;
                 ComponentCount = componentCount;
             }
 
-            public static void Process(EntityManager entityManager, CreateEntityCommand* it, Span<uint> lastEntities)
+            public static void Process(EntityManager entityManager, CreateCommand* it, Span<uint> lastEntities)
             {
                 System.Span<ComponentType> componentTypes = new System.Span<ComponentType>(it + 1, it->ComponentCount);
                 entityManager.Create(componentTypes, lastEntities);
             }
         }
 
-        private struct RemoveEntityCommand
+        private struct DeleteCommand
         {
             public CommandTypes CommandType;
             public int Size;
 
-            public RemoveEntityCommand(int dummy)
+            public DeleteCommand(int dummy)
             {
-                CommandType = CommandTypes.RemoveEntity;
+                CommandType = CommandTypes.Delete;
                 Size = 0;
             }
 
-            public static void Process(EntityManager entityManager, RemoveEntityCommand* it, Span<uint> lastEntities)
+            public static void Process(EntityManager entityManager, DeleteCommand* it, Span<uint> lastEntities)
             {
                 Assert.GreatherThan(lastEntities.Length, 0);
-                entityManager.Remove(lastEntities);
+                entityManager.Delete(lastEntities);
             }
         }
 
-        private struct ReplaceComponentCommand
+        private struct ReplaceCommand
         {
             public CommandTypes CommandType;
             public int Size;
             public ComponentType ComponentType;
             public int DataCount;
 
-            public ReplaceComponentCommand(in ComponentType componentType, int dataCount)
+            public ReplaceCommand(in ComponentType componentType, int dataCount)
             {
-                CommandType = CommandTypes.ReplaceComponent;
-                Size = sizeof(ReplaceComponentCommand);
+                CommandType = CommandTypes.Replace;
+                Size = 0;
                 ComponentType = componentType;
                 DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, Span<uint> lastEntities)
+            public static void Process(EntityManager entityManager, ReplaceCommand* it, Span<uint> lastEntities)
             {
                 Assert.GreatherThan(lastEntities.Length, 0);
-                if (it->DataCount == 1)
-                {
-                    entityManager.SetComponentData(&it->ComponentType, lastEntities, it + 1, false, false);
-                }
-                else
-                {
-                    Assert.EqualTo(lastEntities.Length, it->DataCount);
-                    entityManager.SetComponentData(&it->ComponentType, lastEntities, it + 1, true, true);
-                }
+                entityManager.SetComponentData(&it->ComponentType, lastEntities, it + 1, it->DataCount != 1, false);
             }
         }
 
-        private struct UpdateComponentCommand
+        private struct UpdateCommand
         {
             public CommandTypes CommandType;
             public int Size;
             public ComponentType ComponentType;
             public int DataCount;
 
-            public UpdateComponentCommand(in ComponentType componentType, int dataCount)
+            public UpdateCommand(in ComponentType componentType, int dataCount)
             {
-                CommandType = CommandTypes.UpdateComponent;
-                Size = sizeof(UpdateComponentCommand);
+                CommandType = CommandTypes.Update;
+                Size = 0;
                 ComponentType = componentType;
                 DataCount = dataCount;
             }
 
-
-            public static void Process(EntityManager entityManager, UpdateComponentCommand* it, Span<uint> lastEntities)
+            public static void Process(EntityManager entityManager, UpdateCommand* it, Span<uint> lastEntities)
             {
-                // Assert.GreatherThan(lastEntities.Length, 0);
-                // if (it->DataCount == 1)
-                // {
-                //     entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, true);
-                // }
-                // else
-                // {
-                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
-                //     entityManager.UpdateInternal(&it->ComponentType, lastEntities, it + 1, false);
-                // }
+                Assert.GreatherThan(lastEntities.Length, 0);
+                entityManager.SetComponentData(&it->ComponentType, lastEntities, it + 1, it->DataCount != 1, true);
             }
         }
 
-        private struct AssignComponentCommand
+        private struct AssignCommand
         {
             public CommandTypes CommandType;
             public int Size;
             public ComponentType ComponentType;
             public int DataCount;
 
-            public AssignComponentCommand(in ComponentType componentType, int dataCount)
+            public AssignCommand(in ComponentType componentType, int dataCount)
             {
-                CommandType = CommandTypes.AssignComponent;
-                Size = sizeof(AssignComponentCommand);
+                CommandType = CommandTypes.Assign;
+                Size = 0;
                 ComponentType = componentType;
                 DataCount = dataCount;
             }
 
-            public static void Process(EntityManager entityManager, AssignComponentCommand* it, Span<uint> lastEntities)
+            public static void Process(EntityManager entityManager, AssignCommand* it, Span<uint> lastEntities)
             {
-                // Assert.GreatherThan(lastEntities.Length, 0);
-                // var dataPtr = (void*)(it + 1);
-                // if (it->DataCount == 1)
-                // {
-                //     //assigning one piece of data to all entities
-                //     for (var i = 0; i < lastEntities.Length; i++)
-                //         entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, true);
-                // }
-                // else
-                // {
-                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
-                //     entityManager.AssignInternal(lastEntities, &it->ComponentType, ref dataPtr, false);
-                // }
+                Assert.GreatherThan(lastEntities.Length, 0);
+                entityManager.AssignInternal(lastEntities, &it->ComponentType, it + 1, it->DataCount != 1);
             }
         }
 
-        //TODO: the old system would stack commands on top and run them once for performance
-        private struct RemoveComponentCommand
+        private struct RemoveCommand
         {
             public CommandTypes CommandType;
             public int Size;
-            public int ComponentId;
+            public int ComponentCount;
 
-            public RemoveComponentCommand(int componentId)
+            public RemoveCommand(int componentCount)
             {
-                CommandType = CommandTypes.RemoveComponent;
-                Size = sizeof(RemoveComponentCommand);
-                ComponentId = componentId;
+                CommandType = CommandTypes.Remove;
+                Size = 0;
+                ComponentCount = componentCount;
             }
 
-            public static void Process(EntityManager entityManager, RemoveComponentCommand* it, Span<uint> lastEntities)
+            public static void Process(EntityManager entityManager, RemoveCommand* it, Span<uint> lastEntities)
             {
-                // //TODO: bulk remove
-                // Assert.GreatherThan(lastEntities.Length, 0);
-                // for (var i = 0; i < lastEntities.Length; i++)
-                //     entityManager.RemoveInternal(lastEntities[i], it->ComponentId);
+                Assert.GreatherThan(lastEntities.Length, 0);
+                Assert.GreatherThan(it->ComponentCount, 0);
+                entityManager.Remove(lastEntities, new Span<ComponentType>(it + 1, it->ComponentCount));
             }
         }
 
@@ -216,7 +186,7 @@ namespace Atma.Entities
             _buffer = new NativeBuffer(allocator, sizeInBytes);
         }
 
-        public unsafe void CreateEntity(System.Span<ComponentType> componentTypes, int count = 1)
+        public unsafe void Create(System.Span<ComponentType> componentTypes, int count = 1)
         {
             //old code did not store the components and there is overhead to this
             //but its the only way to make sure the em doesn't crash if it never 
@@ -224,139 +194,176 @@ namespace Atma.Entities
 
             ReserveSetEntity(count);
 
-            var ptr = _buffer.Add(new CreateEntityCommand(componentTypes.Length));
-            var data = _buffer.Take<ComponentType>(componentTypes.Length);
-            for (var i = 0; i < componentTypes.Length; i++)
-                data.Value[i] = componentTypes[i];
+            var ptr = _buffer.Add(new CreateCommand(componentTypes.Length));
+            var data = _buffer.Add(componentTypes);
 
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
 
-        public void CreateEntity(EntitySpec spec, int count = 1)
+        public void Create(EntitySpec spec, int count = 1)
         {
-            System.Span<ComponentType> componentTypes = spec.ComponentTypes;
-            CreateEntity(componentTypes, count);
+            Span<ComponentType> componentTypes = spec.ComponentTypes;
+            Create(componentTypes, count);
         }
 
         private Span<uint> ReserveSetEntity(int count)
         {
-            var ptr = _buffer.Add(new SetEntityCommand(count));
+            var ptr = _buffer.Add(new SetCommand(count));
             var data = _buffer.Take<uint>(count);
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
             return new Span<uint>(data.Value, count);
         }
 
-        public void SetEntity(uint entity)
+        public void Set(uint entity)
         {
             var data = ReserveSetEntity(1);
             data[0] = entity;
         }
 
-        public void SetEntity(Span<uint> entities)
+        public void Set(Span<uint> entities)
         {
             var data = ReserveSetEntity(entities.Length);
             for (var i = 0; i < entities.Length; i++)
                 data[i] = entities[i];
         }
 
-        public void RemoveEntity(uint entity)
+        public void Delete(uint entity)
         {
-            SetEntity(entity);
-            var ptr = _buffer.Add(new RemoveEntityCommand(0));
+            Set(entity);
+            var ptr = _buffer.Add(new DeleteCommand(0));
             ptr.Value->Size = ptr.SizeInBytes;
         }
 
-
-        public void RemoveEntity(Span<uint> entities)
+        public void Delete(Span<uint> entities)
         {
-            SetEntity(entities);
-            _buffer.Add(new RemoveEntityCommand(0));
-            var ptr = _buffer.Add(new RemoveEntityCommand(0));
+            Set(entities);
+            var ptr = _buffer.Add(new DeleteCommand(0));
             ptr.Value->Size = ptr.SizeInBytes;
         }
 
-        public void ReplaceComponent<T>(in T t)
+        public void Replace<T>(in T t)
             where T : unmanaged
         {
             var type = ComponentType<T>.Type;
-            var ptr = _buffer.Add(new ReplaceComponentCommand(type, 1));
+            var ptr = _buffer.Add(new ReplaceCommand(type, 1));
             var data = _buffer.Add(t);
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
-        public void ReplaceComponent<T>(uint entity, in T t)
+        public void Replace<T>(uint entity, in T t)
             where T : unmanaged
         {
-            SetEntity(entity);
+            Set(entity);
 
             var type = ComponentType<T>.Type;
-            var ptr = _buffer.Add(new ReplaceComponentCommand(type, 1));
+            var ptr = _buffer.Add(new ReplaceCommand(type, 1));
             var data = _buffer.Add(t);
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
-        // public void RemoveComponent<T>(uint entity)
-        //     where T : unmanaged
-        // {
-        //     SetEntity(entity);
+        public void Replace<T>(Span<uint> entity, in T t)
+            where T : unmanaged
+        {
+            Set(entity);
 
-        //     var type = ComponentType<T>.Type;
-        //     var ptr = _buffer.Add(new RemoveComponentCommand(type.ID));
-        //     ptr.Value->Size = ptr.SizeInBytes;
-        // }
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new ReplaceCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        // public void AssignComponent<T>(in T t)
-        //     where T : unmanaged
-        // {
-        //     var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
-        //     _buffer.EnsureCapacity(reserveSize);
+        public void Replace<T>(Span<uint> entity, Span<T> t)
+            where T : unmanaged
+        {
+            Set(entity);
 
-        //     var type = ComponentType<T>.Type;
-        //     AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
-        //     _buffer.Add(t);
-        //     it->Size += type.Size;
-        // }
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new ReplaceCommand(type, t.Length));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        // public void AssignComponent<T>(uint entity, in T t)
-        //     where T : unmanaged
-        // {
-        //     SetEntity(entity);
+        public void Remove<T>()
+            where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new RemoveCommand(1));
+            var data = _buffer.Add(type);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        //     var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
-        //     _buffer.EnsureCapacity(reserveSize);
+        public void Remove<T>(uint entity)
+            where T : unmanaged
+        {
+            Set(entity);
 
-        //     var type = ComponentType<T>.Type;
-        //     AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
-        //     _buffer.Add(t);
-        //     it->Size += type.Size;
-        // }
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new RemoveCommand(1));
+            var data = _buffer.Add(type);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        // public void UpdateComponent<T>(in T t)
-        //    where T : unmanaged
-        // {
-        //     var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
-        //     _buffer.EnsureCapacity(reserveSize);
+        public void Remove(uint entity, Span<ComponentType> componentTypes)
+        {
+            Set(entity);
 
-        //     var type = ComponentType<T>.Type;
-        //     UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
-        //     _buffer.Add(t);
-        //     it->Size += type.Size;
-        // }
+            var ptr = _buffer.Add(new RemoveCommand(componentTypes.Length));
+            var data = _buffer.Add(componentTypes);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        // public void UpdateComponent<T>(uint entity, in T t)
-        //    where T : unmanaged
-        // {
-        //     SetEntity(entity);
+        public void Remove(Span<uint> entities, Span<ComponentType> componentTypes)
+        {
+            Set(entities);
 
-        //     var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
-        //     _buffer.EnsureCapacity(reserveSize);
+            var ptr = _buffer.Add(new RemoveCommand(componentTypes.Length));
+            var data = _buffer.Add(componentTypes);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        //     var type = ComponentType<T>.Type;
-        //     UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
-        //     _buffer.Add(t);
-        //     it->Size += type.Size;
-        // }
+
+        public void Assign<T>(in T t)
+            where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new AssignCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Assign<T>(uint entity, in T t)
+            where T : unmanaged
+        {
+            Set(entity);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new AssignCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Assign<T>(Span<uint> entity, in T t)
+            where T : unmanaged
+        {
+            Set(entity);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new AssignCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Assign<T>(Span<uint> entity, Span<T> t)
+            where T : unmanaged
+        {
+            Set(entity);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new AssignCommand(type, t.Length));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
         public void Execute(EntityManager em)
         {
@@ -364,31 +371,31 @@ namespace Atma.Entities
             Span<uint> lastEntities = Span<uint>.Empty;
             while (rawPtr < _buffer.EndPointer)
             {
-                var cmd = (EntityCommand*)rawPtr;
+                var cmd = (Command*)rawPtr;
                 switch (cmd->CommandType)
                 {
-                    case CommandTypes.SetEntity:
-                        lastEntities = SetEntityCommand.Process(em, (SetEntityCommand*)cmd);
+                    case CommandTypes.Set:
+                        lastEntities = SetCommand.Process(em, (SetCommand*)cmd);
                         break;
-                    case CommandTypes.CreateEntity:
-                        CreateEntityCommand.Process(em, (CreateEntityCommand*)cmd, lastEntities);
+                    case CommandTypes.Create:
+                        CreateCommand.Process(em, (CreateCommand*)cmd, lastEntities);
                         break;
-                    case CommandTypes.RemoveEntity:
-                        RemoveEntityCommand.Process(em, (RemoveEntityCommand*)cmd, lastEntities);
+                    case CommandTypes.Delete:
+                        DeleteCommand.Process(em, (DeleteCommand*)cmd, lastEntities);
                         lastEntities = Span<uint>.Empty;
                         break;
-                    case CommandTypes.AssignComponent:
-                        AssignComponentCommand.Process(em, (AssignComponentCommand*)cmd, lastEntities);
+                    case CommandTypes.Assign:
+                        AssignCommand.Process(em, (AssignCommand*)cmd, lastEntities);
                         break;
-                    case CommandTypes.ReplaceComponent:
-                        ReplaceComponentCommand.Process(em, (ReplaceComponentCommand*)cmd, lastEntities);
+                    case CommandTypes.Replace:
+                        ReplaceCommand.Process(em, (ReplaceCommand*)cmd, lastEntities);
                         break;
-                    case CommandTypes.RemoveComponent:
+                    case CommandTypes.Remove:
                         //removing the last component of an entity has the side effect of deleting it, could cause bugs
-                        RemoveComponentCommand.Process(em, (RemoveComponentCommand*)cmd, lastEntities);
+                        RemoveCommand.Process(em, (RemoveCommand*)cmd, lastEntities);
                         break;
-                    case CommandTypes.UpdateComponent:
-                        UpdateComponentCommand.Process(em, (UpdateComponentCommand*)cmd, lastEntities);
+                    case CommandTypes.Update:
+                        UpdateCommand.Process(em, (UpdateCommand*)cmd, lastEntities);
                         break;
                 }
                 Assert.GreatherThan(cmd->Size, 0);

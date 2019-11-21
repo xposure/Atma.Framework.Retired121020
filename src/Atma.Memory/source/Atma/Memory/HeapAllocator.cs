@@ -35,11 +35,11 @@ namespace Atma.Memory
         }
         public static void ConsumeForward(HeapAllocation* root)
         {
-            System.Diagnostics.Debug.WriteLine($"  ConsumeForward {*root}");
+            //System.Diagnostics.Debug.WriteLine($"  ConsumeForward {*root}");
             var ptr = root->Next;
             while (ptr != null)
             {
-                System.Diagnostics.Debug.WriteLine($"  Walked forward {*ptr}");
+                //System.Diagnostics.Debug.WriteLine($"  Walked forward {*ptr}");
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                 if (!ptr->IsFree)
                     break;
@@ -91,7 +91,7 @@ namespace Atma.Memory
 
         public static HeapAllocation* FindFreeBackwards(HeapAllocation* ptr)
         {
-            System.Diagnostics.Debug.WriteLine($"  FindFreeBackwards {*ptr}");
+            //System.Diagnostics.Debug.WriteLine($"  FindFreeBackwards {*ptr}");
             while (ptr->Previous != null)
             {
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -99,7 +99,7 @@ namespace Atma.Memory
                     break;
 
                 ptr = ptr->Previous;
-                System.Diagnostics.Debug.WriteLine($"    Walked back {*ptr}");
+                //System.Diagnostics.Debug.WriteLine($"    Walked back {*ptr}");
             }
 
             Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -210,7 +210,7 @@ namespace Atma.Memory
             public void Free(ref AllocationHandle handle)
             {
                 ref var ptr = ref _allocations[handle.Id];
-                System.Diagnostics.Debug.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
+                //System.Diagnostics.Debug.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
                 Assert.EqualTo(ptr.Address, handle.Address);
                 Assert.EqualTo(ptr.Version & 0xfffffff, handle.Flags >> 4);
 
@@ -234,7 +234,7 @@ namespace Atma.Memory
                     {
                         heapPagePtr = new HeapPagePointer(id, ptr, i, _version);
                         var handle = new AllocationHandle(ptr, id, flags);
-                        System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                        //System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
 
                         return handle;
                     }
@@ -248,7 +248,7 @@ namespace Atma.Memory
 
                     heapPagePtr = new HeapPagePointer(id, ptr, _pages.Count - 1, _version);
                     var handle = new AllocationHandle(ptr, id, flags);
-                    System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                    //System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
                     return handle;
                 }
             }
@@ -312,7 +312,7 @@ namespace Atma.Memory
                 var largestFree = 0u;
                 while (ptr != null)
                 {
-                        System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {*ptr} }}");
+                    //System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {*ptr} }}");
                     if (ptr->IsFree)
                     {
                         var freeBlocks = ptr->Blocks;

@@ -1,6 +1,8 @@
 namespace Atma.Entities
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using Atma.Memory;
     using Divergic.Logging.Xunit;
     using Microsoft.Extensions.Logging;
@@ -10,30 +12,6 @@ namespace Atma.Entities
 
     public unsafe class EntityCommandBufferTests
     {
-        private struct Position
-        {
-            public int X;
-            public int Y;
-
-            public Position(int x, int y)
-            {
-                X = x;
-                Y = y;
-            }
-        }
-
-        private struct Velocity
-        {
-            public int VX;
-            public int VY;
-
-            public Velocity(int vx, int vy)
-            {
-                VX = vx;
-                VY = vy;
-            }
-        }
-
         private readonly ILoggerFactory _logFactory;
 
         public EntityCommandBufferTests(ITestOutputHelper output)
@@ -50,7 +28,7 @@ namespace Atma.Entities
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
-            buffer.CreateEntity(spec);
+            buffer.Create(spec);
 
             buffer.Execute(em);
 
@@ -68,7 +46,7 @@ namespace Atma.Entities
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
-            buffer.CreateEntity(spec, 16384);
+            buffer.Create(spec, 16384);
 
             buffer.Execute(em);
 
@@ -87,7 +65,7 @@ namespace Atma.Entities
 
             var id = em.Create(spec);
 
-            buffer.RemoveEntity(id);
+            buffer.Delete(id);
 
             buffer.Execute(em);
 
@@ -96,21 +74,55 @@ namespace Atma.Entities
         }
 
         [Fact]
+        public void ShouldRemoveManyEntities()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            var idsToDelete = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
+
+            buffer.Delete(idsToDelete);
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(samples - idsToDelete.Length);
+            em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToDelete.Length);
+            var entities = em.EntityArrays[0].AllChunks[0].Entities.ToArray();
+
+            var remainingIds = entities.Select(x => x.ID).ToArray();
+            remainingIds.Any(x => idsToDelete.Contains(x)).ShouldBe(false);
+
+            var otherIds = ids.Where(x => !idsToDelete.Contains(x)).ToArray();
+            remainingIds.All(x => otherIds.Contains(x)).ShouldBe(true);
+        }
+
+        [Fact]
         public void ShouldRemoveEntityOnLastComponentOne()
         {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
-        }
+            var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
-        [Fact]
-        public void ShouldRemoveEntityOnLastComponentMany()
-        {
+            const int samples = 32;
 
-        }
+            var ids = new uint[samples];
+            em.Create(spec, ids);
 
-        [Fact]
-        public void ShouldRemoveEntityOnLastComponentPartial()
-        {
+            buffer.Remove(ids, spec.ComponentTypes);
+            buffer.Execute(em);
 
+            em.EntityCount.ShouldBe(0);
+            em.EntityArrays.Count.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
         }
 
         [Fact]
@@ -124,7 +136,7 @@ namespace Atma.Entities
 
             var id = em.Create(spec);
 
-            buffer.ReplaceComponent(id, new Position(10, 10));
+            buffer.Replace(id, new Position(10, 10));
 
             buffer.Execute(em);
 
@@ -136,69 +148,177 @@ namespace Atma.Entities
         [Fact]
         public void ShouldReplaceManyWithOne()
         {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
+            var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+
+            var position = new Position(10, 10);
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            buffer.Replace(ids, position);
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(32);
+            em.EntityArrays[0].EntityCount.ShouldBe(32);
+            var positions = ids.Select(id => em.Get<Position>(id)).ToArray();
+
+            positions.ShouldAllBe(x => x == position);
         }
 
         [Fact]
         public void SouldReplaceManyWithMany()
         {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
+            var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
+
+            const int samples = 32;
+            var positions = Enumerable.Range(0, samples).Select(x => new Position(x, 10)).ToArray();
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            buffer.Replace(ids, positions.AsSpan());
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(32);
+            em.EntityArrays[0].EntityCount.ShouldBe(32);
+
+            var positionResults = ids.Select(id => em.Get<Position>(id)).ToArray();
+            positionResults.ShouldBe(positions);
         }
 
-        [Fact]
-        public void ShouldThrowReplaceManyWithMismatchLength()
-        {
+        // [Fact]
+        // public void ShouldThrowReplaceManyWithMismatchLength()
+        // {
 
-        }
+        // }
 
-        [Fact]
-        public void ShouldThrowReplaceOneWithOutComponent()
-        {
+        // [Fact]
+        // public void ShouldThrowReplaceOneWithOutComponent()
+        // {
 
-        }
+        // }
 
-        [Fact]
-        public void ShouldThrowReplaceOneWithMany()
-        {
+        // [Fact]
+        // public void ShouldThrowReplaceOneWithMany()
+        // {
 
-        }
+        // }
 
 
         [Fact]
         public void ShouldAssignOne()
         {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
+            var spec = new EntitySpec(ComponentType<Velocity>.Type);
+
+            var id = em.Create(spec);
+
+            buffer.Assign(id, new Position(10, 10));
+
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(1);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.Get<Position>(id).ShouldBe(new Position(10, 10));
         }
 
         [Fact]
         public void ShouldAssignManyWithOne()
         {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
+            var spec = new EntitySpec(ComponentType<Velocity>.Type);
+
+            var position = new Position(10, 10);
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            buffer.Assign(ids, position);
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(32);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityArrays[1].EntityCount.ShouldBe(32);
+            var positions = ids.Select(id => em.Get<Position>(id)).ToArray();
+
+            positions.ShouldAllBe(x => x == position);
         }
 
         [Fact]
         public void SouldAssignManyWithMany()
         {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
+            var spec = new EntitySpec(ComponentType<Velocity>.Type);
+
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            var idsToChange = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
+            var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
+            var positions = idsToChange.Select(x => new Position((int)x, 10)).ToArray();
+
+            buffer.Assign(idsToChange, positions.AsSpan());
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(samples);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToChange.Length);
+            em.EntityArrays[1].EntityCount.ShouldBe(idsToChange.Length);
+
+            var entities0 = em.EntityArrays[0].AllChunks[0].Entities.ToArray();
+            entities0.Any(x => idsToChange.Contains(x.ID)).ShouldBe(false);
+            entities0.All(x => remainingIds.Contains(x.ID)).ShouldBe(true);
+
+            var entities1 = em.EntityArrays[1].AllChunks[0].Entities.ToArray();
+            entities1.Any(x => remainingIds.Contains(x.ID)).ShouldBe(false);
+            entities1.All(x => idsToChange.Contains(x.ID)).ShouldBe(true);
+
+            var positionResults = idsToChange.Select(id => em.Get<Position>(id)).ToArray();
+            positions.ShouldBe(positions);
         }
 
-        [Fact]
-        public void ShouldThrowAssignManyWithMismatchLength()
-        {
 
-        }
+        // [Fact]
+        // public void ShouldThrowAssignManyWithMismatchLength()
+        // {
 
-        [Fact]
-        public void ShouldThrowAssignOneWithComponent()
-        {
+        // }
 
-        }
+        // [Fact]
+        // public void ShouldThrowAssignOneWithComponent()
+        // {
 
-        [Fact]
-        public void ShouldThrowAssignOneWithMany()
-        {
+        // }
 
-        }
+        // [Fact]
+        // public void ShouldThrowAssignOneWithMany()
+        // {
+
+        // }
 
     }
 }

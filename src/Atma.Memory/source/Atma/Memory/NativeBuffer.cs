@@ -108,7 +108,17 @@
             *location = item;
             Length += sizeInBytes;
             return new NativeBufferPtr<T>(this, len, 1, sizeInBytes);
+        }
 
+        public NativeBufferPtr<T> Add<T>(Span<T> item)
+           where T : unmanaged
+        {
+            Assert.EqualTo(Handle.IsValid, true);
+            var data = Take<T>(item.Length);
+
+            for (var i = 0; i < item.Length; i++)
+                data.Value[i] = item[i];
+            return data;
         }
 
         public unsafe NativeBufferPtr<T> Take<T>(int count)

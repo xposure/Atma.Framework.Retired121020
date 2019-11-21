@@ -109,6 +109,11 @@
             var chunkIndex = entities[0].ChunkIndex;
             var lastIndex = 0;
 
+            //we have to delete backwards or things will move around on us and we 
+            //can pass in temp refs to moving entities + its faster to delete backwards
+            //since there is a chance of no swaps
+            entities.Sort(EntityRef.KeySortDesc);
+
             Assert.EqualTo(entities[0].SpecIndex, SpecIndex);
             for (var i = 1; i < entities.Length; i++)
             {
