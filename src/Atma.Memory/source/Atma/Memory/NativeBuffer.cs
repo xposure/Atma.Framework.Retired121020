@@ -2,7 +2,7 @@
 {
     using System;
 
-    //using static Atma.Debug;
+    [System.Diagnostics.DebuggerStepThrough]
     internal struct NativeBufferData
     {
         public int Length;
@@ -11,6 +11,27 @@
     }
 
     [System.Diagnostics.DebuggerStepThrough]
+    public unsafe readonly ref struct NativeBufferPtr<T>
+        where T : unmanaged
+    {
+        private readonly NativeBuffer _buffer;
+        public readonly int Offset;
+
+        public T* Value => (T*)(_buffer.RawPointer + Offset);
+
+        public readonly int Count;
+        public readonly int SizeInBytes;
+
+        internal NativeBufferPtr(NativeBuffer buffer, int offset, int count, int sizeInBytes)
+        {
+            _buffer = buffer;
+            Offset = offset;
+            Count = count;
+            SizeInBytes = sizeInBytes;
+        }
+    }
+
+    //[System.Diagnostics.DebuggerStepThrough]
     public unsafe struct NativeBuffer : IDisposable
     {
 
@@ -74,7 +95,7 @@
         /// <summary>
         /// adds the item to the list
         /// </summary>
-        public T* Add<T>(in T item)
+        public NativeBufferPtr<T> Add<T>(in T item)
             where T : unmanaged
         {
             Assert.EqualTo(Handle.IsValid, true);
@@ -86,18 +107,26 @@
             var location = (T*)EndPointer;
             *location = item;
             Length += sizeInBytes;
-            return location;
+            return new NativeBufferPtr<T>(this, len, 1, sizeInBytes);
+
         }
 
-        public unsafe T* Take<T>(int count)
+        public unsafe NativeBufferPtr<T> Take<T>(int count)
             where T : unmanaged
         {
             var sizeInBytes = SizeOf<T>.Size * count;
             EnsureCapacity(sizeInBytes);
 
+            var len = Length;
             var location = (T*)EndPointer;
             Length += sizeInBytes;
-            return location;
+            return new NativeBufferPtr<T>(this, len, count, sizeInBytes);
+        }
+
+        internal unsafe T* Get<T>(int offset)
+            where T : unmanaged
+        {
+            return (T*)RawPointer[offset];
         }
 
 
@@ -111,14 +140,16 @@
             if (neededLength < MaxLength)
                 return;
 
-            while (neededLength > MaxLength)
-                MaxLength = Math.Max(MaxLength * 3, 48) / 2;
+            var newSize = MaxLength;
+            while (neededLength > newSize)
+                newSize = Unsafe.Align16(Math.Max(newSize * 3, 48) / 2);
 
-            Resize(MaxLength);
+            Resize(newSize);
         }
 
         private void Resize(int newSize)
         {
+            //var oldLength = MaxLength;
             MaxLength = newSize;
             //copy data, get new handle, etc
             var newHandle = Allocator.Take(MaxLength);

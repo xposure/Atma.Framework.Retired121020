@@ -35,11 +35,11 @@ namespace Atma.Memory
         }
         public static void ConsumeForward(HeapAllocation* root)
         {
-            //Console.WriteLine($"  ConsumeForward {*root}");
+            System.Diagnostics.Debug.WriteLine($"  ConsumeForward {*root}");
             var ptr = root->Next;
             while (ptr != null)
             {
-                //Console.WriteLine($"  Walked forward {*ptr}");
+                System.Diagnostics.Debug.WriteLine($"  Walked forward {*ptr}");
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                 if (!ptr->IsFree)
                     break;
@@ -66,11 +66,12 @@ namespace Atma.Memory
             Assert.GreatherThan(blocks, 0);//make sure we are taking at least one block
             Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
 
-            var remainingBlocks = ptr->Blocks - blocks - 1;
-            if (remainingBlocks > 0)
+            var remainingBlocks = ptr->Blocks - blocks;
+            //Assert.LessThan(remainingBlocks, ptr->Blocks);
+            if (remainingBlocks > 1)
             {
                 var newBlock = &ptr[blocks + 1];
-                newBlock->Blocks = remainingBlocks;
+                newBlock->Blocks = remainingBlocks - 1;
                 newBlock->Previous = ptr;
                 newBlock->MagicSignature = MagicChecksum;
 
@@ -82,14 +83,15 @@ namespace Atma.Memory
                     newBlock->Next = ptr->Next;
                     ptr->Next->Previous = newBlock;
                 }
+                remainingBlocks = 0;
             }
             ptr->Flags |= 1;
-            ptr->Blocks = blocks;
+            ptr->Blocks = blocks + remainingBlocks;
         }
 
         public static HeapAllocation* FindFreeBackwards(HeapAllocation* ptr)
         {
-            //Console.WriteLine($"  FindFreeBackwards {*ptr}");
+            System.Diagnostics.Debug.WriteLine($"  FindFreeBackwards {*ptr}");
             while (ptr->Previous != null)
             {
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -97,7 +99,7 @@ namespace Atma.Memory
                     break;
 
                 ptr = ptr->Previous;
-                //Console.WriteLine($"    Walked back {*ptr}");
+                System.Diagnostics.Debug.WriteLine($"    Walked back {*ptr}");
             }
 
             Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -208,7 +210,7 @@ namespace Atma.Memory
             public void Free(ref AllocationHandle handle)
             {
                 ref var ptr = ref _allocations[handle.Id];
-                //Console.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
+                System.Diagnostics.Debug.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
                 Assert.EqualTo(ptr.Address, handle.Address);
                 Assert.EqualTo(ptr.Version & 0xfffffff, handle.Flags >> 4);
 
@@ -232,7 +234,7 @@ namespace Atma.Memory
                     {
                         heapPagePtr = new HeapPagePointer(id, ptr, i, _version);
                         var handle = new AllocationHandle(ptr, id, flags);
-                        //Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                        System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
 
                         return handle;
                     }
@@ -246,7 +248,7 @@ namespace Atma.Memory
 
                     heapPagePtr = new HeapPagePointer(id, ptr, _pages.Count - 1, _version);
                     var handle = new AllocationHandle(ptr, id, flags);
-                    //Console.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                    System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
                     return handle;
                 }
             }
@@ -310,6 +312,7 @@ namespace Atma.Memory
                 var largestFree = 0u;
                 while (ptr != null)
                 {
+                        System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {*ptr} }}");
                     if (ptr->IsFree)
                     {
                         var freeBlocks = ptr->Blocks;

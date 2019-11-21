@@ -69,13 +69,25 @@
         {
             Assert(IsAligned16(src));
             Assert(IsAligned16(dst));
-            Assert(IsAligned16(sizeInBytes));
+
+            var alignedSize = Align16(sizeInBytes);
+
+            //Assert(IsAligned16(sizeInBytes));
 
             var beginSrc = (int*)src;
             var beginDst = (int*)dst;
-            var endSrc = beginSrc + sizeInBytes / 4;
+            var endSrc = beginSrc + (sizeInBytes >> 2);
             while (beginSrc < endSrc)
                 *beginDst++ = *beginSrc++;
+
+            var remaining = alignedSize - sizeInBytes;
+            if(remaining > 0)
+            {
+                var beginSrcByte = (byte*)beginSrc;
+                var beginDstByte = (byte*)endSrc;
+                while(remaining -- > 0)
+                    *beginDstByte = *beginSrcByte;
+            }
         }
 
 

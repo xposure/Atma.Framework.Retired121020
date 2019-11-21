@@ -61,14 +61,14 @@ namespace Atma.Entities
             public CreateEntityCommand(int componentCount)
             {
                 CommandType = CommandTypes.CreateEntity;
-                Size = sizeof(CreateEntityCommand);
+                Size = 0;
                 ComponentCount = componentCount;
             }
 
             public static void Process(EntityManager entityManager, CreateEntityCommand* it, Span<uint> lastEntities)
             {
-                // System.Span<ComponentType> componentTypes = new System.Span<ComponentType>(it + 1, it->ComponentCount);
-                // entityManager.Create(componentTypes, lastEntities);
+                System.Span<ComponentType> componentTypes = new System.Span<ComponentType>(it + 1, it->ComponentCount);
+                entityManager.Create(componentTypes, lastEntities);
             }
         }
 
@@ -80,14 +80,13 @@ namespace Atma.Entities
             public RemoveEntityCommand(int dummy)
             {
                 CommandType = CommandTypes.RemoveEntity;
-                Size = sizeof(RemoveEntityCommand);
+                Size = 0;
             }
 
             public static void Process(EntityManager entityManager, RemoveEntityCommand* it, Span<uint> lastEntities)
             {
-                //TODO: bulk remove entity
-                // Assert.GreatherThan(lastEntities.Length, 0);
-                // entityManager.Remove(lastEntities);
+                Assert.GreatherThan(lastEntities.Length, 0);
+                entityManager.Remove(lastEntities);
             }
         }
 
@@ -210,6 +209,8 @@ namespace Atma.Entities
 
         private readonly NativeBuffer _buffer;
 
+        //internal NativeSlice<EntityRef> _currentEntites;
+
         public EntityCommandBuffer(IAllocator allocator, int sizeInBytes = 65536)
         {
             _buffer = new NativeBuffer(allocator, sizeInBytes);
@@ -223,15 +224,12 @@ namespace Atma.Entities
 
             ReserveSetEntity(count);
 
-            //if this buffer array resizes after the pointer is taken, its going to be invalid...
-            var reserveSize = sizeof(CreateEntityCommand) + sizeof(ComponentType) * componentTypes.Length;
-            _buffer.EnsureCapacity(reserveSize);
-
-            CreateEntityCommand* it = _buffer.Add(new CreateEntityCommand(componentTypes.Length));
-
+            var ptr = _buffer.Add(new CreateEntityCommand(componentTypes.Length));
+            var data = _buffer.Take<ComponentType>(componentTypes.Length);
             for (var i = 0; i < componentTypes.Length; i++)
-                _buffer.Add(componentTypes[i]);
-            it->Size += sizeof(ComponentType);
+                data.Value[i] = componentTypes[i];
+
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
 
@@ -243,9 +241,10 @@ namespace Atma.Entities
 
         private Span<uint> ReserveSetEntity(int count)
         {
-            _buffer.EnsureCapacity(sizeof(SetEntityCommand) + sizeof(uint) * count);
             var ptr = _buffer.Add(new SetEntityCommand(count));
-            return new Span<uint>(ptr + 1, count);
+            var data = _buffer.Take<uint>(count);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+            return new Span<uint>(data.Value, count);
         }
 
         public void SetEntity(uint entity)
@@ -263,98 +262,103 @@ namespace Atma.Entities
 
         public void RemoveEntity(uint entity)
         {
-            _buffer.EnsureCapacity(sizeof(RemoveEntityCommand) + sizeof(uint));
             SetEntity(entity);
+            var ptr = _buffer.Add(new RemoveEntityCommand(0));
+            ptr.Value->Size = ptr.SizeInBytes;
+        }
 
+
+        public void RemoveEntity(Span<uint> entities)
+        {
+            SetEntity(entities);
             _buffer.Add(new RemoveEntityCommand(0));
+            var ptr = _buffer.Add(new RemoveEntityCommand(0));
+            ptr.Value->Size = ptr.SizeInBytes;
         }
 
-        public void ReplaceComponent<T>(in T t)
-            where T : unmanaged
-        {
-            var reserveSize = sizeof(ReplaceComponentCommand) + SizeOf<T>.Size;
-            _buffer.EnsureCapacity(reserveSize);
+        // public void ReplaceComponent<T>(in T t)
+        //     where T : unmanaged
+        // {
+        //     var type = ComponentType<T>.Type;
+        //     var ptr = _buffer.Add(new ReplaceComponentCommand(type, 1));
+        //     var data = _buffer.Add(t);
+        //     ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        // }
 
-            var type = ComponentType<T>.Type;
-            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(type, 1));
-            _buffer.Add(t);
-            it->Size += type.Size;
-        }
+        // public void ReplaceComponent<T>(uint entity, in T t)
+        //     where T : unmanaged
+        // {
+        //     SetEntity(entity);
 
-        public void ReplaceComponent<T>(uint entity, in T t)
-            where T : unmanaged
-        {
-            SetEntity(entity);
+        //     var reserveSize = sizeof(ReplaceComponentCommand) + SizeOf<T>.Size;
+        //     _buffer.EnsureCapacity(reserveSize);
 
-            var reserveSize = sizeof(ReplaceComponentCommand) + SizeOf<T>.Size;
-            _buffer.EnsureCapacity(reserveSize);
+        //     var type = ComponentType<T>.Type;
+        //     ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(type, 1));
+        //     _buffer.Add(t);
+        //     it->Size += type.Size;
+        // }
 
-            var type = ComponentType<T>.Type;
-            ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(type, 1));
-            _buffer.Add(t);
-            it->Size += type.Size;
-        }
+        // public void RemoveComponent<T>(uint entity)
+        //     where T : unmanaged
+        // {
+        //     SetEntity(entity);
 
-        public void RemoveComponent<T>(uint entity)
-            where T : unmanaged
-        {
-            SetEntity(entity);
+        //     var type = ComponentType<T>.Type;
+        //     _buffer.Add(new RemoveComponentCommand(type.ID));
+        // }
 
-            var type = ComponentType<T>.Type;
-            _buffer.Add(new RemoveComponentCommand(type.ID));
-        }
+        // public void AssignComponent<T>(in T t)
+        //     where T : unmanaged
+        // {
+        //     var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
+        //     _buffer.EnsureCapacity(reserveSize);
 
-        public void AssignComponent<T>(in T t)
-            where T : unmanaged
-        {
-            var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
-            _buffer.EnsureCapacity(reserveSize);
+        //     var type = ComponentType<T>.Type;
+        //     AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
+        //     _buffer.Add(t);
+        //     it->Size += type.Size;
+        // }
 
-            var type = ComponentType<T>.Type;
-            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
-            _buffer.Add(t);
-            it->Size += type.Size;
-        }
+        // public void AssignComponent<T>(uint entity, in T t)
+        //     where T : unmanaged
+        // {
+        //     SetEntity(entity);
 
-        public void AssignComponent<T>(uint entity, in T t)
-            where T : unmanaged
-        {
-            SetEntity(entity);
+        //     var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
+        //     _buffer.EnsureCapacity(reserveSize);
 
-            var reserveSize = sizeof(AssignComponentCommand) + SizeOf<T>.Size;
-            _buffer.EnsureCapacity(reserveSize);
+        //     var type = ComponentType<T>.Type;
+        //     AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
+        //     _buffer.Add(t);
+        //     it->Size += type.Size;
+        // }
 
-            var type = ComponentType<T>.Type;
-            AssignComponentCommand* it = _buffer.Add(new AssignComponentCommand(type, 1));
-            _buffer.Add(t);
-            it->Size += type.Size;
-        }
+        // public void UpdateComponent<T>(in T t)
+        //    where T : unmanaged
+        // {
+        //     var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
+        //     _buffer.EnsureCapacity(reserveSize);
 
-        public void UpdateComponent<T>(in T t)
-           where T : unmanaged
-        {
-            var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
-            _buffer.EnsureCapacity(reserveSize);
+        //     var type = ComponentType<T>.Type;
+        //     UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
+        //     _buffer.Add(t);
+        //     it->Size += type.Size;
+        // }
 
-            var type = ComponentType<T>.Type;
-            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
-            _buffer.Add(t);
-            it->Size += type.Size;
-        }
+        // public void UpdateComponent<T>(uint entity, in T t)
+        //    where T : unmanaged
+        // {
+        //     SetEntity(entity);
 
-        public void UpdateComponent<T>(uint entity, in T t)
-           where T : unmanaged
-        {
-            SetEntity(entity);
+        //     var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
+        //     _buffer.EnsureCapacity(reserveSize);
 
-            var reserveSize = sizeof(UpdateComponentCommand) + SizeOf<T>.Size;
-            _buffer.EnsureCapacity(reserveSize);
-
-            var type = ComponentType<T>.Type;
-            UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
-            _buffer.Add(t);
-            it->Size += type.Size;
-        }
+        //     var type = ComponentType<T>.Type;
+        //     UpdateComponentCommand* it = _buffer.Add(new UpdateComponentCommand(type, 1));
+        //     _buffer.Add(t);
+        //     it->Size += type.Size;
+        // }
 
         public void Execute(EntityManager em)
         {
@@ -389,6 +393,7 @@ namespace Atma.Entities
                         UpdateComponentCommand.Process(em, (UpdateComponentCommand*)cmd, lastEntities);
                         break;
                 }
+                Assert.GreatherThan(cmd->Size, 0);
                 rawPtr += cmd->Size;
             }
 

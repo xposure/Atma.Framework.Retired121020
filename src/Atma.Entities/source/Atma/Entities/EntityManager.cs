@@ -7,7 +7,15 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    public sealed partial class EntityManager : UnmanagedDispose//, IEntityManager2
+    public interface IEntityManager : IDisposable
+    {
+        uint Create(in EntitySpec spec);
+        uint Create(Span<ComponentType> componentTypes);
+
+
+    }
+
+    public sealed partial class EntityManager : UnmanagedDispose, IEntityManager
     {
         private const int BATCH_SIZE = 256;
 
