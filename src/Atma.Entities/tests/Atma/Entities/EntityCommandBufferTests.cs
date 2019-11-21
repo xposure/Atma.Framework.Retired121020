@@ -95,168 +95,110 @@ namespace Atma.Entities
             em.EntityArrays[0].EntityCount.ShouldBe(0);
         }
 
+        [Fact]
+        public void ShouldRemoveEntityOnLastComponentOne()
+        {
 
-        //         [Fact]
-        //         public void ShouldCreateEntity()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+        }
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
+        [Fact]
+        public void ShouldRemoveEntityOnLastComponentMany()
+        {
 
-        //             //act
-        //             buffer.CreateEntity(componentTypes);
-        //             buffer.Execute(em);
+        }
 
-        //             //assert
-        //             em.EntityCount.ShouldBe(1);
-        //         }
+        [Fact]
+        public void ShouldRemoveEntityOnLastComponentPartial()
+        {
 
-        //         [Fact]
-        //         public void ShouldRemoveEntity()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+        }
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
-        //             var entity = em.Create(componentTypes);
+        [Fact]
+        public void ShouldReplaceOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
 
-        //             //act
-        //             buffer.RemoveEntity(entity);
-        //             buffer.Execute(em);
+            var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
-        //             //assert
-        //             em.EntityCount.ShouldBe(0);
-        //         }
+            var id = em.Create(spec);
 
-        //         [Fact]
-        //         public void ShouldAssignComponent()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+            buffer.ReplaceComponent(id, new Position(10, 10));
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type };
+            buffer.Execute(em);
 
-        //             //act
-        //             buffer.CreateEntity(componentTypes);
-        //             buffer.AssignComponent(new Velocity(100, 200));
-        //             buffer.Execute(em);
+            em.EntityCount.ShouldBe(1);
+            em.EntityArrays[0].EntityCount.ShouldBe(1);
+            em.Get<Position>(id).ShouldBe(new Position(10, 10));
+        }
 
-        //             var entity = em.Create(componentTypes);
-        //             buffer.AssignComponent(entity, new Velocity(200, 100));
-        //             buffer.Execute(em);
+        [Fact]
+        public void ShouldReplaceManyWithOne()
+        {
 
-        //             //assert
-        //             var v = em.Get<Velocity>(1);
-        //             v.VX.ShouldBe(100);
-        //             v.VY.ShouldBe(200);
+        }
 
-        //             v = em.Get<Velocity>(entity);
-        //             v.VX.ShouldBe(200);
-        //             v.VY.ShouldBe(100);
-        //         }
+        [Fact]
+        public void SouldReplaceManyWithMany()
+        {
 
-        //         [Fact]
-        //         public void ShouldReplaceComponent()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+        }
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type };
+        [Fact]
+        public void ShouldThrowReplaceManyWithMismatchLength()
+        {
 
-        //             //act
-        //             buffer.CreateEntity(componentTypes);
-        //             buffer.ReplaceComponent(new Position(100, 200));
-        //             buffer.Execute(em);
+        }
 
-        //             var entity = em.Create(componentTypes);
-        //             buffer.ReplaceComponent(entity, new Position(200, 100));
-        //             buffer.Execute(em);
+        [Fact]
+        public void ShouldThrowReplaceOneWithOutComponent()
+        {
 
-        //             //assert
-        //             var p = em.Get<Position>(1);
-        //             p.X.ShouldBe(100);
-        //             p.Y.ShouldBe(200);
+        }
 
-        //             p = em.Get<Position>(entity);
-        //             p.X.ShouldBe(200);
-        //             p.Y.ShouldBe(100);
-        //         }
+        [Fact]
+        public void ShouldThrowReplaceOneWithMany()
+        {
 
-        //         [Fact]
-        //         public void ShouldUpdateComponent()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+        }
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Velocity>.Type };
 
-        //             //act
-        //             buffer.CreateEntity(componentTypes);
-        //             buffer.UpdateComponent(new Position(100, 200));
-        //             buffer.Execute(em);
+        [Fact]
+        public void ShouldAssignOne()
+        {
 
-        //             var entity = em.Create(componentTypes);
-        //             buffer.UpdateComponent(entity, new Position(200, 100));
-        //             buffer.Execute(em);
+        }
 
-        //             //assert
-        //             var p = em.Get<Position>(1);
-        //             p.X.ShouldBe(100);
-        //             p.Y.ShouldBe(200);
+        [Fact]
+        public void ShouldAssignManyWithOne()
+        {
 
-        //             p = em.Get<Position>(entity);
-        //             p.X.ShouldBe(200);
-        //             p.Y.ShouldBe(100);
-        //         }
+        }
 
-        //         [Fact]
-        //         public void ShouldRemoveComponent()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+        [Fact]
+        public void SouldAssignManyWithMany()
+        {
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
-        //             var entity = em.Create(componentTypes);
+        }
 
-        //             //act
-        //             buffer.RemoveComponent<Position>(entity);
-        //             buffer.Execute(em);
+        [Fact]
+        public void ShouldThrowAssignManyWithMismatchLength()
+        {
 
-        //             //assert
-        //             em.EntityCount.ShouldBe(1);
-        //             em.Has<Position>(1).ShouldBe(false);
-        //         }
+        }
 
-        //         [Fact]
-        //         public void ShouldRemoveEntityOnLastComponent()
-        //         {
-        //             //arrange
-        //             using var memory = new HeapAllocator(_logFactory);
-        //             using var buffer = new EntityCommandBuffer(memory);
-        //             using var em = new EntityManager(_logFactory, memory);
+        [Fact]
+        public void ShouldThrowAssignOneWithComponent()
+        {
 
-        //             Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type };
-        //             var entity = em.Create(componentTypes);
+        }
 
-        //             //act
-        //             buffer.RemoveComponent<Position>(entity);
-        //             buffer.Execute(em);
+        [Fact]
+        public void ShouldThrowAssignOneWithMany()
+        {
 
-        //             //assert
-        //             em.EntityCount.ShouldBe(0);
-        //         }
+        }
+
     }
 }

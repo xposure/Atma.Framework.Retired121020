@@ -107,16 +107,16 @@ namespace Atma.Entities
 
             public static void Process(EntityManager entityManager, ReplaceComponentCommand* it, Span<uint> lastEntities)
             {
-                // Assert.GreatherThan(lastEntities.Length, 0);
-                // if (it->DataCount == 1)
-                // {
-                //     entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, true, false);
-                // }
-                // else
-                // {
-                //     Assert.EqualTo(lastEntities.Length, it->DataCount);
-                //     entityManager.SetComponentInternal(&it->ComponentType, lastEntities, it + 1, false, true);
-                // }
+                Assert.GreatherThan(lastEntities.Length, 0);
+                if (it->DataCount == 1)
+                {
+                    entityManager.SetComponentData(&it->ComponentType, lastEntities, it + 1, false, false);
+                }
+                else
+                {
+                    Assert.EqualTo(lastEntities.Length, it->DataCount);
+                    entityManager.SetComponentData(&it->ComponentType, lastEntities, it + 1, true, true);
+                }
             }
         }
 
@@ -276,28 +276,25 @@ namespace Atma.Entities
             ptr.Value->Size = ptr.SizeInBytes;
         }
 
-        // public void ReplaceComponent<T>(in T t)
-        //     where T : unmanaged
-        // {
-        //     var type = ComponentType<T>.Type;
-        //     var ptr = _buffer.Add(new ReplaceComponentCommand(type, 1));
-        //     var data = _buffer.Add(t);
-        //     ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
-        // }
+        public void ReplaceComponent<T>(in T t)
+            where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new ReplaceComponentCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
-        // public void ReplaceComponent<T>(uint entity, in T t)
-        //     where T : unmanaged
-        // {
-        //     SetEntity(entity);
+        public void ReplaceComponent<T>(uint entity, in T t)
+            where T : unmanaged
+        {
+            SetEntity(entity);
 
-        //     var reserveSize = sizeof(ReplaceComponentCommand) + SizeOf<T>.Size;
-        //     _buffer.EnsureCapacity(reserveSize);
-
-        //     var type = ComponentType<T>.Type;
-        //     ReplaceComponentCommand* it = _buffer.Add(new ReplaceComponentCommand(type, 1));
-        //     _buffer.Add(t);
-        //     it->Size += type.Size;
-        // }
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new ReplaceComponentCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
         // public void RemoveComponent<T>(uint entity)
         //     where T : unmanaged
@@ -305,7 +302,8 @@ namespace Atma.Entities
         //     SetEntity(entity);
 
         //     var type = ComponentType<T>.Type;
-        //     _buffer.Add(new RemoveComponentCommand(type.ID));
+        //     var ptr = _buffer.Add(new RemoveComponentCommand(type.ID));
+        //     ptr.Value->Size = ptr.SizeInBytes;
         // }
 
         // public void AssignComponent<T>(in T t)
