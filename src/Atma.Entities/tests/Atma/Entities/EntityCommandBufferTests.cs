@@ -55,7 +55,7 @@ namespace Atma.Entities
         }
 
         [Fact]
-        public void ShouldRemoveEntity()
+        public void ShouldDeleteEntity()
         {
             using var memory = new HeapAllocator(_logFactory);
             using var buffer = new EntityCommandBuffer(memory);
@@ -74,7 +74,7 @@ namespace Atma.Entities
         }
 
         [Fact]
-        public void ShouldRemoveManyEntities()
+        public void ShouldDeleteManyEntities()
         {
             using var memory = new HeapAllocator(_logFactory);
             using var buffer = new EntityCommandBuffer(memory);
@@ -104,7 +104,7 @@ namespace Atma.Entities
         }
 
         [Fact]
-        public void ShouldRemoveEntityOnLastComponentOne()
+        public void ShouldDeleteEntityOnLastComponentOne()
         {
             using var memory = new HeapAllocator(_logFactory);
             using var buffer = new EntityCommandBuffer(memory);
@@ -171,7 +171,7 @@ namespace Atma.Entities
         }
 
         [Fact]
-        public void SouldReplaceManyWithMany()
+        public void ShouldReplaceManyWithMany()
         {
             using var memory = new HeapAllocator(_logFactory);
             using var buffer = new EntityCommandBuffer(memory);
@@ -264,7 +264,7 @@ namespace Atma.Entities
         }
 
         [Fact]
-        public void SouldAssignManyWithMany()
+        public void ShouldAssignManyWithMany()
         {
             using var memory = new HeapAllocator(_logFactory);
             using var buffer = new EntityCommandBuffer(memory);
@@ -298,7 +298,7 @@ namespace Atma.Entities
             entities1.All(x => idsToChange.Contains(x.ID)).ShouldBe(true);
 
             var positionResults = idsToChange.Select(id => em.Get<Position>(id)).ToArray();
-            positions.ShouldBe(positions);
+            positionResults.ShouldBe(positions);
         }
 
 
@@ -320,5 +320,213 @@ namespace Atma.Entities
 
         // }
 
+
+        [Fact]
+        public void ShouldUpdateOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Velocity>.Type);
+
+            var id = em.Create(spec);
+
+            buffer.Update(id, new Position(10, 10));
+
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(1);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.Get<Position>(id).ShouldBe(new Position(10, 10));
+        }
+
+        [Fact]
+        public void ShouldUpdateManyWithOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Velocity>.Type);
+
+            var position = new Position(10, 10);
+
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            var idsToChange = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
+            var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
+
+            buffer.Update(idsToChange, position);
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(samples);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToChange.Length);
+            em.EntityArrays[1].EntityCount.ShouldBe(idsToChange.Length);
+
+            var entities0 = em.EntityArrays[0].AllChunks[0].Entities.ToArray();
+            entities0.Any(x => idsToChange.Contains(x.ID)).ShouldBe(false);
+            entities0.All(x => remainingIds.Contains(x.ID)).ShouldBe(true);
+
+            var entities1 = em.EntityArrays[1].AllChunks[0].Entities.ToArray();
+            entities1.Any(x => remainingIds.Contains(x.ID)).ShouldBe(false);
+            entities1.All(x => idsToChange.Contains(x.ID)).ShouldBe(true);
+
+            var positionResults = idsToChange.Select(id => em.Get<Position>(id)).ToArray();
+            positionResults.ShouldAllBe(x => x == position);
+        }
+
+        [Fact]
+        public void ShouldUpdateManyWithMany()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Velocity>.Type);
+
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            var idsToChange = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
+            var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
+            var positions = idsToChange.Select(x => new Position((int)x, 10)).ToArray();
+
+            buffer.Update(idsToChange, positions.AsSpan());
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(samples);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToChange.Length);
+            em.EntityArrays[1].EntityCount.ShouldBe(idsToChange.Length);
+
+            var entities0 = em.EntityArrays[0].AllChunks[0].Entities.ToArray();
+            entities0.Any(x => idsToChange.Contains(x.ID)).ShouldBe(false);
+            entities0.All(x => remainingIds.Contains(x.ID)).ShouldBe(true);
+
+            var entities1 = em.EntityArrays[1].AllChunks[0].Entities.ToArray();
+            entities1.Any(x => remainingIds.Contains(x.ID)).ShouldBe(false);
+            entities1.All(x => idsToChange.Contains(x.ID)).ShouldBe(true);
+
+            var positionResults = idsToChange.Select(id => em.Get<Position>(id)).ToArray();
+            positionResults.ShouldBe(positions);
+        }
+
+        [Fact]
+        public void ShouldRemoveOne()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Velocity>.Type, ComponentType<Position>.Type);
+
+            var id = em.Create(spec);
+
+            buffer.Remove<Position>(id);
+
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(1);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(0);
+            em.EntityArrays[1].EntityCount.ShouldBe(1);
+            em.Has<Position>(id).ShouldBe(false);
+        }
+
+        [Fact]
+        public void ShouldRemoveMany()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Velocity>.Type, ComponentType<Position>.Type);
+
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            var idsToChange = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
+            var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
+
+            buffer.Remove<Position>(idsToChange);
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(samples);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToChange.Length);
+            em.EntityArrays[1].EntityCount.ShouldBe(idsToChange.Length);
+
+            var entities0 = em.EntityArrays[0].AllChunks[0].Entities.ToArray();
+            entities0.Any(x => idsToChange.Contains(x.ID)).ShouldBe(false);
+            entities0.All(x => remainingIds.Contains(x.ID)).ShouldBe(true);
+
+            var entities1 = em.EntityArrays[1].AllChunks[0].Entities.ToArray();
+            entities1.Any(x => remainingIds.Contains(x.ID)).ShouldBe(false);
+            entities1.All(x => idsToChange.Contains(x.ID)).ShouldBe(true);
+
+            var positionResults = idsToChange.Select(id => em.Has<Position>(id)).ToArray();
+            positionResults.ShouldAllBe(x => x == false);
+        }
+
+        private struct Filler
+        {
+            public float z, w;
+        }
+
+        [Fact]
+        public void ShouldRemoveManyWithMany()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var buffer = new EntityCommandBuffer(memory);
+            using var em = new EntityManager(_logFactory, memory);
+
+            var spec = new EntitySpec(ComponentType<Velocity>.Type, ComponentType<Position>.Type, ComponentType<Filler>.Type);
+
+            const int samples = 32;
+
+            var ids = new uint[samples];
+            em.Create(spec, ids);
+
+            var idsToChange = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
+            var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
+
+            var typesToRemove = new[] { spec.ComponentTypes[1], spec.ComponentTypes[2] };
+            buffer.Remove(idsToChange, typesToRemove);
+            buffer.Execute(em);
+
+            em.EntityCount.ShouldBe(samples);
+            em.EntityArrays.Count.ShouldBe(2);
+            em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToChange.Length);
+            em.EntityArrays[1].EntityCount.ShouldBe(idsToChange.Length);
+
+            var entities0 = em.EntityArrays[0].AllChunks[0].Entities.ToArray();
+            entities0.Any(x => idsToChange.Contains(x.ID)).ShouldBe(false);
+            entities0.All(x => remainingIds.Contains(x.ID)).ShouldBe(true);
+
+            var entities1 = em.EntityArrays[1].AllChunks[0].Entities.ToArray();
+            entities1.Any(x => remainingIds.Contains(x.ID)).ShouldBe(false);
+            entities1.All(x => idsToChange.Contains(x.ID)).ShouldBe(true);
+
+            var positionResults = idsToChange.Select(id => em.Has<Position>(id)).ToArray();
+            positionResults.ShouldAllBe(x => x == false);
+
+            var fillerResults = idsToChange.Select(id => em.Has<Filler>(id)).ToArray();
+            fillerResults.ShouldAllBe(x => x == false);
+
+            var velocityResults = idsToChange.Select(id => em.Has<Velocity>(id)).ToArray();
+            velocityResults.ShouldAllBe(x => x == true);
+
+        }
     }
 }

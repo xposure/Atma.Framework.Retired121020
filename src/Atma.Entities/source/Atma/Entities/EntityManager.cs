@@ -11,8 +11,6 @@
     {
         uint Create(in EntitySpec spec);
         uint Create(Span<ComponentType> componentTypes);
-
-
     }
 
     public sealed partial class EntityManager : UnmanagedDispose, IEntityManager
@@ -494,7 +492,11 @@
                 {
                     if (batch.Length > 0)
                     {
-                        Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAny(componentTypes), !addComponent);
+                        if (addComponent)
+                            Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAny(componentTypes), false);
+                        else
+                            Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAll(componentTypes), true);
+
                         MoveInternal(batch, srcSpecIndex, componentTypes, addComponent);
                     }
 
@@ -507,7 +509,11 @@
 
             if (batch.Length > 0)
             {
-                Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAny(componentTypes), !addComponent);
+                if (addComponent)
+                    Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAny(componentTypes), false);
+                else
+                    Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAll(componentTypes), true);
+
                 MoveInternal(batch, srcSpecIndex, componentTypes, addComponent);
             }
         }

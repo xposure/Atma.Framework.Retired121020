@@ -13,7 +13,8 @@ namespace Atma.Entities
             Assign,
             Update,
             Replace,
-            Remove
+            Remove,
+            Move
         }
 
         private struct Command
@@ -89,6 +90,27 @@ namespace Atma.Entities
                 entityManager.Delete(lastEntities);
             }
         }
+
+        private struct MoveCommand
+        {
+            public CommandTypes CommandType;
+            public int Size;
+            public int ComponentCount;
+            public MoveCommand(int componentCount)
+            {
+                CommandType = CommandTypes.Move;
+                Size = 0;
+                ComponentCount = componentCount;
+            }
+
+            public static void Process(EntityManager entityManager, MoveCommand* it, Span<uint> lastEntities)
+            {
+                Assert.GreatherThan(lastEntities.Length, 0);
+                Assert.GreatherThan(it->ComponentCount, 0);
+                entityManager.MoveInternal(lastEntities, new Span<ComponentType>(it, 1), true);
+            }
+        }
+
 
         private struct ReplaceCommand
         {
@@ -304,6 +326,17 @@ namespace Atma.Entities
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
+        public void Remove<T>(Span<uint> entities)
+            where T : unmanaged
+        {
+            Set(entities);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new RemoveCommand(1));
+            var data = _buffer.Add(type);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
         public void Remove(uint entity, Span<ComponentType> componentTypes)
         {
             Set(entity);
@@ -322,6 +355,23 @@ namespace Atma.Entities
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
+        public void Move(uint entity, Span<ComponentType> componentTypes)
+        {
+            Set(entity);
+
+            var ptr = _buffer.Add(new MoveCommand(componentTypes.Length));
+            var data = _buffer.Add(componentTypes);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Move(Span<uint> entities, Span<ComponentType> componentTypes)
+        {
+            Set(entities);
+
+            var ptr = _buffer.Add(new MoveCommand(componentTypes.Length));
+            var data = _buffer.Add(componentTypes);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
 
         public void Assign<T>(in T t)
             where T : unmanaged
@@ -365,6 +415,49 @@ namespace Atma.Entities
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
+
+        public void Update<T>(in T t)
+            where T : unmanaged
+        {
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new UpdateCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Update<T>(uint entity, in T t)
+            where T : unmanaged
+        {
+            Set(entity);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new UpdateCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Update<T>(Span<uint> entity, in T t)
+            where T : unmanaged
+        {
+            Set(entity);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new UpdateCommand(type, 1));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
+        public void Update<T>(Span<uint> entity, Span<T> t)
+            where T : unmanaged
+        {
+            Set(entity);
+
+            var type = ComponentType<T>.Type;
+            var ptr = _buffer.Add(new UpdateCommand(type, t.Length));
+            var data = _buffer.Add(t);
+            ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
+        }
+
         public void Execute(EntityManager em)
         {
             var rawPtr = _buffer.RawPointer;
@@ -394,9 +487,16 @@ namespace Atma.Entities
                         //removing the last component of an entity has the side effect of deleting it, could cause bugs
                         RemoveCommand.Process(em, (RemoveCommand*)cmd, lastEntities);
                         break;
+                    case CommandTypes.Move:
+                        //removing the last component of an entity has the side effect of deleting it, could cause bugs
+                        MoveCommand.Process(em, (MoveCommand*)cmd, lastEntities);
+                        break;
                     case CommandTypes.Update:
                         UpdateCommand.Process(em, (UpdateCommand*)cmd, lastEntities);
                         break;
+
+                    default:
+                        throw new NotImplementedException();
                 }
                 Assert.GreatherThan(cmd->Size, 0);
                 rawPtr += cmd->Size;
