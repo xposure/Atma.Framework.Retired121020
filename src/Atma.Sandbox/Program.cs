@@ -101,7 +101,7 @@
 
             });
 
-            var test2 = new Test2();
+            //var test2 = new Test2();
             //test2.Execute(1);
 
             var type = typeof(Test);
