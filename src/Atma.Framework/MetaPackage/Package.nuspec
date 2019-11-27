@@ -10,9 +10,8 @@
     <dependencies>
       <dependency id="Atma.Common" version="0.1.5" />
       <dependency id="Atma.Memory" version="0.1.5" />
-      <dependency id="Atma.Jobs" version="0.1.5" />
       <dependency id="Atma.Entities" version="0.1.5" />
-      <dependency id="Atma.DI" version="0.1.5" />
+      <dependency id="Atma.Systems" version="0.1.5" />
     </dependencies>
   </metadata>
 </package>
