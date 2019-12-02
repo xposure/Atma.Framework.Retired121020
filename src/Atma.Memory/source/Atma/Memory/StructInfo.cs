@@ -16,17 +16,12 @@ namespace Atma.Memory
         public readonly int Size;
         public readonly UnmanagedType UnmanagedType;
         public readonly bool IsWritable;
-        public readonly bool IsPointer;
 
     }
-
-
-
 
     public class StructInfo<T>
     {
         public static readonly StructInfo info;
-
 
         static StructInfo()
         {

@@ -10,6 +10,7 @@
     using static Atma.Debug;
     using Microsoft.Extensions.Logging;
     using System.Linq.Expressions;
+    using Atma.Common;
 
     public static class Helpers
     {
@@ -23,61 +24,166 @@
     class Program
     {
 
-        public struct Position
+        public abstract class SystemVariable
         {
-            public float X;
-            public float Y;
+            public abstract Type VariableType { get; }
+        }
 
-            public Position(float x, float y)
+        public sealed class SystemVariable<T> : SystemVariable
+        {
+            private readonly static Type _type = typeof(T);
+
+            public override Type VariableType => _type;
+
+            public T Value;
+
+            public SystemVariable(T value)
             {
-                X = x;
-                Y = y;
+                Value = value;
             }
+
+
         }
 
-        public struct Velocity
+        public sealed class SystemManager
         {
-            public float VX;
-            public float VY;
+            private ILoggerFactory _logFactory;
+            private ILogger _logger;
 
-            public Velocity(float vx, float vy)
+            private LookupList<SystemVariable> _variables = new LookupList<SystemVariable>();
+
+            public SystemManager(ILoggerFactory logFactory)
             {
-                VX = vx;
-                VY = vy;
+                _logger = logFactory.CreateLogger<SystemManager>();
             }
-        }
 
-        public interface ISystemProcessor
-        {
-
-        }
-
-        public struct Test //: ISystemProcessor
-        {
-            // public readonly ReadOnlySpan<EntityRef> entities;
-            // public readonly Span<Position> positions;
-            // public readonly ReadOnlySpan<Velocity> velocities;
-
-            public void Execute(int length)
+            public T Variable<T>(string name)
             {
-                Console.WriteLine("hello");
+                var id = name.GetHashCode();
+                if (_variables.TryGetValue(id, out var sys))
+                {
+                    var sysVar = sys as SystemVariable<T>;
+                    if (sysVar == null)
+                    {
+                        _logger.LogError($"Variable [{name}] type mismatch, expected [{typeof(T).FullName}] but got variable type [{sys.VariableType.FullName}].");
+                        return default;
+                    }
+
+                    return sysVar.Value;
+                }
+                _logger.LogWarning($"Variable [{name}] was not found, returning default. Register the variable in the system manager.");
+                return default;
             }
+
+            public void Variable<T>(string name, T value)
+            {
+                var id = name.GetHashCode();
+                if (!_variables.TryGetValue(id, out var sys))
+                {
+                    _variables.Add(id, new SystemVariable<T>(value));
+                    return;
+                }
+
+                var sysVar = sys as SystemVariable<T>;
+                if (sysVar == null)
+                {
+                    _logger.LogError($"Variable [{name}] type mismatch, expected [{typeof(T).FullName}] but got variable type [{sys.VariableType.FullName}].");
+                    return;
+                }
+
+                sysVar.Value = value;
+            }
+
         }
 
-        public readonly ref partial struct Test2 //: ISystemProcessor
+        public interface ISystem
         {
-            public readonly ReadOnlySpan<EntityRef> entities;
-            public readonly Span<Position> positions;
-            public readonly ReadOnlySpan<Velocity> velocities;
+            void Tick(SystemManager systemManager, EntityManager entityManager);
+        }
+
+
+        //file: VelocitySystem.ecs
+        //namespace (optional, get folders, get project namespace?)
+        //variable dt
+        //before <system>
+        //after <system>
+        //group <group>
+        //write position
+        //read velocity
+        //entities entities
+        //buffer buffer [65536]
+
+        //generate file: obj/VelocitySystem.cs
+        public ref partial struct VelocitySystemProcessor
+        {
+            public float dt;
+            public Span<Position> positions;
+            public ReadOnlySpan<EntityRef> entites;
+            public ReadOnlySpan<Velocity> velocities;
+            public EntityCommandBuffer buffer;
+
+            public static void Process(SystemManager sm, EntityManager em)
+            {
+                var processor = new VelocitySystemProcessor();
+                processor.dt = sm.Variable<float>("dt");
+                processor.buffer = em.CreateCommandBuffer();
+
+                Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
+                var entityArrays = em.EntityArrays;
+                for (var i = 0; i < entityArrays.Count; i++)
+                {
+                    var array = entityArrays[i];
+                    if (array.Specification.HasAll(componentTypes))
+                    {
+                        var c0 = array.Specification.GetComponentIndex(componentTypes[0]);
+                        var c1 = array.Specification.GetComponentIndex(componentTypes[1]);
+                        for (var k = 0; k < array.AllChunks.Count; k++)
+                        {
+                            var chunk = array.AllChunks[k];
+                            var length = chunk.Count;
+                            var entities = chunk.Entities;
+                            var t0 = chunk.GetComponentData<Position>(c0, componentTypes[0]);
+                            var t1 = chunk.GetComponentData<Velocity>(c1, componentTypes[1]);
+
+                            processor.Execute(entities.Length);
+                        }
+                    }
+                }
+
+                processor.buffer.Execute(em);
+            }
 
             partial void Execute(int length);
         }
 
-        public readonly ref partial struct Test2
+        public ref partial struct VelocitySystemProcessor
         {
             partial void Execute(int length)
             {
-                Console.WriteLine("Hello world!");
+                for (var i = 0; i < length; i++)
+                {
+                    ref readonly var e = ref entites[i];
+                    ref var p = ref positions[i];
+                    ref readonly var v = ref velocities[i];
+                    p.X += v.X * dt;
+                    p.Y += v.Y * dt;
+                }
+            }
+        }
+
+        public sealed class VelocitySystem : ISystem
+        {
+            public object Dependencies
+            {
+                get
+                {
+                    return null;
+                }
+            }
+
+            public void Tick(SystemManager systemManager, EntityManager entityManager)
+            {
+                VelocitySystemProcessor.Process(systemManager, entityManager);
             }
         }
 
@@ -104,9 +210,9 @@
             //var test2 = new Test2();
             //test2.Execute(1);
 
-            var type = typeof(Test);
+            // var type = typeof(Test);
 
-            type.GetConstructors().WriteLine();
+            // type.GetConstructors().WriteLine();
 
 
             em.Dispose();

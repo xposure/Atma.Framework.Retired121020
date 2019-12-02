@@ -1,3 +1,5 @@
+//#define ALL
+
 namespace Atma.Entities
 {
     using System;
@@ -330,6 +332,17 @@ namespace Atma.Entities
         {
         }
 
+        [Benchmark(Baseline = true)]
+        public void PtrsAndLength()
+        {
+            var processor = new SystemRawPtrAndLength();
+            processor.dt = dt;
+            processor.position = _positions.RawPointer;
+            processor.velocity = _velocities.RawPointer;
+            processor.Execute(N);
+        }
+
+#if ALL
         [Benchmark]
         public void IterateWithCopy()
         {
@@ -363,15 +376,6 @@ namespace Atma.Entities
         }
 
 
-        [Benchmark(Baseline = true)]
-        public void PtrsAndLength()
-        {
-            var processor = new SystemRawPtrAndLength();
-            processor.dt = dt;
-            processor.position = _positions.RawPointer;
-            processor.velocity = _velocities.RawPointer;
-            processor.Execute(N);
-        }
 
 
 
@@ -447,16 +451,6 @@ namespace Atma.Entities
         }
 
         [Benchmark]
-        public void SpanWithLength()
-        {
-            var processor = new SystemSpanWithLength();
-            processor.dt = dt;
-            processor.position = _positions;
-            processor.velocity = (Span<Velocity>)_velocities;
-            processor.Execute(N);
-        }
-
-        [Benchmark]
         public void SpanWithLengthNoRef()
         {
             var processor = new SystemSpanWithLengthNoRef();
@@ -465,7 +459,17 @@ namespace Atma.Entities
             processor.velocity = (Span<Velocity>)_velocities;
             processor.Execute(N);
         }
+#endif
 
+        [Benchmark]
+        public void SpanWithLength()
+        {
+            var processor = new SystemSpanWithLength();
+            processor.dt = dt;
+            processor.position = _positions;
+            processor.velocity = (Span<Velocity>)_velocities;
+            processor.Execute(N);
+        }
 
         [Benchmark]
         public void NativeArrayWithLength()

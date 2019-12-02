@@ -626,6 +626,14 @@
             }
         }
 
+        public EntityCommandBuffer CreateCommandBuffer(int lengthInBytes = -1)
+        {
+            if (lengthInBytes > 0)
+                return new EntityCommandBuffer(_allocator, lengthInBytes);
+
+            return new EntityCommandBuffer(_allocator);
+        }
+
         protected override void OnUnmanagedDispose()
         {
             _entityArrays.DisposeAll();
