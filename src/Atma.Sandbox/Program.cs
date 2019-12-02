@@ -101,20 +101,19 @@
             void Tick(SystemManager systemManager, EntityManager entityManager);
         }
 
-
         //file: VelocitySystem.ecs
         //namespace (optional, get folders, get project namespace?)
-        //variable dt
-        //before <system>
-        //after <system>
-        //group <group>
+        //variable float dt
+        //before <system> (example RenderSystem)
+        //after <system> (example InputSystem)
+        //group <group> (defaults to Update)
         //write position
         //read velocity
         //entities entities
         //buffer buffer [65536]
 
         //generate file: obj/VelocitySystem.cs
-        public ref partial struct VelocitySystemProcessor
+        public ref partial struct VelocitySystem
         {
             public float dt;
             public Span<Position> positions;
@@ -124,9 +123,9 @@
 
             public static void Process(SystemManager sm, EntityManager em)
             {
-                var processor = new VelocitySystemProcessor();
-                processor.dt = sm.Variable<float>("dt");
-                processor.buffer = em.CreateCommandBuffer();
+                var system = new VelocitySystem();
+                system.dt = sm.Variable<float>("dt");
+                system.buffer = em.CreateCommandBuffer();
 
                 Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
                 var entityArrays = em.EntityArrays;
@@ -140,23 +139,21 @@
                         for (var k = 0; k < array.AllChunks.Count; k++)
                         {
                             var chunk = array.AllChunks[k];
-                            var length = chunk.Count;
-                            var entities = chunk.Entities;
-                            var t0 = chunk.GetComponentData<Position>(c0, componentTypes[0]);
-                            var t1 = chunk.GetComponentData<Velocity>(c1, componentTypes[1]);
-
-                            processor.Execute(entities.Length);
+                            system.positions = chunk.GetComponentData<Position>(c0, componentTypes[0]);
+                            system.velocities = chunk.GetComponentData<Velocity>(c1, componentTypes[1]);
+                            system.entites = chunk.Entities;
+                            system.Execute(chunk.Count);
                         }
                     }
                 }
 
-                processor.buffer.Execute(em);
+                system.buffer.Execute(em);
             }
 
             partial void Execute(int length);
         }
 
-        public ref partial struct VelocitySystemProcessor
+        public ref partial struct VelocitySystem
         {
             partial void Execute(int length)
             {
@@ -171,8 +168,10 @@
             }
         }
 
-        public sealed class VelocitySystem : ISystem
+        public sealed class VelocitySystemProcessor : ISystem
         {
+            public string Group => "Update";
+
             public object Dependencies
             {
                 get
@@ -183,10 +182,9 @@
 
             public void Tick(SystemManager systemManager, EntityManager entityManager)
             {
-                VelocitySystemProcessor.Process(systemManager, entityManager);
+                VelocitySystem.Process(systemManager, entityManager);
             }
         }
-
 
         protected static ILoggerFactory _logFactory;
         protected static ILogger _logger;
@@ -202,10 +200,16 @@
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
             var e = em.Create(spec);
 
-            em.ForChunk((int length, ReadOnlySpan<EntityRef> entities, Span<Position> positions, Span<Velocity> velocities) =>
-            {
+            em.Replace(e, new Velocity(1, -1));
 
-            });
+            var sm = new SystemManager(_logFactory);
+            sm.Variable("dt", 0.16f);
+
+            var vs = new VelocitySystemProcessor();
+            vs.Tick(sm, em);
+
+            var p = em.Get<Position>(e);
+            Console.WriteLine(p);
 
             //var test2 = new Test2();
             //test2.Execute(1);
