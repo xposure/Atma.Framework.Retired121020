@@ -1,0 +1,14 @@
+{
+    "name": "asdf",
+    "components": [
+        {
+            "type": "Velocity",
+            "name": "velocities"
+        },
+        {
+            "type": "Position",
+            "name": "positions",
+            "write": true
+        }
+    ]
+}
