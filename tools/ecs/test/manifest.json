@@ -1,0 +1,8 @@
+{
+    "namespace": "Test",
+    "path": "**/*.json",
+    "order": [
+        "update",
+        "render"
+    ]
+}

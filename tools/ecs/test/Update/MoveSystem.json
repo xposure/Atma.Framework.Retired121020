@@ -1,5 +1,4 @@
 {
-    "name": "asdf",
     "components": [
         {
             "type": "Velocity",
@@ -9,6 +8,12 @@
             "type": "Position",
             "name": "positions",
             "write": true
+        }
+    ],
+    "variables": [
+        {
+            "type": "float",
+            "name": "dt"
         }
     ]
 }

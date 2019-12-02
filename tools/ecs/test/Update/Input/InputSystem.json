@@ -1,0 +1,21 @@
+{
+    "components": [
+        {
+            "type": "Velocity",
+            "name": "velocities",
+            "write": true
+        }
+    ],
+    "variables": [
+        {
+            "type": "float",
+            "name": "dt"
+        }
+    ],
+    "buffers": [
+        {
+            "name": "buffer",
+            "size": 128000
+        }
+    ]
+}
