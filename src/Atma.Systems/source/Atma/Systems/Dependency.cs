@@ -276,10 +276,8 @@ namespace Atma.Systems
             else if (other.Priority > Priority) return false; //they are dependent on us
 
             foreach (var read in _readComponents)
-            {
                 if (other._writeComponents.Contains(read))
                     return true;
-            }
 
             return false;
         }

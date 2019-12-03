@@ -60,24 +60,13 @@ namespace Atma.Systems
 
                 for (var i = 0; i < _systems.Count; i++)
                 {
-                    var a = _systems[i];
-                    var ad = a.Dependencies;
-
+                    var a = _systems[i].Dependencies;
                     for (var j = 0; j < _systems.Count; j++)
                     {
                         if (i == j) continue;
-                        var b = _systems[j];
-
-                        if (a.Priority < b.Priority)
-                            _depGraph.AddEdge(a, b);
-                        else if (a.Priority > b.Priority)
-                            _depGraph.AddEdge(b, a);
-                        else
-                        {
-                            var bd = b.Dependencies;
-                            if (IsDependentOf(a, b))
-                                _depGraph.AddEdge(b, a);
-                        }
+                        var b = _systems[j].Dependencies;
+                        if (a.IsDependentOn(b))
+                            _depGraph.AddEdge(_systems[i], _systems[j]);
                     }
                 }
 
@@ -96,14 +85,6 @@ namespace Atma.Systems
                     throw new Exception(sb.ToString());
                 }
             }
-        }
-
-
-        public static bool IsDependentOf(ISystem a, ISystem b)
-        {
-
-
-            return false;
         }
 
         public override string ToString() => $"Name: {Name}, Count: {_systems.Count}";

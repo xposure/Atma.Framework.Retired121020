@@ -117,6 +117,16 @@ namespace Atma.Systems
         }
 
         [Fact]
+        public void AfterShouldTrumpWrite()
+        {
+            var a = new DependencyList("a", 0, deps => deps.After("b").Write<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Read<Position>());
+
+            a.IsDependentOn(b).ShouldBe(true);
+            b.IsDependentOn(a).ShouldBe(false);
+        }
+
+        [Fact]
         public void AfterShouldTrumpPriority()
         {
             var a = new DependencyList("a", 0, deps => deps.Read<Position>());
@@ -126,170 +136,59 @@ namespace Atma.Systems
             b.IsDependentOn(a).ShouldBe(true);
         }
 
-        // [Fact]
-        // public void WriteShouldDependOnBefore()
-        // {
-        //     var a = new DependencyList("a", 0, deps => deps.Read<Position>().Before("b"));
-        //     var b = new DependencyList("b", 0, deps => deps.Write<Position>());
+        [Fact]
+        public void ShouldMergeReads()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Read<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Read<Velocity>());
 
-        //     a.IsDependentOn(b).ShouldBe(false);
-        //     b.IsDependentOn(a).ShouldBe(true);
-        // }
+            var c = DependencyList.MergeComponents("c", 0, new[] { a, b });
+            c._readComponents.Count.ShouldBe(2);
+            c._readComponents.ShouldContain(ComponentType<Position>.Type);
+            c._readComponents.ShouldContain(ComponentType<Velocity>.Type);
+            c._writeComponents.Count.ShouldBe(0);
+            c._allComponents.Count.ShouldBe(2);
+        }
 
-        // [Fact]
-        // public void WriteShouldDependOnAfter()
-        // {
-        //     var a = new DependencyList("a", 0, deps => deps.Read<Position>().Before("b"));
-        //     var b = new DependencyList("b", 0, deps => deps.Write<Position>());
+        [Fact]
+        public void ShouldMergeWrites()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Write<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Write<Velocity>());
 
-        //     a.IsDependentOn(b).ShouldBe(false);
-        //     b.IsDependentOn(a).ShouldBe(true);
-        // }
+            var c = DependencyList.MergeComponents("c", 0, new[] { a, b });
+            c._writeComponents.Count.ShouldBe(2);
+            c._writeComponents.ShouldContain(ComponentType<Position>.Type);
+            c._writeComponents.ShouldContain(ComponentType<Velocity>.Type);
+            c._readComponents.Count.ShouldBe(0);
+            c._allComponents.Count.ShouldBe(2);
+        }
 
-        // [Fact]
-        // public void ShouldUpdateBefore()
-        // {
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
+        [Fact]
+        public void ShouldMergeReadsAndWrites()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Read<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Write<Velocity>());
 
-        //     var render = sm.Add(new DummySystem(_logFactory, "Render", 0, execution, config => { }));
-        //     var update = sm.Add(new DummySystem(_logFactory, "Update", 0, execution, deps => deps.Before("Render")));
+            var c = DependencyList.MergeComponents("c", 0, new[] { a, b });
+            c._readComponents.Count.ShouldBe(1);
+            c._readComponents.ShouldContain(ComponentType<Position>.Type);
+            c._writeComponents.Count.ShouldBe(1);
+            c._writeComponents.ShouldContain(ComponentType<Velocity>.Type);
+            c._allComponents.Count.ShouldBe(2);
+        }
 
-        //     sm.Init();
-        //     sm.Tick();
+        [Fact]
+        public void ShouldPromoteReadToWrite()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Read<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Write<Position>());
 
-        //     update.ExecutionOrder.ShouldBe(0);
-        //     render.ExecutionOrder.ShouldBe(1);
-        // }
-
-
-        // [Fact]
-        // public void ShouldUpdateAfter()
-        // {
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
-
-        //     var render = sm.Add(new DummySystem(_logFactory, "Render", 0, execution, deps => deps.After("Update")));
-        //     var update = sm.Add(new DummySystem(_logFactory, "Update", 0, execution));
-
-        //     sm.Init();
-        //     sm.Tick();
-
-        //     update.ExecutionOrder.ShouldBe(0);
-        //     render.ExecutionOrder.ShouldBe(1);
-        // }
-
-        // [Fact]
-        // public void ShouldUpdateReadAndWrite()
-        // {
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
-
-        //     var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, deps => deps.Read<Position>()));
-        //     var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, deps => deps.Write<Position>().Read<Velocity>()));
-
-        //     sm.Init();
-        //     sm.Tick();
-
-        //     writePosition.ExecutionOrder.ShouldBe(0);
-        //     readPosition.ExecutionOrder.ShouldBe(1);
-        // }
-
-        // [Fact]
-        // public void ShouldThrowCyclic()
-        // {
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
-
-        //     var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, deps => deps.Read<Position>().Write<Velocity>()));
-        //     var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, deps => deps.Write<Position>().Read<Velocity>()));
-
-        //     Should.Throw<Exception>(() => sm.Init());
-        // }
-
-        // [Fact]
-        // public void ShouldNotThrowCyclic()
-        // {
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
-
-        //     var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, deps => deps.Read<Position>().Write<Velocity>()));
-        //     var writePosition = sm.Add(new DummySystem(_logFactory, "write", -1, execution, deps => deps.Write<Position>().Read<Velocity>()));
-
-        //     sm.Init();
-        //     sm.Tick();
-
-        //     writePosition.ExecutionOrder.ShouldBe(0);
-        //     readPosition.ExecutionOrder.ShouldBe(1);
-        // }
-
-        // [Fact]
-        // public void WriteShouldBeAfterReadWithBefore()
-        // {
-
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
-
-        //     var readPosition = sm.Add(new DummySystem(_logFactory, "a", 0, execution, deps => deps.Write<Position>()));
-        //     var writePosition = sm.Add(new DummySystem(_logFactory, "b", 0, execution, deps => deps.Read<Position>().Before("a")));
-
-        //     sm.Init();
-        //     sm.Tick();
-
-        //     readPosition.ExecutionOrder.ShouldBe(0);
-        //     writePosition.ExecutionOrder.ShouldBe(1);
-        // }
-
-        //[Fact]
-        // public void ShouldAggregateAndPromoteDependencies()
-        // {
-        //     var sm = new SystemManager(_logFactory, null);
-        //     var execution = stackalloc int[1];
-
-        //     var updateGroup = sm.Add(new SystemGroup(_logFactory, "Update", -1));
-        //     var renderGroup = sm.Add(new SystemGroup(_logFactory, "Render", 0));
-
-        //     var inputGroup = updateGroup.Add(new SystemGroup(_logFactory, "Input", 0));
-        //     var inputb = inputGroup.Add(new DummySystem(_logFactory, "inputb", 0, execution, new ReadDependency<Position>(), new ReadDependency<Velocity>()));
-        //     var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
-
-        //     var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
-        //     var writePosition = sm.Add(new DummySystem(_logFactory, "write", -1, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
-
-        //     sm.Init();
-        //     sm.Tick();
-
-        //     updateGroup.Dependencies.ShouldContain(new WriteDependency<Position>());
-        //     updateGroup.Dependencies.ShouldContain(new ReadDependency<Velocity>());
-        //     updateGroup.Dependencies.Count().ShouldBe(2);
-
-        //     inputa.ExecutionOrder.ShouldBe(0);
-        //     inputb.ExecutionOrder.ShouldBe(1);
-        //     writePosition.ExecutionOrder.ShouldBe(2);
-        //     readPosition.ExecutionOrder.ShouldBe(3);
-        // }
-
-        // public void ShouldExecuteGroupsInOrder()
-        // {
-        //     var sm = new SystemManager(_logFactory);
-        //     var execution = stackalloc int[1];
-
-        //     var updateGroup = sm.Add(new SystemGroup(_logFactory,"Update", 0));
-        //     var renderGroup = sm.Add(new SystemGroup(_logFactory,"Render", 0));
-
-        //     var inputGroup = updateGroup.Add(new SystemGroup(_logFactory,"Input", 0));
-        //     var inputb = inputGroup.Add(new DummySystem(_logFactory, "inputb", 0, execution, new ReadDependency<Position>(), new ReadDependency<Velocity>()));
-        //     var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
-
-
-        //     var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
-        //     var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
-
-        //     sm.Init();
-        //     sm.Tick(null);
-
-        //     writePosition.ExecutionOrder.ShouldBe(0);
-        //     readPosition.ExecutionOrder.ShouldBe(1);
-        // }
+            var c = DependencyList.MergeComponents("c", 0, new[] { a, b });
+            c._writeComponents.Count.ShouldBe(1);
+            c._writeComponents.ShouldContain(ComponentType<Position>.Type);
+            c._readComponents.Count.ShouldBe(0);
+            c._allComponents.Count.ShouldBe(1);
+        }
     }
 }
