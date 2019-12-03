@@ -104,8 +104,10 @@ namespace Atma.Systems
 
                     foreach (var cyclicNode in _depGraph.CyclicNodes)
                     {
+                        sb.AppendLine();
                         var depMatirx = new DependencyMatrix(_depGraph.PostOrder(cyclicNode));
                         sb.AppendLine(depMatirx.ToString());
+                        sb.AppendLine();
                     }
 
                     throw new Exception(sb.ToString());
