@@ -62,6 +62,8 @@ namespace Atma.Systems
                 _logger.LogDebug(Name);
                 ExecutionOrder = (*_execution)++;
             }
+
+            public override string ToString() => Name;
         }
 
         [Fact]
@@ -147,7 +149,7 @@ namespace Atma.Systems
             var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
-            var updateGroup = sm.Add(new SystemGroup(_logFactory, "Update", 0));
+            var updateGroup = sm.Add(new SystemGroup(_logFactory, "Update", -1));
             var renderGroup = sm.Add(new SystemGroup(_logFactory, "Render", 0));
 
             var inputGroup = updateGroup.Add(new SystemGroup(_logFactory, "Input", 0));
@@ -155,7 +157,7 @@ namespace Atma.Systems
             var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
 
             var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
-            var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
+            var writePosition = sm.Add(new DummySystem(_logFactory, "write", -1, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
 
             sm.Init();
             sm.Tick();

@@ -27,6 +27,7 @@ namespace Atma.Systems
         {
             Name = name;
             _logger = logFactory.CreateLogger($"SystemGroup::{name}[{priority}]");
+            Priority = priority;
             //Group = group;
         }
 
@@ -40,7 +41,8 @@ namespace Atma.Systems
         public void Tick(SystemManager systemManager, EntityManager entityManager)
         {
             foreach (var it in _depGraph.PostOrder())
-                it.Tick(systemManager, entityManager);
+                if (!it.Disabled)
+                    it.Tick(systemManager, entityManager);
         }
 
         public void Init()
@@ -102,13 +104,12 @@ namespace Atma.Systems
                     var sb = new StringBuilder();
                     sb.AppendLine("Cyclic nodes detected");
 
-                    foreach (var cyclicNode in _depGraph.CyclicNodes)
-                    {
-                        sb.AppendLine();
-                        var depMatirx = new DependencyMatrix(_depGraph.PostOrder(cyclicNode));
-                        sb.AppendLine(depMatirx.ToString());
-                        sb.AppendLine();
-                    }
+                    sb.AppendLine();
+                    var depMatirx = new DependencyMatrix(_depGraph.PostOrder(_depGraph.CyclicNode));
+                    sb.AppendLine(depMatirx.ToString());
+                    sb.AppendLine();
+
+                    sb.AppendLine(_depGraph.ToString());
 
                     throw new Exception(sb.ToString());
                 }

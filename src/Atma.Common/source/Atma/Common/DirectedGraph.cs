@@ -11,8 +11,8 @@
 
         //private List<DirectedGraphNode> _orphans;
 
-        private List<T> _cyclicNodes;
-        public IReadOnlyList<T> CyclicNodes => _cyclicNodes;
+        private T _cyclicNode;
+        public T CyclicNode => _cyclicNode;
 
         private class DirectedGraphNode
         {
@@ -79,32 +79,30 @@
 
         public bool Validate()
         {
-            ResetWalkData();
 
-            if (_cyclicNodes != null)
-                _cyclicNodes.Clear();
+            _cyclicNode = default;
 
-
+            var foundCyclicNode = false;
             foreach (var it in _nodes)
             {
-                if (!it.Visited && IsCyclic(it))
+                ResetWalkData();
+                if (IsCyclic(it, out var cyclicNode))
                 {
-                    if (_cyclicNodes == null)
-                        _cyclicNodes = new List<T>();
-
-                    _cyclicNodes.Add(it.Node);
+                    _cyclicNode = cyclicNode.Node;
+                    foundCyclicNode = true;
+                    break;
                 }
             }
 
-            return (_cyclicNodes?.Count ?? 0) == 0;
+            return !foundCyclicNode;
         }
 
         public bool IsCyclic(T node)
         {
             ResetWalkData();
-            return IsCyclic(_nodeLookup[node]);
+            return IsCyclic(_nodeLookup[node], out var _);
         }
-        private bool IsCyclic(DirectedGraphNode node)
+        private bool IsCyclic(DirectedGraphNode node, out DirectedGraphNode cyclicNode)
         {
             if (!node.Visited)
             {
@@ -113,19 +111,21 @@
 
                 foreach (var it in node.Dependents)
                 {
-                    if (!it.Visited && IsCyclic(it))
+                    if (!it.Visited && IsCyclic(it, out cyclicNode))
                     {
                         node.Recursion = false;
                         return true;
                     }
                     else if (it.Recursion)
                     {
+                        cyclicNode = node;
                         node.Recursion = false;
                         return true;
                     }
                 }
             }
 
+            cyclicNode = default;
             node.Recursion = false;
             return false;
         }
@@ -184,6 +184,29 @@
 
             for (var i = _order.Count - 1; i >= 0; i--)
                 yield return _order[i].Node;
+        }
+
+        public override string ToString() => ToString(false);
+        public string ToString(bool reverse)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var node in _nodeLookup)
+            {
+                var first = true;
+                var items = reverse ? ReversePostOrder(node.Value.Node) : PostOrder(node.Value.Node);
+                foreach (var walk in items)
+                {
+                    if (!first)
+                        sb.Append("->");
+                    first = false;
+
+                    sb.Append(walk.ToString());
+                }
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
         }
 
     }
