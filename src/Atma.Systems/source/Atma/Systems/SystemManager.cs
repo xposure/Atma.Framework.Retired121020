@@ -2,6 +2,8 @@ namespace Atma.Systems
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
     using Atma.Common;
     using Atma.Entities;
     using Microsoft.Extensions.Logging;
@@ -10,8 +12,9 @@ namespace Atma.Systems
     {
         private DirectedGraph<ISystem> _depGraph = new DirectedGraph<ISystem>();
         private List<ISystem> _systems = new List<ISystem>();
-        private Dictionary<string, Dependency> _dependencies = new Dictionary<string, Dependency>();
-        public IEnumerable<Dependency> Dependencies => throw new System.NotImplementedException();
+        private List<Dependency> _dependencies = new List<Dependency>();
+
+        public IEnumerable<Dependency> Dependencies => _dependencies;
 
         public int Priority { get; }
         public string Name { get; }
@@ -22,44 +25,82 @@ namespace Atma.Systems
             //Group = group;
         }
 
-        public void Add(ISystem system)
+        public T Add<T>(T system)
+            where T : ISystem
         {
             _systems.Add(system);
             _depGraph.AddNode(system);
+            return system;
         }
 
         public void Tick(SystemManager systemManager, EntityManager entityManager)
         {
-            foreach (var it in _depGraph.ReversePostOrder())
+            foreach (var it in _depGraph.PostOrder())
                 it.Tick(systemManager, entityManager);
         }
 
         public void Init()
         {
-            for (var i = 0; i < _systems.Count; i++)
+            if (_systems.Count > 0)
             {
-                var a = _systems[i];
+                for (var i = 0; i < _systems.Count; i++)
+                    _systems[i].Init();
 
-                for (var j = 0; j < _systems.Count; j++)
+                var readComponents = new HashSet<ComponentType>();
+                var writeComponents = new HashSet<ComponentType>();
+
+                for (var i = 0; i < _systems.Count; i++)
                 {
-                    if (i == j) continue;
-                    var b = _systems[j];
+                    var a = _systems[i];
 
-                    if (a.Priority < b.Priority)
-                        _depGraph.AddEdge(a, b);
-                    else if (a.Priority > b.Priority)
-                        _depGraph.AddEdge(b, a);
-                    else
+                    for (var j = 0; j < _systems.Count; j++)
                     {
-                        foreach (var dep in a.Dependencies)
-                            dep.Resolve(_depGraph, a, b);
+                        if (i == j) continue;
+                        var b = _systems[j];
+
+                        if (a.Priority < b.Priority)
+                            _depGraph.AddEdge(a, b);
+                        else if (a.Priority > b.Priority)
+                            _depGraph.AddEdge(b, a);
+                        else
+                        {
+                            foreach (var dep in a.Dependencies)
+                                dep.Resolve(_depGraph, a, b);
+                        }
+                    }
+
+                    foreach (var dep in a.Dependencies)
+                    {
+                        if (dep is ReadDependency read)
+                            readComponents.Add(read.ComponentType);
+                        else if (dep is WriteDependency write)
+                            writeComponents.Add(write.ComponentType);
                     }
                 }
 
-            }
 
-            _depGraph.Validate(true);
+                foreach (var read in readComponents)
+                    if (!writeComponents.Contains(read))
+                        _dependencies.Add(new ReadDependency(read));
+
+                foreach (var write in writeComponents)
+                    _dependencies.Add(new WriteDependency(write));
+
+                if (!_depGraph.Validate())
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("Cyclic nodes detected");
+                    foreach (var cyclic in _depGraph.CyclicNodes)
+                    {
+                        var recursion = string.Join("->", _depGraph.PostOrder(cyclic).Select(it => it.Name));
+                        sb.AppendLine(recursion);
+                    }
+
+                    throw new Exception(sb.ToString());
+                }
+            }
         }
+        public override string ToString() => $"Name: {Name}, Count: {_systems.Count}";
     }
 
     public sealed class SystemManager

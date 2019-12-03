@@ -1,6 +1,7 @@
 ﻿namespace Atma.Common
 {
     using System.Collections.Generic;
+    using System.Text;
 
     public sealed class DirectedGraph<T>
     {
@@ -8,14 +9,20 @@
         private Dictionary<T, DirectedGraphNode> _nodeLookup = new Dictionary<T, DirectedGraphNode>();
         private List<DirectedGraphNode> _order = new List<DirectedGraphNode>();
 
+        //private List<DirectedGraphNode> _orphans;
+
+        private List<T> _cyclicNodes;
+        public IReadOnlyList<T> CyclicNodes => _cyclicNodes;
+
         private class DirectedGraphNode
         {
             public T Node;
+
             public bool Visited = false;
             public bool Recursion = false;
+
             public HashSet<DirectedGraphNode> Dependents = new HashSet<DirectedGraphNode>();
             public HashSet<DirectedGraphNode> Parents = new HashSet<DirectedGraphNode>();
-
         }
 
         public void AddNode(T node)
@@ -70,29 +77,34 @@
             }
         }
 
-        public bool Validate(bool throwOnError = false)
-        {
-            var hasRoots = false;
-            foreach (var it in Roots)
-            {
-                hasRoots = true;
-                if (IsCyclic(it, throwOnError))
-                    return false;
-            }
-
-            if (throwOnError && !hasRoots)
-                throw new System.Exception("The graph has no roots.");
-
-            return hasRoots;
-        }
-
-        public bool IsCyclic(T node, bool throwOnError = false)
+        public bool Validate()
         {
             ResetWalkData();
-            return IsCyclic(_nodeLookup[node], throwOnError);
+
+            if (_cyclicNodes != null)
+                _cyclicNodes.Clear();
+
+
+            foreach (var it in _nodes)
+            {
+                if (!it.Visited && IsCyclic(it))
+                {
+                    if (_cyclicNodes == null)
+                        _cyclicNodes = new List<T>();
+
+                    _cyclicNodes.Add(it.Node);
+                }
+            }
+
+            return (_cyclicNodes?.Count ?? 0) == 0;
         }
 
-        private bool IsCyclic(DirectedGraphNode node, bool throwOnError)
+        public bool IsCyclic(T node)
+        {
+            ResetWalkData();
+            return IsCyclic(_nodeLookup[node]);
+        }
+        private bool IsCyclic(DirectedGraphNode node)
         {
             if (!node.Visited)
             {
@@ -101,16 +113,14 @@
 
                 foreach (var it in node.Dependents)
                 {
-                    if (!it.Visited && IsCyclic(it, throwOnError))
+                    if (!it.Visited && IsCyclic(it))
                     {
-                        if (throwOnError)
-                            throw new System.Exception("Cyclic dependency on " + it.Node.ToString());
+                        node.Recursion = false;
                         return true;
                     }
                     else if (it.Recursion)
                     {
-                        if (throwOnError)
-                            throw new System.Exception("Cyclic dependency on " + it.Node.ToString());
+                        node.Recursion = false;
                         return true;
                     }
                 }
@@ -122,12 +132,16 @@
 
         private void Walk(DirectedGraphNode node)
         {
-            node.Visited = true;
-            foreach (var it in node.Dependents)
-                if (!it.Visited)
+            if (!node.Visited && !node.Recursion)
+            {
+                node.Visited = true;
+                node.Recursion = true;
+                foreach (var it in node.Dependents)
                     Walk(it);
 
-            _order.Add(node);
+                node.Recursion = false;
+                _order.Add(node);
+            }
         }
 
         public IEnumerable<T> ReversePostOrder()

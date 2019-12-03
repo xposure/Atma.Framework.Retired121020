@@ -2,6 +2,7 @@ namespace Atma.Systems
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Atma.Entities;
     using Divergic.Logging.Xunit;
     using Microsoft.Extensions.Logging;
@@ -122,6 +123,7 @@ namespace Atma.Systems
             Should.Throw<Exception>(() => sm.Init());
         }
 
+        [Fact]
         public void ShouldNotThrowCyclic()
         {
             var sm = new SystemManager(_logFactory);
@@ -136,5 +138,57 @@ namespace Atma.Systems
             writePosition.ExecutionOrder.ShouldBe(0);
             readPosition.ExecutionOrder.ShouldBe(1);
         }
+
+        [Fact]
+        public void ShouldAggregateAndPromoteDependencies()
+        {
+            var sm = new SystemManager(_logFactory);
+            var execution = stackalloc int[1];
+
+            var updateGroup = sm.Add(new SystemGroup("Update", 0));
+            var renderGroup = sm.Add(new SystemGroup("Render", 0));
+
+            var inputGroup = updateGroup.Add(new SystemGroup("Input", 0));
+            var inputb = inputGroup.Add(new DummySystem(_logFactory, "inputb", 0, execution, new ReadDependency<Position>(), new ReadDependency<Velocity>()));
+            var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
+
+            var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
+            var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
+
+            sm.Init();
+            sm.Tick(null);
+
+            updateGroup.Dependencies.ShouldContain(new WriteDependency<Position>());
+            updateGroup.Dependencies.ShouldContain(new ReadDependency<Velocity>());
+            updateGroup.Dependencies.Count().ShouldBe(2);
+
+            inputa.ExecutionOrder.ShouldBe(0);
+            inputb.ExecutionOrder.ShouldBe(1);
+            writePosition.ExecutionOrder.ShouldBe(2);
+            readPosition.ExecutionOrder.ShouldBe(3);
+        }
+
+        // public void ShouldExecuteGroupsInOrder()
+        // {
+        //     var sm = new SystemManager(_logFactory);
+        //     var execution = stackalloc int[1];
+
+        //     var updateGroup = sm.Add(new SystemGroup("Update", 0));
+        //     var renderGroup = sm.Add(new SystemGroup("Render", 0));
+
+        //     var inputGroup = updateGroup.Add(new SystemGroup("Input", 0));
+        //     var inputb = inputGroup.Add(new DummySystem(_logFactory, "inputb", 0, execution, new ReadDependency<Position>(), new ReadDependency<Velocity>()));
+        //     var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
+
+
+        //     var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
+        //     var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
+
+        //     sm.Init();
+        //     sm.Tick(null);
+
+        //     writePosition.ExecutionOrder.ShouldBe(0);
+        //     readPosition.ExecutionOrder.ShouldBe(1);
+        // }
     }
 }

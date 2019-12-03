@@ -2,9 +2,11 @@
 {
     using System.Linq;
     using Shouldly;
+    using Xunit;
 
     public class DirectedGraphTests
     {
+        [Fact]
         public void ShouldFindPath()
         {
             //https://eli.thegreenplace.net/2015/directed-graph-traversal-orderings-and-applications-to-data-flow-analysis/
@@ -41,6 +43,7 @@
             graph.Validate().ShouldBe(true);
         }
 
+        [Fact]
         public void ShouldDetectSimpleCycles()
         {
             var graph = new DirectedGraph<char>();
@@ -55,6 +58,7 @@
 
         }
 
+        [Fact]
         public void ShoudlDetectDiamondCycles()
         {
             var graph = new DirectedGraph<char>();
@@ -73,6 +77,7 @@
             graph.Roots.Count().ShouldBe(0);
         }
 
+        [Fact]
         public void ShouldDetectComplexCycles()
         {
             //https://eli.thegreenplace.net/2015/directed-graph-traversal-orderings-and-applications-to-data-flow-analysis/
@@ -110,6 +115,7 @@
             graph.Validate().ShouldBe(false);
         }
 
+        [Fact]
         public void ShouldSupportMultipleRootsWithSharedChildren()
         {
             //https://eli.thegreenplace.net/2015/directed-graph-traversal-orderings-and-applications-to-data-flow-analysis/
@@ -145,6 +151,19 @@
             graph.Roots.Count().ShouldBe(3);
             graph.ReversePostOrder().ShouldBe(new char[] { 'd', 'b', 't', 'e', 'j', 'c', 'x', 'f', 'r', 'k', 'p', 'q' });
             graph.Validate().ShouldBe(true);
+        }
+
+        [Fact]
+        public void ShouldFailOnCyclicNodesWithValidRoot()
+        {
+            var graph = new DirectedGraph<char>();
+            graph.AddNodes('a', 'b', 'c', 'd');
+            graph.AddEdge('b', 'c');
+            graph.AddEdge('c', 'd');
+            graph.AddEdge('d', 'b');
+
+            graph.Roots.Count().ShouldBe(1);
+            graph.Validate().ShouldBe(false);
         }
     }
 }
