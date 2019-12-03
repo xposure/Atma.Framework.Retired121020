@@ -10,6 +10,8 @@ namespace Atma.Systems
 
     public sealed class SystemGroup : ISystem
     {
+        private ILogger _logger;
+
         private DirectedGraph<ISystem> _depGraph = new DirectedGraph<ISystem>();
         private List<ISystem> _systems = new List<ISystem>();
         private List<Dependency> _dependencies = new List<Dependency>();
@@ -18,10 +20,13 @@ namespace Atma.Systems
 
         public int Priority { get; }
         public string Name { get; }
+
+        public bool Disabled { get; set; }
         //public string Group { get; }
-        public SystemGroup(string name, int priority)
+        public SystemGroup(ILoggerFactory logFactory, string name, int priority)
         {
             Name = name;
+            _logger = logFactory.CreateLogger($"SystemGroup::{name}[{priority}]");
             //Group = group;
         }
 
@@ -29,7 +34,6 @@ namespace Atma.Systems
             where T : ISystem
         {
             _systems.Add(system);
-            _depGraph.AddNode(system);
             return system;
         }
 
@@ -41,10 +45,14 @@ namespace Atma.Systems
 
         public void Init()
         {
+            _depGraph.Clear();
             if (_systems.Count > 0)
             {
                 for (var i = 0; i < _systems.Count; i++)
+                {
+                    _depGraph.AddNode(_systems[i]);
                     _systems[i].Init();
+                }
 
                 var readComponents = new HashSet<ComponentType>();
                 var writeComponents = new HashSet<ComponentType>();
@@ -71,35 +79,40 @@ namespace Atma.Systems
 
                     foreach (var dep in a.Dependencies)
                     {
-                        if (dep is ReadDependency read)
-                            readComponents.Add(read.ComponentType);
-                        else if (dep is WriteDependency write)
-                            writeComponents.Add(write.ComponentType);
+                        if (dep is ComponentDependency c)
+                        {
+                            if (c.Writable)
+                                writeComponents.Add(c.ComponentType);
+                            else
+                                readComponents.Add(c.ComponentType);
+                        }
                     }
                 }
 
 
                 foreach (var read in readComponents)
                     if (!writeComponents.Contains(read))
-                        _dependencies.Add(new ReadDependency(read));
+                        _dependencies.Add(new ComponentDependency(read, false));
 
                 foreach (var write in writeComponents)
-                    _dependencies.Add(new WriteDependency(write));
+                    _dependencies.Add(new ComponentDependency(write, true));
 
                 if (!_depGraph.Validate())
                 {
                     var sb = new StringBuilder();
                     sb.AppendLine("Cyclic nodes detected");
-                    foreach (var cyclic in _depGraph.CyclicNodes)
+
+                    foreach (var cyclicNode in _depGraph.CyclicNodes)
                     {
-                        var recursion = string.Join("->", _depGraph.PostOrder(cyclic).Select(it => it.Name));
-                        sb.AppendLine(recursion);
+                        var depMatirx = new DependencyMatrix(_depGraph.PostOrder(cyclicNode));
+                        sb.AppendLine(depMatirx.ToString());
                     }
 
                     throw new Exception(sb.ToString());
                 }
             }
         }
+
         public override string ToString() => $"Name: {Name}, Count: {_systems.Count}";
     }
 
@@ -108,12 +121,16 @@ namespace Atma.Systems
         private ILoggerFactory _logFactory;
         private ILogger _logger;
 
-        private SystemGroup _systems = new SystemGroup("Root", 0);
+        private EntityManager _entityManager;
 
-        public SystemManager(ILoggerFactory logFactory)
+        private SystemGroup _systems;
+
+        public SystemManager(ILoggerFactory logFactory, EntityManager em)
         {
             _logFactory = logFactory;
             _logger = logFactory.CreateLogger<SystemManager>();
+            _entityManager = em;
+            _systems = new SystemGroup(logFactory, "Root", 0);
         }
 
         public T Add<T>(T system)
@@ -128,9 +145,10 @@ namespace Atma.Systems
             _systems.Init();
         }
 
-        public void Tick(EntityManager entityManager)
+        public void Tick()
         {
-            _systems.Tick(this, entityManager);
+            if (!_systems.Disabled)
+                _systems.Tick(this, _entityManager);
         }
 
     }

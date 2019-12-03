@@ -8,6 +8,11 @@
 
     public unsafe readonly struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
     {
+        internal static ConcurrentLookupList<Type> _typeLookup = new ConcurrentLookupList<Type>();
+
+        public static Type LookUp(in ComponentType type) => LookUp(type.ID);
+        public static Type LookUp(int id) => _typeLookup[id];
+
         public readonly int ID;
         public readonly int Size;
 
@@ -262,6 +267,9 @@
             Copy copy = (void* src, void* dst) => *(T*)dst = *(T*)src;
             Reset reset = (void* dst) => *(T*)dst = default;
             Helper = new ComponentTypeHelper(Type, copy, copyAndMoveNext, reset);
+
+            ComponentType._typeLookup.Add(Type.ID, typeof(T));
+
         }
     }
 

@@ -34,6 +34,8 @@ namespace Atma.Systems
             private Dependency[] _dependencies;
             public IEnumerable<Dependency> Dependencies => _dependencies;
 
+            public bool Disabled { get; set; } = false;
+
             public int Priority { get; } = 0;
 
             public string Name { get; }
@@ -65,14 +67,14 @@ namespace Atma.Systems
         [Fact]
         public void ShouldUpdateBefore()
         {
-            var sm = new SystemManager(_logFactory);
+            var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
             var render = sm.Add(new DummySystem(_logFactory, "Render", 0, execution));
             var update = sm.Add(new DummySystem(_logFactory, "Update", 0, execution, new BeforeDependency("Render")));
 
             sm.Init();
-            sm.Tick(null);
+            sm.Tick();
 
             update.ExecutionOrder.ShouldBe(0);
             render.ExecutionOrder.ShouldBe(1);
@@ -82,14 +84,14 @@ namespace Atma.Systems
         [Fact]
         public void ShouldUpdateAfter()
         {
-            var sm = new SystemManager(_logFactory);
+            var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
             var render = sm.Add(new DummySystem(_logFactory, "Render", 0, execution, new AfterDependency("Update")));
             var update = sm.Add(new DummySystem(_logFactory, "Update", 0, execution));
 
             sm.Init();
-            sm.Tick(null);
+            sm.Tick();
 
             update.ExecutionOrder.ShouldBe(0);
             render.ExecutionOrder.ShouldBe(1);
@@ -98,14 +100,14 @@ namespace Atma.Systems
         [Fact]
         public void ShouldUpdateReadAndWrite()
         {
-            var sm = new SystemManager(_logFactory);
+            var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
             var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>()));
             var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
 
             sm.Init();
-            sm.Tick(null);
+            sm.Tick();
 
             writePosition.ExecutionOrder.ShouldBe(0);
             readPosition.ExecutionOrder.ShouldBe(1);
@@ -114,7 +116,7 @@ namespace Atma.Systems
         [Fact]
         public void ShouldThrowCyclic()
         {
-            var sm = new SystemManager(_logFactory);
+            var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
             var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
@@ -126,14 +128,14 @@ namespace Atma.Systems
         [Fact]
         public void ShouldNotThrowCyclic()
         {
-            var sm = new SystemManager(_logFactory);
+            var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
             var readPosition = sm.Add(new DummySystem(_logFactory, "read", 0, execution, new ReadDependency<Position>(), new WriteDependency<Velocity>()));
             var writePosition = sm.Add(new DummySystem(_logFactory, "write", -1, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
 
             sm.Init();
-            sm.Tick(null);
+            sm.Tick();
 
             writePosition.ExecutionOrder.ShouldBe(0);
             readPosition.ExecutionOrder.ShouldBe(1);
@@ -142,13 +144,13 @@ namespace Atma.Systems
         [Fact]
         public void ShouldAggregateAndPromoteDependencies()
         {
-            var sm = new SystemManager(_logFactory);
+            var sm = new SystemManager(_logFactory, null);
             var execution = stackalloc int[1];
 
-            var updateGroup = sm.Add(new SystemGroup("Update", 0));
-            var renderGroup = sm.Add(new SystemGroup("Render", 0));
+            var updateGroup = sm.Add(new SystemGroup(_logFactory, "Update", 0));
+            var renderGroup = sm.Add(new SystemGroup(_logFactory, "Render", 0));
 
-            var inputGroup = updateGroup.Add(new SystemGroup("Input", 0));
+            var inputGroup = updateGroup.Add(new SystemGroup(_logFactory, "Input", 0));
             var inputb = inputGroup.Add(new DummySystem(_logFactory, "inputb", 0, execution, new ReadDependency<Position>(), new ReadDependency<Velocity>()));
             var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
 
@@ -156,7 +158,7 @@ namespace Atma.Systems
             var writePosition = sm.Add(new DummySystem(_logFactory, "write", 0, execution, new WriteDependency<Position>(), new ReadDependency<Velocity>()));
 
             sm.Init();
-            sm.Tick(null);
+            sm.Tick();
 
             updateGroup.Dependencies.ShouldContain(new WriteDependency<Position>());
             updateGroup.Dependencies.ShouldContain(new ReadDependency<Velocity>());
@@ -173,10 +175,10 @@ namespace Atma.Systems
         //     var sm = new SystemManager(_logFactory);
         //     var execution = stackalloc int[1];
 
-        //     var updateGroup = sm.Add(new SystemGroup("Update", 0));
-        //     var renderGroup = sm.Add(new SystemGroup("Render", 0));
+        //     var updateGroup = sm.Add(new SystemGroup(_logFactory,"Update", 0));
+        //     var renderGroup = sm.Add(new SystemGroup(_logFactory,"Render", 0));
 
-        //     var inputGroup = updateGroup.Add(new SystemGroup("Input", 0));
+        //     var inputGroup = updateGroup.Add(new SystemGroup(_logFactory,"Input", 0));
         //     var inputb = inputGroup.Add(new DummySystem(_logFactory, "inputb", 0, execution, new ReadDependency<Position>(), new ReadDependency<Velocity>()));
         //     var inputa = inputGroup.Add(new DummySystem(_logFactory, "inputa", 0, execution, new WriteDependency<Position>()));
 
