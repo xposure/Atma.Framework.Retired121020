@@ -7,132 +7,310 @@ namespace Atma.Systems
     using Atma.Common;
     using Atma.Entities;
 
-    public abstract class Dependency : IEquatable<Dependency>
+    // public abstract class Dependency : IEquatable<Dependency>
+    // {
+    //     public bool Equals(Dependency other) => OnEqual(other);
+
+    //     public abstract int Priority { get; }
+
+    //     protected abstract bool OnEqual(Dependency other);
+
+    //     public void Resolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
+    //     {
+    //         OnResolve(graph, a, b);
+    //     }
+    //     protected abstract void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b);
+    // }
+
+
+    // public class ComponentDependency : Dependency
+    // {
+    //     private ComponentType _componentType;
+    //     public ComponentType ComponentType => _componentType;
+
+    //     public readonly bool Writable;
+
+    //     public ComponentDependency(in ComponentType componentType, bool writable)
+    //     {
+    //         _componentType = componentType;
+    //         Writable = writable;
+    //     }
+
+    //     public override int Priority => 1000;
+
+    //     protected override bool OnEqual(Dependency other)
+    //     {
+    //         if (other is null || !(other is ComponentDependency it))
+    //             return false;
+
+    //         return _componentType.ID == it._componentType.ID && Writable == it.Writable;
+    //     }
+
+    //     protected override void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
+    //     {
+    //         foreach (var it in b.Dependencies)
+    //         {
+    //             if (it is ComponentDependency dep && dep.ComponentType.ID == _componentType.ID)
+    //             {
+    //                 //TODO: if both of these are writable, we are going to have cyclic issues
+    //                 if (Writable != dep.Writable)
+    //                 {
+    //                     if (Writable)
+    //                         graph.AddEdge(a, b);
+    //                     else
+    //                         graph.AddEdge(b, a);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    // public class ComponentDependency<T> : ComponentDependency
+    //         where T : unmanaged
+    // {
+    //     public ComponentDependency(bool writable) : base(ComponentType<T>.Type, writable) { }
+    // }
+    // public class ReadDependency<T> : ComponentDependency<T>
+    //         where T : unmanaged
+    // {
+    //     public ReadDependency() : base(false) { }
+    // }
+
+    // public class WriteDependency<T> : ComponentDependency<T>
+    //     where T : unmanaged
+    // {
+    //     public WriteDependency() : base(true) { }
+    // }
+
+    // public class BeforeDependency : Dependency
+    // {
+    //     public string Name { get; }
+
+    //     public override int Priority => 2000;
+
+    //     public BeforeDependency(string name)
+    //     {
+    //         Name = name;
+    //     }
+
+    //     protected override bool OnEqual(Dependency other)
+    //     {
+    //         if (other is null || !(other is BeforeDependency it))
+    //             return false;
+
+    //         return Name == it.Name;
+    //     }
+
+    //     protected override void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
+    //     {
+    //         if (string.Compare(Name, b.Name, true) == 0)
+    //             graph.AddEdge(a, b);
+    //     }
+    // }
+
+
+    // public class AfterDependency : Dependency
+    // {
+    //     public string Name { get; }
+    //     public override int Priority => 1000;
+    //     public AfterDependency(string name)
+    //     {
+    //         Name = name;
+    //     }
+
+    //     protected override bool OnEqual(Dependency other)
+    //     {
+    //         if (other is null || !(other is AfterDependency it))
+    //             return false;
+
+    //         return Name == it.Name;
+    //     }
+
+    //     protected override void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
+    //     {
+    //         if (string.Compare(Name, b.Name, true) == 0)
+    //             graph.AddEdge(b, a);
+    //     }
+    // }
+
+
+    public class DependencyListConfig
     {
-        public bool Equals(Dependency other) => OnEqual(other);
+        private DependencyList _list;
 
-        protected abstract bool OnEqual(Dependency other);
-
-        public void Resolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
+        internal DependencyListConfig(DependencyList list)
         {
-            OnResolve(graph, a, b);
+            _list = list;
         }
-        protected abstract void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b);
-    }
 
-    public class ComponentDependency<T> : ComponentDependency
+        public DependencyListConfig Read<T>()
             where T : unmanaged
-    {
-        public ComponentDependency(bool writable) : base(ComponentType<T>.Type, writable) { }
+        {
+            var componentType = ComponentType<T>.Type;
+            if (!_list._allComponents.Add(componentType))
+                throw new Exception("Duplicate type");
+            _list._readComponents.Add(componentType);
+            return this;
+        }
+
+        public DependencyListConfig Write<T>()
+            where T : unmanaged
+        {
+            var componentType = ComponentType<T>.Type;
+            if (!_list._allComponents.Add(componentType))
+                throw new Exception("Duplicate type");
+
+            _list._writeComponents.Add(componentType);
+            return this;
+        }
+
+        public DependencyListConfig Before(string name)
+        {
+            _list._before.Add(name);
+            return this;
+        }
+
+        public DependencyListConfig After(string name)
+        {
+            _list._after.Add(name);
+            return this;
+        }
     }
 
-    public class ComponentDependency : Dependency
+    public sealed class DependencyList
     {
-        private ComponentType _componentType;
-        public ComponentType ComponentType => _componentType;
+        public readonly string Name;
+        public readonly int Priority;
 
-        public readonly bool Writable;
+        internal HashSet<ComponentType> _readComponents = new HashSet<ComponentType>();
+        internal HashSet<ComponentType> _writeComponents = new HashSet<ComponentType>();
+        internal HashSet<ComponentType> _allComponents = new HashSet<ComponentType>();
 
-        public ComponentDependency(in ComponentType componentType, bool writable)
+        internal HashSet<string> _before = new HashSet<string>();
+        internal HashSet<string> _after = new HashSet<string>();
+
+        public DependencyList(string name, int priority, Action<DependencyListConfig> config)
         {
-            _componentType = componentType;
-            Writable = writable;
+            Name = name;
+            Priority = priority;
+            config?.Invoke(new DependencyListConfig(this));
         }
 
-        protected override bool OnEqual(Dependency other)
+        private DependencyList(string name, int priority)
         {
-            if (other is null || !(other is ComponentDependency it))
-                return false;
-
-            return _componentType.ID == it._componentType.ID && Writable == it.Writable;
+            Name = name;
+            Priority = priority;
         }
 
-        protected override void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
+        public IEnumerable<ComponentType> Components
         {
-            foreach (var it in b.Dependencies)
+            get
             {
-                if (it is ComponentDependency dep && dep.ComponentType.ID == _componentType.ID)
-                {
-                    //TODO: if both of these are writable, we are going to have cyclic issues
-                    if (Writable != dep.Writable)
-                    {
-                        if (Writable)
-                            graph.AddEdge(a, b);
-                        else
-                            graph.AddEdge(b, a);
-                    }
-                }
+                foreach (var read in _readComponents)
+                    yield return read;
+
+                foreach (var write in _writeComponents)
+                    yield return write;
             }
         }
+
+        internal bool IsBefore(DependencyList other)
+        {
+            foreach (var it in _before)
+                if (string.Compare(it, other.Name, true) == 0)
+                    return true;
+            foreach (var it in other._after)
+                if (string.Compare(it, Name, true) == 0)
+                    return true;
+            return false;
+        }
+
+        internal bool IsAfter(DependencyList other)
+        {
+            foreach (var it in _after)
+                if (string.Compare(it, other.Name, true) == 0)
+                    return true;
+            foreach (var it in other._before)
+                if (string.Compare(it, Name, true) == 0)
+                    return true;
+            return false;
+        }
+
+        internal bool HasWriteComponent(in ComponentType type)
+        {
+            foreach (var it in _writeComponents)
+                if (it.ID == type.ID)
+                    return true;
+            return false;
+        }
+        internal bool HasReadComponent(in ComponentType type)
+        {
+            foreach (var it in _readComponents)
+                if (it.ID == type.ID)
+                    return true;
+            return false;
+        }
+
+        internal bool HasComponent(in ComponentType type, out bool writable)
+        {
+            if (HasWriteComponent(type))
+            {
+                writable = true;
+                return true;
+            }
+            writable = false;
+            if (HasReadComponent(type))
+                return true;
+
+            return false;
+        }
+
+        internal bool HasComponent(in ComponentType type) => HasWriteComponent(type) || HasReadComponent(type);
+
+        public bool IsDependentOn(DependencyList other)
+        {
+            if (IsBefore(other)) return false;
+            else if (other.IsBefore(this)) return true;
+
+            if (other.Priority < Priority) return true; //we depend on them first
+            else if (other.Priority > Priority) return false; //they are dependent on us
+
+            foreach (var read in _readComponents)
+            {
+                if (other._writeComponents.Contains(read))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static DependencyList MergeComponents(string name, int priority, IEnumerable<DependencyList> lists)
+        {
+            var list = new DependencyList(name, priority);
+
+            foreach (var it in lists)
+                foreach (var write in it._writeComponents)
+                    if (list._writeComponents.Add(write))
+                        list._allComponents.Add(write);
+
+            foreach (var it in lists)
+                foreach (var read in it._readComponents)
+                    if (!list._writeComponents.Contains(read))
+                        if (list._readComponents.Add(read))
+                            list._allComponents.Add(read);
+
+            return list;
+        }
     }
 
-    public class ReadDependency<T> : ComponentDependency<T>
-            where T : unmanaged
-    {
-        public ReadDependency() : base(false) { }
-    }
-
-    public class WriteDependency<T> : ComponentDependency<T>
-        where T : unmanaged
-    {
-        public WriteDependency() : base(true) { }
-    }
-
-    public class BeforeDependency : Dependency
-    {
-        public string Name { get; }
-        public BeforeDependency(string name)
-        {
-            Name = name;
-        }
-
-        protected override bool OnEqual(Dependency other)
-        {
-            if (other is null || !(other is BeforeDependency it))
-                return false;
-
-            return Name == it.Name;
-        }
-
-        protected override void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
-        {
-            if (string.Compare(Name, b.Name, true) == 0)
-                graph.AddEdge(a, b);
-        }
-    }
-
-
-    public class AfterDependency : Dependency
-    {
-        public string Name { get; }
-        public AfterDependency(string name)
-        {
-            Name = name;
-        }
-
-        protected override bool OnEqual(Dependency other)
-        {
-            if (other is null || !(other is AfterDependency it))
-                return false;
-
-            return Name == it.Name;
-        }
-
-        protected override void OnResolve(DirectedGraph<ISystem> graph, ISystem a, ISystem b)
-        {
-            if (string.Compare(Name, b.Name, true) == 0)
-                graph.AddEdge(b, a);
-        }
-    }
-
-    public enum DependencyState
+    public enum ComponentState
     {
         Missing,
         Read,
         Write
     }
 
-    public class DependencyMatrix
+    public class ComponentMatrix
     {
         private ISystem[] _systems;
         private ComponentType[] _components;
@@ -143,14 +321,14 @@ namespace Atma.Systems
         public ReadOnlySpan<ISystem> Systems => _systems;
         public ReadOnlySpan<ComponentType> Components => _components;
 
-        private DependencyState[] _matrix;
+        private ComponentState[] _matrix;
 
-        public ReadOnlySpan<DependencyState> GetRow(int row)
+        public ReadOnlySpan<ComponentState> GetRow(int row)
         {
-            return new ReadOnlySpan<DependencyState>(_matrix, (row * _components.Length), _components.Length);
+            return new ReadOnlySpan<ComponentState>(_matrix, (row * _components.Length), _components.Length);
         }
 
-        public ReadOnlySpan<DependencyState> GetRow(ISystem system)
+        public ReadOnlySpan<ComponentState> GetRow(ISystem system)
         {
             for (var i = 0; i < _systems.Length; i++)
                 if (_systems[i] == system)
@@ -159,7 +337,7 @@ namespace Atma.Systems
             throw new ArgumentException(nameof(system));
         }
 
-        public DependencyState this[ISystem system, in ComponentType componentType]
+        public ComponentState this[ISystem system, in ComponentType componentType]
         {
             get
             {
@@ -174,7 +352,7 @@ namespace Atma.Systems
                 }
 
                 if (componentIndex == -1)
-                    return DependencyState.Missing;
+                    return ComponentState.Missing;
 
                 var systemIndex = -1;
                 for (var i = 0; i < _systems.Length; i++)
@@ -187,24 +365,24 @@ namespace Atma.Systems
                 }
 
                 if (systemIndex == -1)
-                    return DependencyState.Missing;
+                    return ComponentState.Missing;
 
                 return _matrix[(systemIndex * _components.Length) + componentIndex];
             }
         }
 
-        public DependencyMatrix(IEnumerable<ISystem> systems)
+        public ComponentMatrix(IEnumerable<ISystem> systems)
         {
             _systems = systems.ToArray();
 
             _components = _systems
-                            .SelectMany(it => it.Dependencies.OfType<ComponentDependency>())
-                            .GroupBy(it => it.ComponentType)
+                            .SelectMany(it => it.Dependencies.Components)
+                            .GroupBy(it => it)
                             .Where(it => it.Count() > 1)
                             .Select(it => it.Key)
                             .ToArray();
 
-            _matrix = new DependencyState[_systems.Length * _components.Length];
+            _matrix = new ComponentState[_systems.Length * _components.Length];
 
             for (var i = 0; i < _systems.Length; i++)
             {
@@ -214,18 +392,12 @@ namespace Atma.Systems
                     var component = _components[k];
                     var idx = (i * _components.Length) + k;
 
-                    var dep =
-                        system
-                            .Dependencies
-                            .OfType<ComponentDependency>()
-                            .FirstOrDefault(it => it.ComponentType.ID == component.ID);
-
-                    if (dep != null)
+                    if (system.Dependencies.HasComponent(component, out var writable))
                     {
-                        if (dep.Writable)
-                            _matrix[idx] = DependencyState.Write;
+                        if (writable)
+                            _matrix[idx] = ComponentState.Write;
                         else
-                            _matrix[idx] = DependencyState.Read;
+                            _matrix[idx] = ComponentState.Read;
                     }
                 }
             }
@@ -265,12 +437,12 @@ namespace Atma.Systems
                             var state = _matrix[idx];
 
                             var wrote = 0;
-                            if (state == DependencyState.Read)
+                            if (state == ComponentState.Read)
                             {
                                 sb.Append("Read");
                                 wrote = 4;
                             }
-                            else if (state == DependencyState.Write)
+                            else if (state == ComponentState.Write)
                             {
                                 sb.Append("Write");
                                 wrote = 5;
@@ -285,4 +457,5 @@ namespace Atma.Systems
             return sb.ToString();
         }
     }
+
 }

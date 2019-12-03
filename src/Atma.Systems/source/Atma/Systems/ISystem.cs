@@ -8,7 +8,7 @@ namespace Atma.Systems
     {
         void Init();
         void Tick(SystemManager systemManager, EntityManager entityManager);
-        IEnumerable<Dependency> Dependencies { get; }
+        DependencyList Dependencies { get; }
         int Priority { get; }
         //string Group { get; }
         string Name { get; }

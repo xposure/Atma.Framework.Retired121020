@@ -14,9 +14,9 @@ namespace Atma.Systems
 
         private DirectedGraph<ISystem> _depGraph = new DirectedGraph<ISystem>();
         private List<ISystem> _systems = new List<ISystem>();
-        private List<Dependency> _dependencies = new List<Dependency>();
+        private DependencyList _dependencies;
 
-        public IEnumerable<Dependency> Dependencies => _dependencies;
+        public DependencyList Dependencies => _dependencies;
 
         public int Priority { get; }
         public string Name { get; }
@@ -56,12 +56,12 @@ namespace Atma.Systems
                     _systems[i].Init();
                 }
 
-                var readComponents = new HashSet<ComponentType>();
-                var writeComponents = new HashSet<ComponentType>();
+                _dependencies = DependencyList.MergeComponents(Name, Priority, _systems.Select(it => it.Dependencies));
 
                 for (var i = 0; i < _systems.Count; i++)
                 {
                     var a = _systems[i];
+                    var ad = a.Dependencies;
 
                     for (var j = 0; j < _systems.Count; j++)
                     {
@@ -74,30 +74,12 @@ namespace Atma.Systems
                             _depGraph.AddEdge(b, a);
                         else
                         {
-                            foreach (var dep in a.Dependencies)
-                                dep.Resolve(_depGraph, a, b);
-                        }
-                    }
-
-                    foreach (var dep in a.Dependencies)
-                    {
-                        if (dep is ComponentDependency c)
-                        {
-                            if (c.Writable)
-                                writeComponents.Add(c.ComponentType);
-                            else
-                                readComponents.Add(c.ComponentType);
+                            var bd = b.Dependencies;
+                            if (IsDependentOf(a, b))
+                                _depGraph.AddEdge(b, a);
                         }
                     }
                 }
-
-
-                foreach (var read in readComponents)
-                    if (!writeComponents.Contains(read))
-                        _dependencies.Add(new ComponentDependency(read, false));
-
-                foreach (var write in writeComponents)
-                    _dependencies.Add(new ComponentDependency(write, true));
 
                 if (!_depGraph.Validate())
                 {
@@ -105,7 +87,7 @@ namespace Atma.Systems
                     sb.AppendLine("Cyclic nodes detected");
 
                     sb.AppendLine();
-                    var depMatirx = new DependencyMatrix(_depGraph.PostOrder(_depGraph.CyclicNode));
+                    var depMatirx = new ComponentMatrix(_depGraph.PostOrder(_depGraph.CyclicNode));
                     sb.AppendLine(depMatirx.ToString());
                     sb.AppendLine();
 
@@ -114,6 +96,14 @@ namespace Atma.Systems
                     throw new Exception(sb.ToString());
                 }
             }
+        }
+
+
+        public static bool IsDependentOf(ISystem a, ISystem b)
+        {
+
+
+            return false;
         }
 
         public override string ToString() => $"Name: {Name}, Count: {_systems.Count}";
@@ -153,6 +143,7 @@ namespace Atma.Systems
             if (!_systems.Disabled)
                 _systems.Tick(this, _entityManager);
         }
-
     }
+
+
 }
