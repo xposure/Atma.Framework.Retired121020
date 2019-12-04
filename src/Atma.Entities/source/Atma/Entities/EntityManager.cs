@@ -17,9 +17,11 @@
     {
         private const int BATCH_SIZE = 256;
 
-        public int EntityCount { get => _entityArrays.Sum(x => x.EntityCount); }
-        public int SpecCount { get => _knownSpecs.Count; }
-        public IReadOnlyList<EntityChunkList> EntityArrays => _entityArrays;
+        public int EntityCount { get => EntityArrays.EntityCount(); }
+        //public int SpecCount { get => _knownSpecs.Count; }
+        //public IReadOnlyList<EntityChunkList> EntityArrays => _entityArrays;
+
+        public readonly EntityArrayList EntityArrays;
 
         private ILogger _logger;
         private ILoggerFactory _logFactory;
@@ -27,7 +29,7 @@
 
         private EntityPool _entityPool;// = new EntityPool2();
         private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
-        private List<EntityChunkList> _entityArrays = new List<EntityChunkList>();
+        //private List<EntityChunkList> _entityArrays = new List<EntityChunkList>();
 
         public EntityManager(ILoggerFactory logFactory, IAllocator allocator)
         {
@@ -36,63 +38,68 @@
             _allocator = allocator;
 
             _entityPool = new EntityPool(_logFactory, _allocator);
+            EntityArrays = new EntityArrayList(logFactory, allocator);
         }
 
-        internal int GetOrCreateSpec(in EntitySpec spec)
-        {
-            var specIndex = _knownSpecs.IndexOf(spec.ID);
-            if (specIndex == -1)
-            {
-                //we are limited to this many unique specs per EM
-                specIndex = _knownSpecs.Count;
-                Assert.LessThan(specIndex, Entity.SPEC_MAX);
-                _knownSpecs.Add(spec.ID, spec);
-                _entityArrays.Add(new EntityChunkList(_logFactory, _allocator, spec, specIndex));
-            }
-            return specIndex;
-        }
+        // internal int GetOrCreateSpec(in EntitySpec spec)
+        // {
+        //     var specIndex = _knownSpecs.IndexOf(spec.ID);
+        //     if (specIndex == -1)
+        //     {
+        //         //we are limited to this many unique specs per EM
+        //         specIndex = _knownSpecs.Count;
+        //         Assert.LessThan(specIndex, Entity.SPEC_MAX);
+        //         _knownSpecs.Add(spec.ID, spec);
+        //         EntityArrays2.Add(new EntityChunkList(_logFactory, _allocator, spec, specIndex));
+        //     }
+        //     return specIndex;
+        // }
 
-        internal int GetOrCreateSpec(Span<ComponentType> componentTypes)
-        {
-            var specId = ComponentType.CalculateId(componentTypes);
-            var specIndex = _knownSpecs.IndexOf(specId);
-            if (specIndex == -1)
-                return GetOrCreateSpec(new EntitySpec(specId, componentTypes));
+        // internal int GetOrCreateSpec(Span<ComponentType> componentTypes)
+        // {
+        //     var specId = ComponentType.CalculateId(componentTypes);
+        //     var specIndex = _knownSpecs.IndexOf(specId);
+        //     if (specIndex == -1)
+        //         return GetOrCreateSpec(new EntitySpec(specId, componentTypes));
 
-            return specIndex;
-        }
+        //     return specIndex;
+        // }
 
         public uint Create(in EntitySpec spec)
         {
-            var specIndex = GetOrCreateSpec(spec);
+            //var specIndex = GetOrCreateSpec(spec);
+            var array = EntityArrays[spec];
             Span<uint> createdEntities = stackalloc uint[1];
-            CreateInternal(specIndex, createdEntities);
+            CreateInternal(array, createdEntities);
             return createdEntities[0];
         }
 
         public uint Create(Span<ComponentType> componentTypes)
         {
-            var specIndex = GetOrCreateSpec(componentTypes);
+            //var specIndex = GetOrCreateSpec(componentTypes);
+            var array = EntityArrays[componentTypes];
             Span<uint> createdEntities = stackalloc uint[1];
-            CreateInternal(specIndex, createdEntities);
+            CreateInternal(array, createdEntities);
             return createdEntities[0];
         }
 
         public unsafe void Create(in EntitySpec spec, Span<uint> createdEntities)
         {
-            var specIndex = GetOrCreateSpec(spec);
-            CreateInternal(specIndex, createdEntities);
+            //var specIndex = GetOrCreateSpec(spec);
+            var array = EntityArrays[spec];
+            CreateInternal(array, createdEntities);
         }
 
         public unsafe void Create(Span<ComponentType> componentTypes, Span<uint> createdEntities)
         {
-            var specIndex = GetOrCreateSpec(componentTypes);
-            CreateInternal(specIndex, createdEntities);
+            //var specIndex = GetOrCreateSpec(componentTypes);
+            var array = EntityArrays[componentTypes];
+            CreateInternal(array, createdEntities);
         }
 
-        internal unsafe void CreateInternal(int specIndex, Span<uint> entities)
+        internal unsafe void CreateInternal(EntityChunkList array, Span<uint> entities)
         {
-            var array = _entityArrays[specIndex];
+            //var array = EntityArrays2[specIndex];
             for (var i = 0; i < entities.Length;)
             {
                 var remaining = entities.Length - i;
@@ -148,7 +155,7 @@
 
             ref readonly var e = ref _entityPool[entity];
 
-            var array = _entityArrays[e.SpecIndex];
+            var array = EntityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
             var span = chunk.GetComponentData<T>();
 
@@ -175,7 +182,7 @@
 
         private bool Has(ref Entity entityInfo, int componentId)
         {
-            var spec = _entityArrays[entityInfo.SpecIndex].Specification;
+            var spec = EntityArrays[entityInfo.SpecIndex].Specification;
             return spec.Has(componentId);
         }
 
@@ -253,7 +260,7 @@
                     var amountToRemove = i - lastIndex - 1;
                     if (amountToRemove > 0)
                     {
-                        var array = _entityArrays[specIndex];
+                        var array = EntityArrays[specIndex];
                         var workingEntities = entities.Slice(lastIndex, amountToRemove);
                         array.Delete(workingEntities);
 
@@ -270,7 +277,7 @@
 
             if (entities.Length - lastIndex > 0)
             {
-                var array = _entityArrays[specIndex];
+                var array = EntityArrays[specIndex];
                 var workingEntities = entities.Slice(lastIndex, entities.Length - lastIndex);
                 array.Delete(workingEntities);
                 if (returnId)
@@ -304,7 +311,7 @@
 
         public unsafe void Move(uint entity, in EntitySpec spec)
         {
-            var dstSpecIndex = GetOrCreateSpec(spec);
+            var dstSpecIndex = EntityArrays.GetOrCreateSpec(spec);
             Span<EntityRef> entities = stackalloc[] { _entityPool.GetRef(entity) };
 
             MoveInternal(entities, entities[0].SpecIndex, dstSpecIndex);
@@ -314,7 +321,7 @@
         {
             if (entities.Length == 0)
                 return;
-            var dstSpecIndex = GetOrCreateSpec(spec);
+            var dstSpecIndex = EntityArrays.GetOrCreateSpec(spec);
 
             var srcSpecIndex = entities[0].SpecIndex;
             var lastIndex = 0;
@@ -360,8 +367,8 @@
         // private unsafe void MoveInternal(Span<uint> entities, int srcSpecIndex, int dstSpecIndex)
         // {
         //     var index = 0;
-        //     var src = _entityArrays[srcSpecIndex];
-        //     var dst = _entityArrays[dstSpecIndex];
+        //     var src = EntityArrays2[srcSpecIndex];
+        //     var dst = EntityArrays2[dstSpecIndex];
 
         //     var entityPtr = stackalloc Entity[BATCH_SIZE];
         //     var entityData = new Span<Entity>(entityPtr, BATCH_SIZE);
@@ -406,8 +413,8 @@
         private unsafe void MoveInternal(Span<EntityRef> entities, int srcSpecIndex, int dstSpecIndex)
         {
             var index = 0;
-            var src = _entityArrays[srcSpecIndex];
-            var dst = _entityArrays[dstSpecIndex];
+            var src = EntityArrays[srcSpecIndex];
+            var dst = EntityArrays[dstSpecIndex];
 
             var tempEntitiesPtr = stackalloc Entity[BATCH_SIZE];
             var tempEntities = new Span<Entity>(tempEntitiesPtr, BATCH_SIZE);
@@ -439,7 +446,7 @@
 
         private unsafe int MoveInternal(Span<uint> entities, int srcSpecIndex, Span<ComponentType> types, bool addComponent)
         {
-            var srcSpec = _entityArrays[srcSpecIndex].Specification;
+            var srcSpec = EntityArrays[srcSpecIndex].Specification;
 
             //we need to move the entity to the new spec
             var srcComponents = srcSpec.ComponentTypes.AsSpan();
@@ -467,8 +474,8 @@
             }
             else
             {
-                var specId = ComponentType.CalculateId(componentTypes);
-                var dstSpecIndex = GetOrCreateSpec(componentTypes);
+                //var specId = ComponentType.CalculateId(componentTypes);                
+                var dstSpecIndex = EntityArrays.GetOrCreateSpec(componentTypes);
 
                 //TODO: needs rewrote, just making the tests pass
                 Span<EntityRef> entityRefs = stackalloc EntityRef[entities.Length];
@@ -493,9 +500,9 @@
                     if (batch.Length > 0)
                     {
                         if (addComponent)
-                            Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAny(componentTypes), false);
+                            Assert.EqualTo(EntityArrays[srcSpecIndex].Specification.HasAny(componentTypes), false);
                         else
-                            Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAll(componentTypes), true);
+                            Assert.EqualTo(EntityArrays[srcSpecIndex].Specification.HasAll(componentTypes), true);
 
                         MoveInternal(batch, srcSpecIndex, componentTypes, addComponent);
                     }
@@ -510,9 +517,9 @@
             if (batch.Length > 0)
             {
                 if (addComponent)
-                    Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAny(componentTypes), false);
+                    Assert.EqualTo(EntityArrays[srcSpecIndex].Specification.HasAny(componentTypes), false);
                 else
-                    Assert.EqualTo(_entityArrays[srcSpecIndex].Specification.HasAll(componentTypes), true);
+                    Assert.EqualTo(EntityArrays[srcSpecIndex].Specification.HasAll(componentTypes), true);
 
                 MoveInternal(batch, srcSpecIndex, componentTypes, addComponent);
             }
@@ -522,7 +529,7 @@
         public void Reset(uint entity)
         {
             ref var e = ref _entityPool[entity];
-            var array = _entityArrays[e.SpecIndex];
+            var array = EntityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
             chunk.PackedArray.Reset(e.Index);
         }
@@ -533,7 +540,7 @@
             for (var i = 0; i < entities.Length; i++)
             {
                 ref var e = ref _entityPool[entities[i]];
-                var array = _entityArrays[e.SpecIndex];
+                var array = EntityArrays[e.SpecIndex];
                 var chunk = array.AllChunks[e.ChunkIndex];
                 chunk.PackedArray.Reset(e.Index);
             }
@@ -543,7 +550,7 @@
             where T : unmanaged
         {
             ref var e = ref _entityPool[entity];
-            var array = _entityArrays[e.SpecIndex];
+            var array = EntityArrays[e.SpecIndex];
             var chunk = array.AllChunks[e.ChunkIndex];
             chunk.PackedArray.Reset<T>(e.Index);
         }
@@ -600,12 +607,12 @@
                         if (!hasComponent)
                             specIndex = MoveInternal(entities.Slice(lastIndex, entityRefs.Length), specIndex, new Span<ComponentType>(componentType, 1), true);
 
-                        var array = _entityArrays[specIndex];
+                        var array = EntityArrays[specIndex];
                         array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
                         entityRefs.Reset();
                     }
                     specIndex = e.SpecIndex;
-                    hasComponent = _entityArrays[e.SpecIndex].Specification.Has(componentType->ID);
+                    hasComponent = EntityArrays[e.SpecIndex].Specification.Has(componentType->ID);
                     lastIndex = i;
 
                     Assert.EqualTo(hasComponent | allowMove, true);
@@ -621,7 +628,7 @@
                     specIndex = MoveInternal(entities.Slice(lastIndex, entityRefs.Length), specIndex, new Span<ComponentType>(componentType, 1), true);
                 }
 
-                var array = _entityArrays[specIndex];
+                var array = EntityArrays[specIndex];
                 array.Copy(specIndex, componentType, ref src, entityRefs.Slice(), incrementSource);
             }
         }
@@ -636,9 +643,7 @@
 
         protected override void OnUnmanagedDispose()
         {
-            _entityArrays.DisposeAll();
-            _entityArrays.Clear();
-
+            EntityArrays.Dispose();
             _entityPool.Dispose();
         }
     }

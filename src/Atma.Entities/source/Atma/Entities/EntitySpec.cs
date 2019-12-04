@@ -39,6 +39,9 @@ namespace Atma.Entities
 
         public bool HasAny(Span<ComponentType> componentTypes) => ComponentType.HasAny(ComponentTypes, componentTypes);
 
+        public bool HasNone(Span<ComponentType> componentTypes) => !ComponentType.HasAny(ComponentTypes, componentTypes);
+        public bool HasNone(EntitySpec other) => !HasAny(other.ComponentTypes);
+
         public bool Has(in ComponentType type) => Has(type.ID);
 
         internal bool Has(int id)

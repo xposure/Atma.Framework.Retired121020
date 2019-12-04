@@ -59,57 +59,57 @@
             _logFactory = LogFactory.Create(output);
         }
 
-        [Fact]
-        public void ShouldGetOrCreateSpecByEntitySpec()
-        {
-            using var memory = new HeapAllocator(_logFactory);
-            using var entities = new EntityManager(_logFactory, memory);
+        // [Fact]
+        // public void ShouldGetOrCreateSpecByEntitySpec()
+        // {
+        //     using var memory = new HeapAllocator(_logFactory);
+        //     using var entities = new EntityManager(_logFactory, memory);
 
-            Span<ComponentType> c0 = stackalloc[] { ComponentType<Position>.Type };
-            Span<ComponentType> c1 = stackalloc[] { ComponentType<Velocity>.Type };
-            Span<ComponentType> c2 = stackalloc[] { ComponentType<Velocity>.Type, ComponentType<Position>.Type };
-            Span<ComponentType> c3 = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
+        //     Span<ComponentType> c0 = stackalloc[] { ComponentType<Position>.Type };
+        //     Span<ComponentType> c1 = stackalloc[] { ComponentType<Velocity>.Type };
+        //     Span<ComponentType> c2 = stackalloc[] { ComponentType<Velocity>.Type, ComponentType<Position>.Type };
+        //     Span<ComponentType> c3 = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
 
-            var si0 = entities.GetOrCreateSpec(new EntitySpec(c0));
-            var si1 = entities.GetOrCreateSpec(new EntitySpec(c1));
-            var si2 = entities.GetOrCreateSpec(new EntitySpec(c2));
-            var si3 = entities.GetOrCreateSpec(new EntitySpec(c3));
-            var si4 = entities.GetOrCreateSpec(new EntitySpec(c0));
-            var si5 = entities.GetOrCreateSpec(new EntitySpec(c1));
+        //     var si0 = entities.GetOrCreateSpec(new EntitySpec(c0));
+        //     var si1 = entities.GetOrCreateSpec(new EntitySpec(c1));
+        //     var si2 = entities.GetOrCreateSpec(new EntitySpec(c2));
+        //     var si3 = entities.GetOrCreateSpec(new EntitySpec(c3));
+        //     var si4 = entities.GetOrCreateSpec(new EntitySpec(c0));
+        //     var si5 = entities.GetOrCreateSpec(new EntitySpec(c1));
 
-            si0.ShouldBe(0);
-            si1.ShouldBe(1);
-            si2.ShouldBe(2);
-            si3.ShouldBe(2);
-            si4.ShouldBe(0);
-            si5.ShouldBe(1);
-        }
+        //     si0.ShouldBe(0);
+        //     si1.ShouldBe(1);
+        //     si2.ShouldBe(2);
+        //     si3.ShouldBe(2);
+        //     si4.ShouldBe(0);
+        //     si5.ShouldBe(1);
+        // }
 
-        [Fact]
-        public void ShouldGetOrCreateSpecByComponentTypes()
-        {
-            using var memory = new HeapAllocator(_logFactory);
-            using var entities = new EntityManager(_logFactory, memory);
+        // [Fact]
+        // public void ShouldGetOrCreateSpecByComponentTypes()
+        // {
+        //     using var memory = new HeapAllocator(_logFactory);
+        //     using var entities = new EntityManager(_logFactory, memory);
 
-            Span<ComponentType> c0 = stackalloc[] { ComponentType<Position>.Type };
-            Span<ComponentType> c1 = stackalloc[] { ComponentType<Velocity>.Type };
-            Span<ComponentType> c2 = stackalloc[] { ComponentType<Velocity>.Type, ComponentType<Position>.Type };
-            Span<ComponentType> c3 = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
+        //     Span<ComponentType> c0 = stackalloc[] { ComponentType<Position>.Type };
+        //     Span<ComponentType> c1 = stackalloc[] { ComponentType<Velocity>.Type };
+        //     Span<ComponentType> c2 = stackalloc[] { ComponentType<Velocity>.Type, ComponentType<Position>.Type };
+        //     Span<ComponentType> c3 = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
 
-            var si0 = entities.GetOrCreateSpec(c0);
-            var si1 = entities.GetOrCreateSpec(c1);
-            var si2 = entities.GetOrCreateSpec(c2);
-            var si3 = entities.GetOrCreateSpec(c3);
-            var si4 = entities.GetOrCreateSpec(c0);
-            var si5 = entities.GetOrCreateSpec(c1);
+        //     var si0 = entities.GetOrCreateSpec(c0);
+        //     var si1 = entities.GetOrCreateSpec(c1);
+        //     var si2 = entities.GetOrCreateSpec(c2);
+        //     var si3 = entities.GetOrCreateSpec(c3);
+        //     var si4 = entities.GetOrCreateSpec(c0);
+        //     var si5 = entities.GetOrCreateSpec(c1);
 
-            si0.ShouldBe(0);
-            si1.ShouldBe(1);
-            si2.ShouldBe(2);
-            si3.ShouldBe(2);
-            si4.ShouldBe(0);
-            si5.ShouldBe(1);
-        }
+        //     si0.ShouldBe(0);
+        //     si1.ShouldBe(1);
+        //     si2.ShouldBe(2);
+        //     si3.ShouldBe(2);
+        //     si4.ShouldBe(0);
+        //     si5.ShouldBe(1);
+        // }
 
         [Fact]
         public void ShouldCreateOne()
