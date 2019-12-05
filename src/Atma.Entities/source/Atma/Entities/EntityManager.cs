@@ -680,7 +680,7 @@
             var e = _entityPool.GetRef(entity);
             var array = EntityArrays[e.SpecIndex];
             var srcSpec = array.Specification;
-            return srcSpec.GetGroupedData<T>();
+            return srcSpec.GetGroupData<T>();
         }
 
         protected override void OnUnmanagedDispose()

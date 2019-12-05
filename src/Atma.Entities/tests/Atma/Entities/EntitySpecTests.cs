@@ -168,8 +168,8 @@ namespace Atma.Entities
             var b = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 1 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
 
             a.ID.ShouldBe(b.ID);
-            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
-            b.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+            a.GetGroupData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupData<GroupA>().HashCode.ShouldBe(1);
         }
 
         [Fact]
@@ -179,10 +179,10 @@ namespace Atma.Entities
             var b = new EntitySpec(new IEntitySpecGroup[] { new GroupB() { HashCode = 2 }, new GroupA() { HashCode = 1 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
 
             a.ID.ShouldBe(b.ID);
-            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
-            b.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
-            a.GetGroupedData<GroupB>().HashCode.ShouldBe(2);
-            b.GetGroupedData<GroupB>().HashCode.ShouldBe(2);
+            a.GetGroupData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupData<GroupA>().HashCode.ShouldBe(1);
+            a.GetGroupData<GroupB>().HashCode.ShouldBe(2);
+            b.GetGroupData<GroupB>().HashCode.ShouldBe(2);
         }
 
         [Fact]
@@ -192,8 +192,8 @@ namespace Atma.Entities
             var b = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 2 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
 
             a.ID.ShouldNotBe(b.ID);
-            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
-            b.GetGroupedData<GroupA>().HashCode.ShouldBe(2);
+            a.GetGroupData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupData<GroupA>().HashCode.ShouldBe(2);
         }
 
         [Fact]
@@ -203,8 +203,8 @@ namespace Atma.Entities
             var b = new EntitySpec(new IEntitySpecGroup[] { new GroupB() { HashCode = 1 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
 
             a.ID.ShouldNotBe(b.ID);
-            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
-            b.GetGroupedData<GroupB>().HashCode.ShouldBe(1);
+            a.GetGroupData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupData<GroupB>().HashCode.ShouldBe(1);
         }
     }
 }

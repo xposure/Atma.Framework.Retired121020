@@ -13,7 +13,7 @@ namespace Atma.Entities
 
         internal readonly IEntitySpecGroup[] Grouping;
 
-        public readonly T GetGroupedData<T>()
+        public readonly T GetGroupData<T>()
             where T : IEntitySpecGroup
         {
             if (Grouping != null)
