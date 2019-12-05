@@ -130,6 +130,58 @@
         }
 
         [Fact]
+        public void ShouldCreateWithGroupedData()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var speca = EntitySpec.Create<Position, Velocity>(new GroupA() { HashCode = 1 });
+            var specb = EntitySpec.Create<Position, Velocity>(new GroupA() { HashCode = 2 });
+            var id0 = entities.Create(speca);
+            var id1 = entities.Create(specb);
+
+            id0.ShouldNotBe(0u);
+            id1.ShouldNotBe(0u);
+            id0.ShouldNotBe(id1);
+
+            entities.EntityCount.ShouldBe(2);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(1);
+            entities.EntityArrays[1].EntityCount.ShouldBe(1);
+
+            entities.GetGroupData<GroupA>(id0).HashCode.ShouldBe(1);
+            entities.GetGroupData<GroupA>(id1).HashCode.ShouldBe(2);
+        }
+
+        [Fact]
+        public void ShouldMoveEntityWithGroupedData()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+            using var entities = new EntityManager(_logFactory, memory);
+
+            var speca = EntitySpec.Create<Position, Velocity>(new GroupA() { HashCode = 1 });
+            var specb = EntitySpec.Create<Position, Velocity>(new GroupA() { HashCode = 2 });
+            var id0 = entities.Create(speca);
+            var id1 = entities.Create(specb);
+
+            id0.ShouldNotBe(0u);
+            id1.ShouldNotBe(0u);
+            id0.ShouldNotBe(id1);
+
+            var newSpec = entities.SetGroupData(id0, new GroupA() { HashCode = 2 });
+
+            newSpec.ID.ShouldBe(specb.ID);
+
+            entities.EntityCount.ShouldBe(2);
+            entities.EntityArrays.Count.ShouldBe(2);
+            entities.EntityArrays[0].EntityCount.ShouldBe(0);
+            entities.EntityArrays[1].EntityCount.ShouldBe(2);
+
+            entities.GetGroupData<GroupA>(id0).HashCode.ShouldBe(2);
+            entities.GetGroupData<GroupA>(id1).HashCode.ShouldBe(2);
+        }
+
+        [Fact]
         public void ShouldCreateBySpan()
         {
             using var memory = new HeapAllocator(_logFactory);

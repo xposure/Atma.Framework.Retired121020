@@ -2,6 +2,7 @@ namespace Atma.Entities
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Shouldly;
     using Xunit;
@@ -158,6 +159,52 @@ namespace Atma.Entities
             m2.Any(x => x.ID == ComponentType<Valid4>.Type.ID).ShouldBe(false);
             m2.Any(x => x.ID == ComponentType<Valid2>.Type.ID).ShouldBe(false);
 
+        }
+
+        [Fact]
+        public void EntitySpecGroupShouldMatch()
+        {
+            var a = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 1 } }, ComponentType<Valid>.Type, ComponentType<Valid2>.Type);
+            var b = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 1 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
+
+            a.ID.ShouldBe(b.ID);
+            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+        }
+
+        [Fact]
+        public void EntitySpecGroupShouldMatchAll()
+        {
+            var a = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 1 }, new GroupB() { HashCode = 2 } }, ComponentType<Valid>.Type, ComponentType<Valid2>.Type);
+            var b = new EntitySpec(new IEntitySpecGroup[] { new GroupB() { HashCode = 2 }, new GroupA() { HashCode = 1 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
+
+            a.ID.ShouldBe(b.ID);
+            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+            a.GetGroupedData<GroupB>().HashCode.ShouldBe(2);
+            b.GetGroupedData<GroupB>().HashCode.ShouldBe(2);
+        }
+
+        [Fact]
+        public void EntitySpecGroupShouldNotMatchHash()
+        {
+            var a = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 1 } }, ComponentType<Valid>.Type, ComponentType<Valid2>.Type);
+            var b = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 2 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
+
+            a.ID.ShouldNotBe(b.ID);
+            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupedData<GroupA>().HashCode.ShouldBe(2);
+        }
+
+        [Fact]
+        public void EntitySpecGroupShouldNotMatchDifferentGroup()
+        {
+            var a = new EntitySpec(new IEntitySpecGroup[] { new GroupA() { HashCode = 1 } }, ComponentType<Valid>.Type, ComponentType<Valid2>.Type);
+            var b = new EntitySpec(new IEntitySpecGroup[] { new GroupB() { HashCode = 1 } }, ComponentType<Valid2>.Type, ComponentType<Valid>.Type);
+
+            a.ID.ShouldNotBe(b.ID);
+            a.GetGroupedData<GroupA>().HashCode.ShouldBe(1);
+            b.GetGroupedData<GroupB>().HashCode.ShouldBe(1);
         }
     }
 }

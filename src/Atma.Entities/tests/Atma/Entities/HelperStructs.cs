@@ -76,4 +76,19 @@ namespace Atma.Entities
         }
         public override string ToString() => $"X: {X}, Y: {Y}";
     }
+
+    public struct GroupA : IEntitySpecGroup
+    {
+        public int HashCode;
+
+        public override int GetHashCode() => HashCode;
+    }
+
+    public struct GroupB : IEntitySpecGroup
+    {
+        public int HashCode;
+
+        public override int GetHashCode() => HashCode;
+    }
+
 }

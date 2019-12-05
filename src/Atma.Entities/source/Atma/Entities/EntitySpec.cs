@@ -3,25 +3,49 @@ namespace Atma.Entities
     using System;
     using System.Linq;
 
+
+
     public readonly struct EntitySpec : IEquatable<EntitySpec>
     {
         public readonly int ID;
         public readonly ComponentType[] ComponentTypes;
         public readonly int EntitySize;
 
+        public readonly IEntitySpecGroup[] Grouping;
+
+        public T GetGroupedData<T>()
+            where T : IEntitySpecGroup
+        {
+            if (Grouping != null)
+                for (var i = 0; i < Grouping.Length; i++)
+                    if (Grouping[i] is T group)
+                        return group;
+
+            return default;
+        }
+
         internal EntitySpec(int id, Span<ComponentType> componentTypes)
         {
             ID = id;
             ComponentTypes = componentTypes.ToArray();
             EntitySize = ComponentTypes.Sum(x => x.Size);
+            Grouping = null;
         }
-
 
         internal EntitySpec(Span<ComponentType> componentTypes)
         {
             ID = ComponentType.CalculateId(componentTypes);
             ComponentTypes = componentTypes.ToArray();
             EntitySize = ComponentTypes.Sum(x => x.Size);
+            Grouping = null;
+        }
+
+        internal EntitySpec(IEntitySpecGroup[] groups, Span<ComponentType> componentTypes)
+        {
+            ID = ComponentType.CalculateId(componentTypes, groups);
+            ComponentTypes = componentTypes.ToArray();
+            EntitySize = ComponentTypes.Sum(x => x.Size);
+            Grouping = groups;
         }
 
         public EntitySpec(params ComponentType[] componentTypes)
@@ -29,6 +53,39 @@ namespace Atma.Entities
             ComponentTypes = componentTypes;
             ID = ComponentType.CalculateId(ComponentTypes);
             EntitySize = ComponentTypes.Sum(x => x.Size);
+            Grouping = null;
+        }
+
+        public EntitySpec(IEntitySpecGroup[] grouping, params ComponentType[] componentTypes)
+        {
+            ComponentTypes = componentTypes;
+            ID = ComponentType.CalculateId(ComponentTypes, grouping);
+            EntitySize = ComponentTypes.Sum(x => x.Size);
+            Grouping = grouping;
+        }
+
+        public bool Has<T>(out int index)
+            where T : IEntitySpecGroup
+        {
+            if (Grouping != null)
+                for (index = 0; index < Grouping.Length; index++)
+                    if (Grouping[index] is T g)
+                        return true;
+
+            index = -1;
+            return false;
+        }
+
+        public bool Has<T>(T group)
+            where T : IEntitySpecGroup
+        {
+            var groupHash = group.GetHashCode();
+            if (Grouping != null)
+                for (var i = 0; i < Grouping.Length; i++)
+                    if (Grouping[i] is T g)
+                        return g.GetHashCode() == groupHash;
+
+            return false;
         }
 
         public bool HasAll(EntitySpec other) => HasAll(other.ComponentTypes);
@@ -72,27 +129,27 @@ namespace Atma.Entities
 
         public static implicit operator Span<ComponentType>(EntitySpec it) => it.ComponentTypes;
 
-        public static EntitySpec Create<T0>()
+        public static EntitySpec Create<T0>(params IEntitySpecGroup[] groups)
             where T0 : unmanaged
-            => new EntitySpec(ComponentType<T0>.Type);
+            => new EntitySpec(groups, ComponentType<T0>.Type);
 
-        public static EntitySpec Create<T0, T1>()
+        public static EntitySpec Create<T0, T1>(params IEntitySpecGroup[] groups)
             where T0 : unmanaged
             where T1 : unmanaged
-            => new EntitySpec(ComponentType<T0>.Type, ComponentType<T1>.Type);
+            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type);
 
-        public static EntitySpec Create<T0, T1, T2>()
+        public static EntitySpec Create<T0, T1, T2>(params IEntitySpecGroup[] groups)
             where T0 : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged
-            => new EntitySpec(ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type);
+            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type);
 
-        public static EntitySpec Create<T0, T1, T2, T3>()
+        public static EntitySpec Create<T0, T1, T2, T3>(params IEntitySpecGroup[] groups)
             where T0 : unmanaged
             where T1 : unmanaged
             where T2 : unmanaged
             where T3 : unmanaged
-            => new EntitySpec(ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type);
+            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type);
 
     }
 }

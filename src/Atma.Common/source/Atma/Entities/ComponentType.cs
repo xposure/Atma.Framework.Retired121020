@@ -197,20 +197,32 @@
         /// </summary>
         /// <param name="types"></param>
         /// <returns></returns>
-        public static int CalculateId(Span<ComponentType> types)
+        public unsafe static int CalculateId(Span<ComponentType> types, IEntitySpecGroup[] groups = null)
         {
             Assert(types.Length > 0);
-            Span<int> hashIds = stackalloc int[types.Length];
+            var count = types.Length;
+            if (groups != null) count += groups.Length * 2;
+
+            Span<int> hashIds = stackalloc int[count];
             for (var i = 0; i < types.Length; i++)
                 hashIds[i] = types[i].ID;
 
+            if (groups != null)
+            {
+                for (var i = 0; i < groups.Length; i++)
+                {
+                    hashIds[types.Length + i * 2] = groups[i].GetHashCode();
+                    hashIds[types.Length + i * 2 + 1] = groups[i].GetType().GetHashCode();
+                }
+            }
+
             hashIds.InsertionSort();
 
-            var hashCode = new HashCode();
-            for (var i = 0; i < types.Length; i++)
-                hashCode.Add(hashIds[i]);
+            var hashCode = stackalloc HashCode[1];
+            for (var i = 0; i < hashIds.Length; i++)
+                hashCode->Add(hashIds[i]);
 
-            return hashCode.ToHashCode();
+            return hashCode->ToHashCode();
         }
     }
 

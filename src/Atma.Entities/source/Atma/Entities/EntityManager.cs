@@ -7,13 +7,8 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    public interface IEntityManager : IDisposable
-    {
-        uint Create(in EntitySpec spec);
-        uint Create(Span<ComponentType> componentTypes);
-    }
 
-    public sealed partial class EntityManager : UnmanagedDispose, IEntityManager
+    public sealed partial class EntityManager : UnmanagedDispose
     {
         private const int BATCH_SIZE = 256;
 
@@ -639,6 +634,53 @@
                 return new EntityCommandBuffer(_allocator, lengthInBytes);
 
             return new EntityCommandBuffer(_allocator);
+        }
+
+        public unsafe EntitySpec SetGroupData<T>(uint entity, T data)
+            where T : IEntitySpecGroup
+        {
+            var e = _entityPool.GetRef(entity);
+            var array = EntityArrays[e.SpecIndex];
+            var srcSpec = array.Specification;
+
+            var componentTypes = srcSpec.ComponentTypes.AsSpan();
+            IEntitySpecGroup[] groups = null;
+            if (srcSpec.Has<T>(out var index))
+            {
+                //need to replace
+                groups = srcSpec.Grouping;
+                groups[index] = data;
+            }
+            else
+            {
+                var count = 1;
+                if (srcSpec.Grouping != null)
+                    count += srcSpec.Grouping.Length;
+
+                groups = new IEntitySpecGroup[count];
+                for (var i = 0; i < groups.Length; i++)
+                {
+                    if (i < groups.Length - 1)
+                        groups[i] = srcSpec.Grouping[i];
+                    else
+                        groups[i] = data;
+                }
+            }
+
+            var dstSpec = new EntitySpec(groups, componentTypes);
+            var dstSpecIndex = EntityArrays.GetOrCreateSpec(dstSpec);
+            Span<EntityRef> entities = stackalloc[] { e };
+            MoveInternal(entities, e.SpecIndex, dstSpecIndex);
+            return dstSpec;
+        }
+
+        public unsafe T GetGroupData<T>(uint entity)
+            where T : IEntitySpecGroup
+        {
+            var e = _entityPool.GetRef(entity);
+            var array = EntityArrays[e.SpecIndex];
+            var srcSpec = array.Specification;
+            return srcSpec.GetGroupedData<T>();
         }
 
         protected override void OnUnmanagedDispose()
