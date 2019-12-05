@@ -11,9 +11,9 @@ namespace Atma.Entities
         public readonly ComponentType[] ComponentTypes;
         public readonly int EntitySize;
 
-        public readonly IEntitySpecGroup[] Grouping;
+        internal readonly IEntitySpecGroup[] Grouping;
 
-        public T GetGroupedData<T>()
+        public readonly T GetGroupedData<T>()
             where T : IEntitySpecGroup
         {
             if (Grouping != null)
