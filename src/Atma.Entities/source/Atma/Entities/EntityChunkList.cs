@@ -31,6 +31,15 @@
             SpecIndex = specIndex;
         }
 
+        public EntityChunk this[int index]
+        {
+            get
+            {
+                Assert.Range(index, 0, _chunks.Count);
+                return _chunks[index];
+            }
+        }
+
         internal void Create(in EntityRef entity)
         {
             Span<EntityRef> entities = stackalloc[] { entity };

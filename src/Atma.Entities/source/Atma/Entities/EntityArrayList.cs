@@ -1,12 +1,13 @@
 namespace Atma.Entities
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using Atma.Common;
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
 
-    public sealed class EntityArrayList : UnmanagedDispose
+    public sealed class EntityArrayList : UnmanagedDispose, IEnumerable<EntityChunkList>
     {
         private ILogger _logger;
         private ILoggerFactory _logFactory;
@@ -91,17 +92,19 @@ namespace Atma.Entities
             return current;
         }
 
-        // public IEnumerable<EntityChunkList> Filter(Span<ComponentType> componentTypes, Span<ComponentType> excludedComponents = default)
+        // public IEnumerable<EntityChunkList> Filter(EntitySpec spec)
         // {
-        //     var smallest = FindSmallest(componentTypes);
+        //     var smallest = FindSmallest(spec);
         //     for (var i = 0; i < smallest.Count; i++)
         //     {
         //         var array = smallest[i];
-        //         if (array.Specification.HasAll(componentTypes) &&
-        //             (excludedComponents.IsEmpty || array.Specification.HasNone(excludedComponents)))
+        //         if (array.Specification.HasAll(spec.ComponentTypes)
+        //             //&& (excludedComponents.IsEmpty || array.Specification.HasNone(excludedComponents))
+        //             )
         //             yield return array;
         //     }
         // }
+
 
         internal int GetOrCreateSpec(Span<ComponentType> componentTypes)
         {
@@ -142,6 +145,34 @@ namespace Atma.Entities
         {
             _entityArrays.DisposeAll();
             _entityArrays.Clear();
+        }
+
+        public IEnumerator<EntityChunkList> GetEnumerator()
+        {
+            foreach (var it in _entityArrays)
+                yield return it;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            foreach (var it in _entityArrays)
+                yield return it;
+        }
+    }
+
+    public static class EntityArrayListExtensions
+    {
+        public static void Filter(this EntityArrayList it, Span<ComponentType> componentTypes, Action<EntityChunkList> result) => it.Filter(componentTypes, Span<ComponentType>.Empty, result);
+        public static void Filter(this EntityArrayList it, Span<ComponentType> componentTypes, Span<ComponentType> excludedComponents, Action<EntityChunkList> result)
+        {
+            var smallest = it.FindSmallest(componentTypes);
+            for (var i = 0; i < smallest.Count; i++)
+            {
+                var array = smallest[i];
+                if (array.Specification.HasAll(componentTypes)
+                    && (excludedComponents.IsEmpty || array.Specification.HasNone(excludedComponents)))
+                    result(array);
+            }
         }
     }
 
