@@ -92,18 +92,17 @@ namespace Atma.Entities
             return current;
         }
 
-        // public IEnumerable<EntityChunkList> Filter(EntitySpec spec)
-        // {
-        //     var smallest = FindSmallest(spec);
-        //     for (var i = 0; i < smallest.Count; i++)
-        //     {
-        //         var array = smallest[i];
-        //         if (array.Specification.HasAll(spec.ComponentTypes)
-        //             //&& (excludedComponents.IsEmpty || array.Specification.HasNone(excludedComponents))
-        //             )
-        //             yield return array;
-        //     }
-        // }
+        public IEnumerable<EntityChunkList> Filter(EntitySpec contains, EntitySpec exclude = default)
+        {
+            var smallest = FindSmallest(contains);
+            for (var i = 0; i < smallest.Count; i++)
+            {
+                var array = smallest[i];
+                if (array.Specification.HasAll(contains.ComponentTypes)
+                    && (exclude.ID == 0 || array.Specification.HasNone(exclude)))
+                    yield return array;
+            }
+        }
 
 
         internal int GetOrCreateSpec(Span<ComponentType> componentTypes)
