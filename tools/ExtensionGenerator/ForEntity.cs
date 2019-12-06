@@ -12,6 +12,7 @@ namespace ExtensionGenerator
         protected override int OnRun()
         {
             Console.WriteLine("using System;");
+            Console.WriteLine("using Atma;");
             Console.WriteLine("using Atma.Entities;");
             Console.WriteLine("using Atma.Memory;");
             Console.WriteLine("public static class ForEntityExtensions{");
@@ -32,6 +33,7 @@ namespace ExtensionGenerator
             var spanArgs = genericCount.Range().Select(i => $"ref T{i} t{i}");
             var viewArgs = genericCount.Range().Select(i => $"ref t{i}[i]");
             var componentType = genericCount.Range().Select(i => $"ComponentType<T{i}>.Type").ToArray();
+            var componentArrays = genericCount.Range().Select(i => $"  var t{i} = chunk.GetComponentData<T{i}>();").ToArray();
 
             Console.WriteLine($"public delegate void ForEachEntity<{generics.Join()}>(uint entity, {spanArgs.Join()}){where.Join(" ")};");
             Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityManager em, ForEachEntity<{generics.Join()}> view) ");
@@ -56,6 +58,17 @@ namespace ExtensionGenerator
             Console.WriteLine($"    for (var i = 0; i < length; i++)");
             Console.WriteLine($"      view(entities[i].ID, {viewArgs.Join()});");
             Console.WriteLine($"  }});");
+            Console.WriteLine($"}}");
+            Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityChunk chunk, ForEachEntity<{generics.Join()}> view) ");
+            Console.WriteLine($"  {where.Join(" ")}");
+            Console.WriteLine($"{{");
+            Console.WriteLine($"  Span<ComponentType> componentTypes = stackalloc ComponentType[] {{ {componentType.Join()} }};");
+            Console.WriteLine($"  Assert.EqualTo(chunk.Specification.HasAll(componentTypes), true);");
+            Console.WriteLine($"  var length = chunk.Count;");
+            Console.WriteLine($"  var entities = chunk.Entities;");
+            Console.WriteLine($"{componentArrays.Join("\n")}");
+            Console.WriteLine($"    for (var i = 0; i < length; i++)");
+            Console.WriteLine($"      view(entities[i].ID, {viewArgs.Join()});");
             Console.WriteLine($"}}");
 
 

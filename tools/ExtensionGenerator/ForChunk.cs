@@ -53,6 +53,15 @@ namespace ExtensionGenerator
             Console.WriteLine($"        view(length,entities,{viewArgs.Join()}); ");
             Console.WriteLine($"      }}");
             Console.WriteLine($"}}");
+            Console.WriteLine($"public static void ForChunk<{generics.Join()}>(this EntityManager em, ForEachChunk<{generics.Join()}> view) ");
+            Console.WriteLine($"  {where.Join(" ")}");
+            Console.WriteLine($"{{");
+            Console.WriteLine($"  Span<ComponentType> componentTypes = stackalloc ComponentType[] {{ {componentType.Join()} }};");
+            Console.WriteLine($"  var arrays = em.EntityArrays.FindSmallest(componentTypes);");
+            Console.WriteLine($"  foreach (var array in arrays)");
+            Console.WriteLine($"    if (array.Specification.HasAll(componentTypes))");
+            Console.WriteLine($"      array.ForChunk(componentTypes, view);");
+            Console.WriteLine($"}}");
 
             // Console.WriteLine($"public delegate void ForEachChunk<{generics.Join()}>(int length, ReadOnlySpan<EntityRef> entities, {spanGenerics.Join()}){where.Join(" ")};");
             // Console.WriteLine($"public unsafe static void ForChunk<{generics.Join()}>(this EntityManager em, ForEachChunk<{generics.Join()}> view) ");
