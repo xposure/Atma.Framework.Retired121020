@@ -32,7 +32,7 @@ namespace Atma.Entities
             Grouping = null;
         }
 
-        internal EntitySpec(Span<ComponentType> componentTypes)
+        public EntitySpec(Span<ComponentType> componentTypes)
         {
             ID = ComponentType.CalculateId(componentTypes);
             ComponentTypes = componentTypes.ToArray();
@@ -86,6 +86,13 @@ namespace Atma.Entities
                         return g.GetHashCode() == groupHash;
 
             return false;
+        }
+
+        public bool Has<T>()
+            where T : unmanaged
+        {
+            Span<ComponentType> componentTypes = stackalloc[] { ComponentType<T>.Type };
+            return HasAll(componentTypes);
         }
 
         public bool HasAll(EntitySpec other) => HasAll(other.ComponentTypes);
@@ -178,6 +185,17 @@ namespace Atma.Entities
             where T5 : unmanaged
             where T6 : unmanaged
             => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type);
+
+        public static EntitySpec Create<T0, T1, T2, T3, T4, T5, T6, T7>(params IEntitySpecGroup[] groups)
+             where T0 : unmanaged
+             where T1 : unmanaged
+             where T2 : unmanaged
+             where T3 : unmanaged
+             where T4 : unmanaged
+             where T5 : unmanaged
+             where T6 : unmanaged
+             where T7 : unmanaged
+             => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type);
 
     }
 }

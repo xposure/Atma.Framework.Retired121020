@@ -3,7 +3,7 @@ namespace Atma.Entities
     using System;
     using Atma.Memory;
 
-    public unsafe readonly ref struct EntityCommandBuffer //: UnmanagedDispose
+    public unsafe readonly struct EntityCommandBuffer : IDisposable
     {
         private enum CommandTypes
         {
@@ -200,11 +200,13 @@ namespace Atma.Entities
         }
 
         private readonly NativeBuffer _buffer;
+        private readonly EntityManager _entityManager;
 
         //internal NativeSlice<EntityRef> _currentEntites;
 
-        public EntityCommandBuffer(IAllocator allocator, int sizeInBytes = 65536)
+        public EntityCommandBuffer(EntityManager entityManager, IAllocator allocator, int sizeInBytes = 65536)
         {
+            _entityManager = entityManager;
             _buffer = new NativeBuffer(allocator, sizeInBytes);
         }
 
@@ -458,8 +460,9 @@ namespace Atma.Entities
             ptr.Value->Size = ptr.SizeInBytes + data.SizeInBytes;
         }
 
-        public void Execute(EntityManager em)
+        public void Execute()
         {
+            var em = _entityManager;
             var rawPtr = _buffer.RawPointer;
             Span<uint> lastEntities = Span<uint>.Empty;
             while (rawPtr < _buffer.EndPointer)

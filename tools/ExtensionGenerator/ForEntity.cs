@@ -36,6 +36,7 @@ namespace ExtensionGenerator
             var componentArrays = genericCount.Range().Select(i => $"  var t{i} = chunk.GetComponentData<T{i}>();").ToArray();
 
             Console.WriteLine($"public delegate void ForEachEntity<{generics.Join()}>(uint entity, {spanArgs.Join()}){where.Join(" ")};");
+            Console.WriteLine($"public delegate void ForEachEntityGroup<G0, {generics.Join()}>(uint entity, G0 g0, {spanArgs.Join()})where G0: IEntitySpecGroup {where.Join(" ")};");
             Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityManager em, ForEachEntity<{generics.Join()}> view) ");
             Console.WriteLine($"  {where.Join(" ")}");
             Console.WriteLine($"{{");
@@ -48,6 +49,24 @@ namespace ExtensionGenerator
             Console.WriteLine($"          for (var i = 0; i < length; i++)");
             Console.WriteLine($"            view(entities[i].ID, {viewArgs.Join()});");
             Console.WriteLine($"        }});");
+            Console.WriteLine($"  }}");
+            Console.WriteLine($"}}");
+            Console.WriteLine($"public unsafe static void ForEntityGroup<G0, {generics.Join()}>(this EntityManager em, ForEachEntityGroup<G0, {generics.Join()}> view) ");
+            Console.WriteLine($"  where G0: IEntitySpecGroup");
+            Console.WriteLine($"  {where.Join(" ")}");
+            Console.WriteLine($"{{");
+            Console.WriteLine($"  Span<ComponentType> componentTypes = stackalloc ComponentType[] {{ {componentType.Join()} }};");
+            Console.WriteLine($"  var arrays = em.EntityArrays.FindSmallest(componentTypes);");
+            Console.WriteLine($"  if(arrays != null) {{");
+            Console.WriteLine($"    foreach (var array in arrays) {{");
+            Console.WriteLine($"      if(array.Specification.Has<G0>(out var g0i) && array.Specification.HasAll(componentTypes)){{");
+            Console.WriteLine($"        var g0 = (G0)array.Specification.Grouping[g0i];");
+            Console.WriteLine($"        array.ForChunk(componentTypes, (int length, ReadOnlySpan<EntityRef> entities, {spanGenerics.Join()}) => {{");
+            Console.WriteLine($"          for (var i = 0; i < length; i++)");
+            Console.WriteLine($"            view(entities[i].ID, g0, {viewArgs.Join()});");
+            Console.WriteLine($"        }});");
+            Console.WriteLine($"      }}");
+            Console.WriteLine($"    }}");
             Console.WriteLine($"  }}");
             Console.WriteLine($"}}");
             Console.WriteLine($"public unsafe static void ForEntity<{generics.Join()}>(this EntityChunkList chunkList, ForEachEntity<{generics.Join()}> view) ");

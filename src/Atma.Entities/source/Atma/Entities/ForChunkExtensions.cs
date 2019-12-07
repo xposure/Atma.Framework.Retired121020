@@ -4,6 +4,7 @@ using Atma.Memory;
 public static class ForChunkExtensions
 {
     public delegate void ForEachChunk<T0>(int length, ReadOnlySpan<EntityRef> entities, Span<T0> t0) where T0 : unmanaged;
+    public delegate void ForEachChunkGroup<G0, T0>(int length, G0 g0, ReadOnlySpan<EntityRef> entities, Span<T0> t0) where T0 : unmanaged;
     public unsafe static void ForChunk<T0>(this EntityChunkList chunkList, ForEachChunk<T0> view)
       where T0 : unmanaged
     {
@@ -33,6 +34,17 @@ public static class ForChunkExtensions
                 if (array.Specification.HasAll(componentTypes))
                     array.ForChunk(componentTypes, view);
     }
+    // public static void ForChunkGroup<G0, T0>(this EntityManager em, ForEachChunkGroup<G0, T0> view)
+    //   where G0 : IEntitySpecGroup
+    //   where T0 : unmanaged
+    // {
+    //     Span<ComponentType> componentTypes = stackalloc ComponentType[] { ComponentType<T0>.Type };
+    //     var arrays = em.EntityArrays.FindSmallest(componentTypes);
+    //     if (arrays != null)
+    //         foreach (var array in arrays)
+    //             if (array.Specification.HasAll(componentTypes))
+    //                 array.ForChunkGroup<G0>( componentTypes, view);
+    // }
     public delegate void ForEachChunk<T0, T1>(int length, ReadOnlySpan<EntityRef> entities, Span<T0> t0, Span<T1> t1) where T0 : unmanaged where T1 : unmanaged;
     public unsafe static void ForChunk<T0, T1>(this EntityChunkList chunkList, ForEachChunk<T0, T1> view)
       where T0 : unmanaged where T1 : unmanaged

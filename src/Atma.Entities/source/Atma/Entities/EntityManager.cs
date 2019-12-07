@@ -4,17 +4,12 @@
     using Atma.Memory;
     using Microsoft.Extensions.Logging;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-
 
     public sealed partial class EntityManager : UnmanagedDispose
     {
         private const int BATCH_SIZE = 256;
 
         public int EntityCount { get => EntityArrays.EntityCount(); }
-        //public int SpecCount { get => _knownSpecs.Count; }
-        //public IReadOnlyList<EntityChunkList> EntityArrays => _entityArrays;
 
         public readonly EntityArrayList EntityArrays;
 
@@ -23,8 +18,6 @@
         private IAllocator _allocator;
 
         private EntityPool _entityPool;// = new EntityPool2();
-        private LookupList<EntitySpec> _knownSpecs = new LookupList<EntitySpec>();
-        //private List<EntityChunkList> _entityArrays = new List<EntityChunkList>();
 
         public EntityManager(ILoggerFactory logFactory, IAllocator allocator)
         {
@@ -36,29 +29,6 @@
             EntityArrays = new EntityArrayList(logFactory, allocator);
         }
 
-        // internal int GetOrCreateSpec(in EntitySpec spec)
-        // {
-        //     var specIndex = _knownSpecs.IndexOf(spec.ID);
-        //     if (specIndex == -1)
-        //     {
-        //         //we are limited to this many unique specs per EM
-        //         specIndex = _knownSpecs.Count;
-        //         Assert.LessThan(specIndex, Entity.SPEC_MAX);
-        //         _knownSpecs.Add(spec.ID, spec);
-        //         EntityArrays2.Add(new EntityChunkList(_logFactory, _allocator, spec, specIndex));
-        //     }
-        //     return specIndex;
-        // }
-
-        // internal int GetOrCreateSpec(Span<ComponentType> componentTypes)
-        // {
-        //     var specId = ComponentType.CalculateId(componentTypes);
-        //     var specIndex = _knownSpecs.IndexOf(specId);
-        //     if (specIndex == -1)
-        //         return GetOrCreateSpec(new EntitySpec(specId, componentTypes));
-
-        //     return specIndex;
-        // }
 
         public uint Create(in EntitySpec spec)
         {
@@ -631,9 +601,9 @@
         public EntityCommandBuffer CreateCommandBuffer(int lengthInBytes = -1)
         {
             if (lengthInBytes > 0)
-                return new EntityCommandBuffer(_allocator, lengthInBytes);
+                return new EntityCommandBuffer(this, _allocator, lengthInBytes);
 
-            return new EntityCommandBuffer(_allocator);
+            return new EntityCommandBuffer(this, _allocator);
         }
 
         public unsafe EntitySpec SetGroupData<T>(uint entity, T data)
