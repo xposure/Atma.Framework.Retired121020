@@ -147,7 +147,7 @@
                     }
                 }
 
-                system.buffer.Execute(em);
+                system.buffer.Execute();
             }
 
             partial void Execute(int length);

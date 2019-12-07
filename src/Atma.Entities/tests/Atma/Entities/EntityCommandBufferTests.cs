@@ -23,14 +23,14 @@ namespace Atma.Entities
         public void ShouldCreateEntity()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
             buffer.Create(spec);
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(1);
             em.EntityArrays[0].EntityCount.ShouldBe(1);
@@ -41,14 +41,14 @@ namespace Atma.Entities
         public void ShouldCreateManyEntity()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory, 8);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory, 8);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
             buffer.Create(spec, 16384);
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(16384);
             em.EntityArrays[0].EntityCount.ShouldBe(16384);
@@ -58,8 +58,8 @@ namespace Atma.Entities
         public void ShouldDeleteEntity()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -67,7 +67,7 @@ namespace Atma.Entities
 
             buffer.Delete(id);
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(0);
             em.EntityArrays[0].EntityCount.ShouldBe(0);
@@ -77,8 +77,8 @@ namespace Atma.Entities
         public void ShouldDeleteManyEntities()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -90,7 +90,7 @@ namespace Atma.Entities
             var idsToDelete = new[] { ids[0], ids[11], ids[22], ids[23], ids[3], ids[2], ids[15], ids[17], ids[29], ids[21] };
 
             buffer.Delete(idsToDelete);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(samples - idsToDelete.Length);
             em.EntityArrays[0].EntityCount.ShouldBe(samples - idsToDelete.Length);
@@ -107,8 +107,8 @@ namespace Atma.Entities
         public void ShouldDeleteEntityOnLastComponentOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -118,7 +118,7 @@ namespace Atma.Entities
             em.Create(spec, ids);
 
             buffer.Remove(ids, spec.ComponentTypes);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(0);
             em.EntityArrays.Count.ShouldBe(1);
@@ -129,8 +129,8 @@ namespace Atma.Entities
         public void ShouldReplaceOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -138,7 +138,7 @@ namespace Atma.Entities
 
             buffer.Replace(id, new Position(10, 10));
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(1);
             em.EntityArrays[0].EntityCount.ShouldBe(1);
@@ -149,8 +149,8 @@ namespace Atma.Entities
         public void ShouldReplaceManyWithOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -161,7 +161,7 @@ namespace Atma.Entities
             em.Create(spec, ids);
 
             buffer.Replace(ids, position);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(32);
             em.EntityArrays[0].EntityCount.ShouldBe(32);
@@ -174,8 +174,8 @@ namespace Atma.Entities
         public void ShouldReplaceManyWithMany()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
 
@@ -186,7 +186,7 @@ namespace Atma.Entities
             em.Create(spec, ids);
 
             buffer.Replace(ids, positions.AsSpan());
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(32);
             em.EntityArrays[0].EntityCount.ShouldBe(32);
@@ -218,8 +218,8 @@ namespace Atma.Entities
         public void ShouldAssignOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type);
 
@@ -227,7 +227,7 @@ namespace Atma.Entities
 
             buffer.Assign(id, new Position(10, 10));
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(1);
             em.EntityArrays.Count.ShouldBe(2);
@@ -240,8 +240,8 @@ namespace Atma.Entities
         public void ShouldAssignManyWithOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type);
 
@@ -252,7 +252,7 @@ namespace Atma.Entities
             em.Create(spec, ids);
 
             buffer.Assign(ids, position);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(32);
             em.EntityArrays.Count.ShouldBe(2);
@@ -267,8 +267,8 @@ namespace Atma.Entities
         public void ShouldAssignManyWithMany()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type);
 
@@ -282,7 +282,7 @@ namespace Atma.Entities
             var positions = idsToChange.Select(x => new Position((int)x, 10)).ToArray();
 
             buffer.Assign(idsToChange, positions.AsSpan());
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(samples);
             em.EntityArrays.Count.ShouldBe(2);
@@ -325,8 +325,8 @@ namespace Atma.Entities
         public void ShouldUpdateOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type);
 
@@ -334,7 +334,7 @@ namespace Atma.Entities
 
             buffer.Update(id, new Position(10, 10));
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(1);
             em.EntityArrays.Count.ShouldBe(2);
@@ -347,8 +347,8 @@ namespace Atma.Entities
         public void ShouldUpdateManyWithOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type);
 
@@ -363,7 +363,7 @@ namespace Atma.Entities
             var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
 
             buffer.Update(idsToChange, position);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(samples);
             em.EntityArrays.Count.ShouldBe(2);
@@ -386,8 +386,8 @@ namespace Atma.Entities
         public void ShouldUpdateManyWithMany()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type);
 
@@ -401,7 +401,7 @@ namespace Atma.Entities
             var positions = idsToChange.Select(x => new Position((int)x, 10)).ToArray();
 
             buffer.Update(idsToChange, positions.AsSpan());
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(samples);
             em.EntityArrays.Count.ShouldBe(2);
@@ -424,8 +424,8 @@ namespace Atma.Entities
         public void ShouldRemoveOne()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type, ComponentType<Position>.Type);
 
@@ -433,7 +433,7 @@ namespace Atma.Entities
 
             buffer.Remove<Position>(id);
 
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(1);
             em.EntityArrays.Count.ShouldBe(2);
@@ -446,8 +446,8 @@ namespace Atma.Entities
         public void ShouldRemoveMany()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type, ComponentType<Position>.Type);
 
@@ -460,7 +460,7 @@ namespace Atma.Entities
             var remainingIds = ids.Where(x => !idsToChange.Contains(x)).ToArray();
 
             buffer.Remove<Position>(idsToChange);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(samples);
             em.EntityArrays.Count.ShouldBe(2);
@@ -488,8 +488,8 @@ namespace Atma.Entities
         public void ShouldRemoveManyWithMany()
         {
             using var memory = new HeapAllocator(_logFactory);
-            using var buffer = new EntityCommandBuffer(memory);
             using var em = new EntityManager(_logFactory, memory);
+            using var buffer = new EntityCommandBuffer(em, memory);
 
             var spec = new EntitySpec(ComponentType<Velocity>.Type, ComponentType<Position>.Type, ComponentType<Filler>.Type);
 
@@ -503,7 +503,7 @@ namespace Atma.Entities
 
             var typesToRemove = new[] { spec.ComponentTypes[1], spec.ComponentTypes[2] };
             buffer.Remove(idsToChange, typesToRemove);
-            buffer.Execute(em);
+            buffer.Execute();
 
             em.EntityCount.ShouldBe(samples);
             em.EntityArrays.Count.ShouldBe(2);
