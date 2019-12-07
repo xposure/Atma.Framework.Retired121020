@@ -21,6 +21,8 @@
         public IntPtr RawIntPtr => Handle.Address;
         public IntPtr EndIntPtr => new IntPtr((T*)Handle.Address + Length);
 
+        public static NativeArray<T> Empty => new NativeArray<T>(null, 0);
+
         public NativeArray(IAllocator allocator, int length)
         {
             Allocator = allocator;

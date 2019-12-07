@@ -58,7 +58,7 @@
 
         public static bool operator !=(ComponentType a, ComponentType b) => !(a == b);
 
-        public override string ToString() => $"ID: {ID}, Size: {Size}";
+        public override string ToString() => $"Name: {LookUp(ID)}, ID: {ID}, Size: {Size}";
 
         public static int FindMatches(Span<ComponentType> a, Span<ComponentType> b, Span<ComponentType> results)
         {

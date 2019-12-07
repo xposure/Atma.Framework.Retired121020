@@ -123,6 +123,7 @@ namespace Atma.Entities
             return -1;
         }
 
+        public int GetComponentIndex<T>() where T : unmanaged => GetComponentIndex(ComponentType<T>.Type.ID);
         public int GetComponentIndex(in ComponentType type) => GetComponentIndex(type.ID);
 
         public bool Equals(EntitySpec other) => this.ID == other.ID;
@@ -150,6 +151,33 @@ namespace Atma.Entities
             where T2 : unmanaged
             where T3 : unmanaged
             => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type);
+
+        public static EntitySpec Create<T0, T1, T2, T3, T4>(params IEntitySpecGroup[] groups)
+            where T0 : unmanaged
+            where T1 : unmanaged
+            where T2 : unmanaged
+            where T3 : unmanaged
+            where T4 : unmanaged
+            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type);
+
+        public static EntitySpec Create<T0, T1, T2, T3, T4, T5>(params IEntitySpecGroup[] groups)
+            where T0 : unmanaged
+            where T1 : unmanaged
+            where T2 : unmanaged
+            where T3 : unmanaged
+            where T4 : unmanaged
+            where T5 : unmanaged
+            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type);
+
+        public static EntitySpec Create<T0, T1, T2, T3, T4, T5, T6>(params IEntitySpecGroup[] groups)
+            where T0 : unmanaged
+            where T1 : unmanaged
+            where T2 : unmanaged
+            where T3 : unmanaged
+            where T4 : unmanaged
+            where T5 : unmanaged
+            where T6 : unmanaged
+            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type);
 
     }
 }

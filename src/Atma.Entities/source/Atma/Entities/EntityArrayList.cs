@@ -56,7 +56,7 @@ namespace Atma.Entities
         internal int EntityCount(in ComponentType type)
         {
             if (!_specMapping.TryGetValue(type.ID, out var lists))
-                return 0;
+                return -1;
 
             var count = 0;
             for (var i = 0; i < lists.Count; i++)
@@ -79,13 +79,13 @@ namespace Atma.Entities
         internal List<EntityChunkList> FindSmallest(in EntitySpec spec) => FindSmallest(spec.ComponentTypes);
         internal List<EntityChunkList> FindSmallest(Span<ComponentType> componentTypes)
         {
-            var current = _specMapping[componentTypes[0].ID];
-            var count = EntityCount(componentTypes[0]);
+            List<EntityChunkList> current = null;// = _specMapping[componentTypes[0].ID];
+            var count = -1; //EntityCount(componentTypes[0]);
 
-            for (var i = 1; i < componentTypes.Length; i++)
+            for (var i = 0; i < componentTypes.Length; i++)
             {
                 var nextCount = EntityCount(componentTypes[i]);
-                if (nextCount < count)
+                if (nextCount > count)
                     current = _specMapping[componentTypes[i].ID];
             }
 
@@ -95,12 +95,15 @@ namespace Atma.Entities
         public IEnumerable<EntityChunkList> Filter(EntitySpec contains, EntitySpec exclude = default)
         {
             var smallest = FindSmallest(contains);
-            for (var i = 0; i < smallest.Count; i++)
+            if (smallest != null)
             {
-                var array = smallest[i];
-                if (array.Specification.HasAll(contains.ComponentTypes)
-                    && (exclude.ID == 0 || array.Specification.HasNone(exclude)))
-                    yield return array;
+                for (var i = 0; i < smallest.Count; i++)
+                {
+                    var array = smallest[i];
+                    if (array.Specification.HasAll(contains.ComponentTypes)
+                        && (exclude.ID == 0 || array.Specification.HasNone(exclude)))
+                        yield return array;
+                }
             }
         }
 
