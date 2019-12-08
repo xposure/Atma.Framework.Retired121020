@@ -3,9 +3,7 @@ namespace Atma.Entities
     using System;
     using System.Linq;
 
-
-
-    public readonly struct EntitySpec : IEquatable<EntitySpec>
+    public readonly partial struct EntitySpec : IEquatable<EntitySpec>
     {
         public readonly int ID;
         public readonly ComponentType[] ComponentTypes;
@@ -137,65 +135,6 @@ namespace Atma.Entities
 
         public static implicit operator Span<ComponentType>(EntitySpec it) => it.ComponentTypes;
 
-        public static EntitySpec Create<T0>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type);
-
-        public static EntitySpec Create<T0, T1>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            where T1 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type);
-
-        public static EntitySpec Create<T0, T1, T2>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            where T1 : unmanaged
-            where T2 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type);
-
-        public static EntitySpec Create<T0, T1, T2, T3>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type);
-
-        public static EntitySpec Create<T0, T1, T2, T3, T4>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type);
-
-        public static EntitySpec Create<T0, T1, T2, T3, T4, T5>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
-            where T5 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type);
-
-        public static EntitySpec Create<T0, T1, T2, T3, T4, T5, T6>(params IEntitySpecGroup[] groups)
-            where T0 : unmanaged
-            where T1 : unmanaged
-            where T2 : unmanaged
-            where T3 : unmanaged
-            where T4 : unmanaged
-            where T5 : unmanaged
-            where T6 : unmanaged
-            => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type);
-
-        public static EntitySpec Create<T0, T1, T2, T3, T4, T5, T6, T7>(params IEntitySpecGroup[] groups)
-             where T0 : unmanaged
-             where T1 : unmanaged
-             where T2 : unmanaged
-             where T3 : unmanaged
-             where T4 : unmanaged
-             where T5 : unmanaged
-             where T6 : unmanaged
-             where T7 : unmanaged
-             => new EntitySpec(groups, ComponentType<T0>.Type, ComponentType<T1>.Type, ComponentType<T2>.Type, ComponentType<T3>.Type, ComponentType<T4>.Type, ComponentType<T5>.Type, ComponentType<T6>.Type, ComponentType<T7>.Type);
 
     }
 }
