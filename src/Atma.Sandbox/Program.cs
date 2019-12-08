@@ -189,6 +189,7 @@
         protected static ILoggerFactory _logFactory;
         protected static ILogger _logger;
 
+
         static void Main(string[] args)
         {
             _logFactory = LoggerFactory.Create(builder => builder.AddConsole());

@@ -144,7 +144,26 @@ namespace Atma.Entities
         }
     }
 
+    public unsafe ref struct SystemRawPtrAndLength2
+    {
+        public float dt;
+        public Position* position;
 
+        //[ReadOnly]
+        public Velocity* velocity;
+
+        public void Execute(int length)
+        {
+            for (var i = 0; i < length; i++)
+                Execute(ref position[i], velocity[i]);
+        }
+
+        private void Execute(ref Position p, in Velocity v)
+        {
+            p.X += v.X * dt;
+            p.Y += v.Y * dt;
+        }
+    }
 
     public unsafe ref struct SystemIterateWithSpan
     {
@@ -336,6 +355,16 @@ namespace Atma.Entities
         public void PtrsAndLength()
         {
             var processor = new SystemRawPtrAndLength();
+            processor.dt = dt;
+            processor.position = _positions.RawPointer;
+            processor.velocity = _velocities.RawPointer;
+            processor.Execute(N);
+        }
+
+        [Benchmark()]
+        public void PtrsAndLength2()
+        {
+            var processor = new SystemRawPtrAndLength2();
             processor.dt = dt;
             processor.position = _positions.RawPointer;
             processor.velocity = _velocities.RawPointer;

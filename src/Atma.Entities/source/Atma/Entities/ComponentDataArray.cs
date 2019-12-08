@@ -14,8 +14,11 @@
         private ILoggerFactory _logFactory;
         private IAllocator _allocator;
         private AllocationHandle _memoryHandle;
+        internal void* Memory => (void*)_memoryHandle.Address;
         private readonly ComponentType _componentType;
         private readonly ComponentTypeHelper _componentHelper;
+
+
 
         internal ComponentDataArray(ILoggerFactory logFactory, IAllocator allocator, ComponentType componentType, int length)
         {

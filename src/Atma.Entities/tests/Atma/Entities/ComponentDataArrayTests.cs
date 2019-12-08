@@ -1,6 +1,7 @@
 namespace Atma.Entities
 {
     using System;
+    using System.Runtime.InteropServices;
     using Atma.Memory;
     using Divergic.Logging.Xunit;
     using Microsoft.Extensions.Logging;
@@ -57,6 +58,55 @@ namespace Atma.Entities
             p.X.ShouldBe(0);
             p.Y.ShouldBe(0);
         }
+
+        // private ref struct SpanHack
+        // {
+        //     public Span<Position> positions;
+        //     public Span<Velocity> velocities;
+        //     public void Execute(int length)
+        //     {
+        //         positions.Length.ShouldBe(2);
+        //         velocities.Length.ShouldBe(2);
+        //         positions[0].X.ShouldBe(10);
+        //         positions[0].Y.ShouldBe(10);
+        //         positions[1].X.ShouldBe(20);
+        //         positions[1].Y.ShouldBe(20);
+        //         positions[1].X.ShouldBe(10);
+        //         positions[1].Y.ShouldBe(10);
+        //         positions[0].X.ShouldBe(20);
+        //         positions[0].Y.ShouldBe(20);
+        //     }
+        // }
+
+        // [Fact]
+        // public unsafe void SpanHackTest()
+        // {
+        //     using IAllocator allocator = new DynamicAllocator(_logFactory);
+        //     var data0 = stackalloc[] { new Position(10, 10), new Position(20, 20) };
+        //     var data1 = stackalloc[] { new Velocity(20, 20), new Velocity(10, 10) };
+        //     var size = Marshal.SizeOf(typeof(SpanHack));
+        //     using var memory = allocator.TakeScoped(size);
+
+        //     var hack = (byte*)memory.Address;
+        //     var offset0 = Marshal.OffsetOf(typeof(SpanHack), "positions");
+        //     var offset1 = Marshal.OffsetOf(typeof(SpanHack), "velocities");
+
+        //     var ptr = (IntPtr*)(hack + offset0.ToInt32());
+        //     *ptr = new IntPtr(data0);
+        //     ptr++;
+
+        //     var length = (int*)ptr;
+        //     *length = 2;
+
+        //     ptr = (IntPtr*)(hack + offset1.ToInt32());
+        //     *ptr = new IntPtr(data1);
+        //     ptr++;
+
+        //     length = (int*)ptr;
+        //     *length = 2;
+
+        //     var x = stackalloc[] { Span<int>.Empty };
+        // }
 
         [Fact]
         public void ShouldSetIndex()

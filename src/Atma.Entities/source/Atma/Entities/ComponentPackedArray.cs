@@ -28,6 +28,8 @@ namespace Atma.Entities
                 _componentData[i] = new ComponentDataArray(_logFactory, _allocator, _componentTypes[i], Entity.ENTITY_MAX);
         }
 
+        internal ComponentDataArray this[int index] => _componentData[index];
+
         internal void Copy(int componentIndex, ref void* src, int dstIndex, int length, bool incrementSrc)
         {
             _componentData[componentIndex].Copy(ref src, dstIndex, length, incrementSrc);
