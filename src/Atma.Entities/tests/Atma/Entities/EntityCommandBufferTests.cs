@@ -482,6 +482,11 @@ namespace Atma.Entities
         private struct Filler
         {
             public float z, w;
+            public Filler(int z, int w)
+            {
+                this.z = z;
+                this.w = w;
+            }
         }
 
         [Fact]

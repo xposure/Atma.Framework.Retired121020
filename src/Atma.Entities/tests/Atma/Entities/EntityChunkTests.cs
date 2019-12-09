@@ -81,6 +81,7 @@ namespace Atma.Entities
             entityChunk.Free.ShouldBe(free - 1);
         }
 
+        [Fact]
         public unsafe void ShouldCreateManyEntities()
         {
             //arrange

@@ -145,6 +145,7 @@ namespace Atma.Entities
             });
         }
 
+        [Fact]
         public void ShouldGetComponentIndex()
         {
             //arrange
