@@ -142,27 +142,26 @@ namespace Atma.Systems
         {
             _list = list;
         }
-
-        public DependencyListConfig Read<T>()
-            where T : unmanaged
+        public DependencyListConfig Read(in ComponentType componentType)
         {
-            var componentType = ComponentType<T>.Type;
             if (!_list._allComponents.Add(componentType))
                 throw new Exception("Duplicate type");
             _list._readComponents.Add(componentType);
             return this;
         }
 
-        public DependencyListConfig Write<T>()
-            where T : unmanaged
+        public DependencyListConfig Read<T>() where T : unmanaged => Read(ComponentType<T>.Type);
+
+        public DependencyListConfig Write(in ComponentType componentType)
         {
-            var componentType = ComponentType<T>.Type;
             if (!_list._allComponents.Add(componentType))
                 throw new Exception("Duplicate type");
 
             _list._writeComponents.Add(componentType);
             return this;
         }
+
+        public DependencyListConfig Write<T>() where T : unmanaged => Write(ComponentType<T>.Type);
 
         public DependencyListConfig Before(string name)
         {

@@ -11,6 +11,7 @@
     using Microsoft.Extensions.Logging;
     using System.Linq.Expressions;
     using Atma.Common;
+    using System.Reflection.Emit;
 
     public static class Helpers
     {
@@ -189,11 +190,74 @@
         protected static ILoggerFactory _logFactory;
         protected static ILogger _logger;
 
+        public struct ActorTest
+        {
+            public int x, y;
+        }
+
+        public unsafe class SystemTest
+        {
+
+
+            private delegate void caller(SystemTest test, void* it);
+
+            public void Execute()
+            {
+                var memory = new HeapAllocator(_logFactory);
+                var actors = memory.Take<ActorTest>(2);
+                var actor = (ActorTest*)actors.Address;
+                actor[0] = new ActorTest() { x = 1, y = 2 };
+                actor[1] = new ActorTest() { x = 100, y = 200 };
+                //var actor = stackalloc[] { new ActorTest() { x = 1, y = 2 }, new ActorTest() { x = 100, y = 200 } };
+
+
+                var method = new DynamicMethod("Test", null, new Type[] { typeof(SystemTest), typeof(void*) });
+
+                var gen = method.GetILGenerator();
+                gen.Emit(OpCodes.Ldarg_0); //void*, systemtest
+                gen.Emit(OpCodes.Ldarg_1); //void*                
+                gen.Emit(OpCodes.Ldarg_1); //void*                
+                gen.Emit(OpCodes.Call, typeof(SystemTest).GetMethod("ExecuteMe2"));
+
+                gen.Emit(OpCodes.Ret);
+
+                var f = (caller)method.CreateDelegate(typeof(caller));
+                //Console.WriteLine(new IntPtr(actor));
+                //ExecuteMe(actor);
+                f(this, actor);
+            }
+
+            public void ExecuteMe(ActorTest* actor)
+            {
+                Console.WriteLine(new IntPtr(actor));
+                Console.WriteLine(actor[0].x);
+                Console.WriteLine(actor[0].y);
+                Console.WriteLine(actor[1].x);
+                Console.WriteLine(actor[1].y);
+            }
+            public void ExecuteMe2(ref ActorTest actor, in ActorTest actor2)
+            {
+                //Console.WriteLine(new IntPtr(actor));
+                Console.WriteLine(actor.x);
+                Console.WriteLine(actor.y);
+                Console.WriteLine(actor2.x);
+                Console.WriteLine(actor2.y);
+            }
+
+
+        }
+
 
         static void Main(string[] args)
         {
             _logFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = _logFactory.CreateLogger("Sandbox");
+
+
+            var sys = new SystemTest();
+            sys.Execute();
+            return;
+
 
             var memory = new HeapAllocator(_logFactory);
             var em = new EntityManager(_logFactory, memory);

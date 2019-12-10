@@ -12,7 +12,7 @@
 //     {
 //         ComponentType,
 //         Entity,
-//         Length
+//         Variable
 //     }
 
 //     internal sealed class ComponentViewList

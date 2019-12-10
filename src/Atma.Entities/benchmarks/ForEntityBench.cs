@@ -16,6 +16,7 @@ namespace Atma.Entities
         private ILoggerFactory _logFactory;
         private ILogger _logger;
         private EntityManager _entities;
+        ActorSystem view = new ActorSystem();
 
         private IAllocator _memory;
 
@@ -115,7 +116,7 @@ namespace Atma.Entities
             }
         }
 
-        [Benchmark]
+        [Benchmark(Baseline = true)]
         public void ForChunk()
         {
             _entities.ForChunk((int length, ReadOnlySpan<EntityRef> entities, Span<Position> positions, Span<Velocity> velocities) =>
@@ -139,11 +140,26 @@ namespace Atma.Entities
                 }
             });
         }
-        [Benchmark]
-        public void ForEntity()
+
+
+
+        public readonly unsafe struct Actor : Atma.Systems.IExecutor
         {
-            _entities.ForEntity((uint entity, ref Position position, ref Velocity velocity) =>
+            public readonly Position* position;
+            public readonly Velocity* velocity;
+
+            public void Execute(int length)
             {
+                for (var i = 0; i < length; i++)
+                    Execute(ref position[i], ref velocity[i]);
+            }
+
+            private void Execute(ref Position position, ref Velocity velocity)
+            {
+                float dt = 0.016f;
+                float maxx = 1024;
+                float maxy = 1024;
+
                 position.X += velocity.X * dt;
                 position.Y += velocity.Y * dt;
 
@@ -155,8 +171,110 @@ namespace Atma.Entities
 
                 if ((position.Y > maxy && velocity.Y > 0) || (position.Y < 0 && velocity.Y < 0))
                     velocity.Y = -velocity.Y;
+            }
+        }
 
+        private unsafe void ExecuteActor(Actor* actor)
+        {
+            actor->position->X += actor->velocity->X * dt;
+            actor->position->Y += actor->velocity->Y * dt;
+
+            actor->velocity->X -= actor->velocity->X * dt;
+            actor->velocity->Y -= actor->velocity->Y * dt;
+
+            if ((actor->position->X > maxx && actor->velocity->X > 0) || (actor->position->X < 0 && actor->velocity->X < 0))
+                actor->velocity->X = -actor->velocity->X;
+
+            if ((actor->position->Y > maxy && actor->velocity->Y > 0) || (actor->position->Y < 0 && actor->velocity->Y < 0))
+                actor->velocity->Y = -actor->velocity->Y;
+        }
+
+        [Benchmark]
+        public unsafe void ForEntityStructPtr()
+        {
+            Span<ComponentType> componentTypes = stackalloc[] { ComponentType<Position>.Type, ComponentType<Velocity>.Type };
+
+            _entities.EntityArrays.Filter(componentTypes, array =>
+            {
+                var actor = stackalloc[] { new Actor() };
+
+                var ptr0Size = sizeof(Position);
+                var ptr1Size = sizeof(Velocity);
+
+                byte** ptr0 = (byte**)&actor->position;
+                byte** ptr1 = (byte**)&actor->velocity;
+
+                var c0 = array.Specification.GetComponentIndex(ComponentType<Position>.Type);
+                var c1 = array.Specification.GetComponentIndex(ComponentType<Velocity>.Type);
+
+                for (var i = 0; i < array.AllChunks.Count; i++)
+                {
+                    var chunk = array.AllChunks[i];
+                    (*ptr0) = (byte*)chunk.PackedArray[c0].Memory;
+                    (*ptr1) = (byte*)chunk.PackedArray[c1].Memory;
+
+                    for (var j = 0; j < chunk.Count; j++)
+                    {
+                        ExecuteActor(actor);
+                        (*ptr0) += ptr0Size;
+                        (*ptr1) += ptr1Size;
+                    }
+                }
             });
+        }
+
+        [Benchmark]
+        public unsafe void ForEntityViewStructPtr()
+        {
+            view.Execute(_entities);
+        }
+
+        public sealed unsafe partial class ActorSystem : Atma.Systems.System<Actor>
+        {
+            public float dt = 0.016f;
+            public float maxx = 1024;
+            public float maxy = 1024;
+
+            protected override void Execute(in Actor actor, int length)
+            {
+                for (var i = 0; i < length; i++)
+                    Execute(ref actor.position[i], ref actor.velocity[i]);
+                // actor.position->X += actor.velocity->X * dt;
+                // actor.position->Y += actor.velocity->Y * dt;
+
+                // actor.velocity->X -= actor.velocity->X * dt;
+                // actor.velocity->Y -= actor.velocity->Y * dt;
+
+                // if ((actor.position->X > maxx && actor.velocity->X > 0) || (actor.position->X < 0 && actor.velocity->X < 0))
+                //     actor.velocity->X = -actor.velocity->X;
+
+                // if ((actor.position->Y > maxy && actor.velocity->Y > 0) || (actor.position->Y < 0 && actor.velocity->Y < 0))
+                //     actor.velocity->Y = -actor.velocity->Y;
+            }
+
+            partial void Execute(ref Position position, ref Velocity velocity);
+        }
+
+        public partial class ActorSystem : Atma.Systems.System<Actor>
+        {
+            partial void Execute(ref Position position, ref Velocity velocity)
+            {
+                float dt = 0.016f;
+                float maxx = 1024;
+                float maxy = 1024;
+
+                position.X += velocity.X * dt;
+                position.Y += velocity.Y * dt;
+
+                velocity.X -= velocity.X * dt;
+                velocity.Y -= velocity.Y * dt;
+
+                if ((position.X > maxx && velocity.X > 0) || (position.X < 0 && velocity.X < 0))
+                    velocity.X = -velocity.X;
+
+                if ((position.Y > maxy && velocity.Y > 0) || (position.Y < 0 && velocity.Y < 0))
+                    velocity.Y = -velocity.Y;
+            }
         }
     }
 }

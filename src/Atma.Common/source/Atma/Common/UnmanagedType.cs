@@ -67,11 +67,11 @@
             if (!IsUnManaged(t))
                 return false;
 
-            if (!_cacheTypes.TryGetValue(t, out var ut))
+            if (!_cacheTypes.TryGetValue(t, out unmanagedType))
             {
                 var size = Size.Of(t);
                 unmanagedType = new UnmanagedType(t, size);
-                _cacheTypes.Add(t, ut);
+                _cacheTypes.Add(t, unmanagedType);
             }
 
             return true;

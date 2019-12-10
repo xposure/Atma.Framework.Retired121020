@@ -17,7 +17,8 @@
         {
             //for (var i = 0; i < 15; i++)
             //    RunOnce(1000);
-            var summary = BenchmarkRunner.Run<ReadWriteStructs>();
+            //var summary = BenchmarkRunner.Run<ReadWriteStructs>();
+            var summary = BenchmarkRunner.Run<ForEntityBench>();
         }
     }
 }

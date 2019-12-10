@@ -30,9 +30,9 @@ namespace Atma.Entities
             AddComponent<Entity>();
         }
 
-        public void AddComponent<T>() where T : unmanaged => AddComponent(typeof(T));
+        public ComponentType AddComponent<T>() where T : unmanaged => AddComponent(typeof(T));
 
-        public void AddComponent(Type type)
+        public ComponentType AddComponent(Type type)
         {
             var validType = _unmanagedHelper.GetInfo(type, out var unmanagedType);
             Contract.EqualTo(validType, true);
@@ -40,6 +40,22 @@ namespace Atma.Entities
             var componentType = new ComponentType(unmanagedType.ID, unmanagedType.Size);
             _components.Add(componentType.ID, componentType);
             _componentTypes.Add(componentType.ID, new ComponentTypeInfo(type, componentType));
+            return componentType;
+        }
+
+        public bool TryAddComponent(Type type) => TryAddComponent(type, out var _);
+        public bool TryAddComponent(Type type, out ComponentType componentType)
+        {
+            if (!_unmanagedHelper.GetInfo(type, out var unmanagedType))
+            {
+                componentType = default;
+                return false;
+            }
+
+            componentType = new ComponentType(unmanagedType.ID, unmanagedType.Size);
+            _components.Add(componentType.ID, componentType);
+            _componentTypes.Add(componentType.ID, new ComponentTypeInfo(type, componentType));
+            return true;
         }
 
         public void AddFromNamespace(Assembly assembly, string name)

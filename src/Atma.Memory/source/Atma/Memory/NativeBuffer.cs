@@ -11,13 +11,33 @@
     }
 
     [System.Diagnostics.DebuggerStepThrough]
-    public unsafe readonly ref struct NativeBufferPtr<T>
+    public unsafe readonly struct NativeBufferPtr<T>
         where T : unmanaged
     {
         private readonly NativeBuffer _buffer;
         public readonly int Offset;
 
         public T* Value => (T*)(_buffer.RawPointer + Offset);
+
+        public readonly int Count;
+        public readonly int SizeInBytes;
+
+        internal NativeBufferPtr(NativeBuffer buffer, int offset, int count, int sizeInBytes)
+        {
+            _buffer = buffer;
+            Offset = offset;
+            Count = count;
+            SizeInBytes = sizeInBytes;
+        }
+    }
+
+    [System.Diagnostics.DebuggerStepThrough]
+    public unsafe readonly struct NativeBufferPtr
+    {
+        private readonly NativeBuffer _buffer;
+        public readonly int Offset;
+
+        public void* Value => _buffer.RawPointer + Offset;
 
         public readonly int Count;
         public readonly int SizeInBytes;
@@ -131,6 +151,15 @@
             var location = (T*)EndPointer;
             Length += sizeInBytes;
             return new NativeBufferPtr<T>(this, len, count, sizeInBytes);
+        }
+
+        public unsafe NativeBufferPtr Take(int sizeInBytes)
+        {
+            EnsureCapacity(sizeInBytes);
+
+            var len = Length;
+            Length += sizeInBytes;
+            return new NativeBufferPtr(this, len, 1, sizeInBytes);
         }
 
         internal unsafe T* Get<T>(int offset)

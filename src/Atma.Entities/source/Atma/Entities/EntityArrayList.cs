@@ -168,12 +168,15 @@ namespace Atma.Entities
         public static void Filter(this EntityArrayList it, Span<ComponentType> componentTypes, Span<ComponentType> excludedComponents, Action<EntityChunkList> result)
         {
             var smallest = it.FindSmallest(componentTypes);
-            for (var i = 0; i < smallest.Count; i++)
+            if (smallest != null)
             {
-                var array = smallest[i];
-                if (array.Specification.HasAll(componentTypes)
-                    && (excludedComponents.IsEmpty || array.Specification.HasNone(excludedComponents)))
-                    result(array);
+                for (var i = 0; i < smallest.Count; i++)
+                {
+                    var array = smallest[i];
+                    if (array.Specification.HasAll(componentTypes)
+                        && (excludedComponents.IsEmpty || array.Specification.HasNone(excludedComponents)))
+                        result(array);
+                }
             }
         }
     }
