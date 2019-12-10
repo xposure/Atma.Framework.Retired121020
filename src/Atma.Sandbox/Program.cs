@@ -192,36 +192,6 @@
         protected static ILogger _logger;
 
 
-
-
-
-        public unsafe class SystemTest
-        {
-
-            private SystemMethodList _systemMethodList;
-
-            public SystemTest()
-            {
-                _systemMethodList = new SystemMethodList(this.GetType());
-            }
-
-            public void Process(EntityManager entityManager)
-            {
-                _systemMethodList.Execute(entityManager, this);
-            }
-
-
-            public void Execute(ref Position position, in Velocity velocity)
-            {
-                //Console.WriteLine(new IntPtr(actor));
-                Console.WriteLine(position.X);
-                Console.WriteLine(position.Y);
-                Console.WriteLine(velocity.X);
-                Console.WriteLine(velocity.Y);
-            }
-        }
-
-
         static unsafe void Main(string[] args)
         {
             _logFactory = LoggerFactory.Create(builder => builder.AddConsole());
@@ -234,25 +204,6 @@
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
             var e = em.Create(spec);
             em.Replace(e, new Velocity(1, -1));
-
-            var sys = new SystemTest();
-            sys.Process(em);
-            // em.EntityArrays.Filter(spec.ComponentTypes, array =>
-            // {
-            //     var c0 = array.Specification.GetComponentIndex(ComponentType<Position>.Type);
-            //     var c1 = array.Specification.GetComponentIndex(ComponentType<Velocity>.Type);
-
-            //     for (var i = 0; i < array.AllChunks.Count; i++)
-            //     {
-            //         var chunk = array.AllChunks[i];
-            //         var data = stackalloc void*[2];
-            //         data[0] = chunk.PackedArray[c0].Memory;
-            //         data[1] = chunk.PackedArray[c1].Memory;
-            //         sys.Execute(chunk.Count, data);
-            //     }
-            // });
-            return;
-
 
 
             var sm = new SystemManager(_logFactory);
