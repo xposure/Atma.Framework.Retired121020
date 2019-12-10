@@ -278,6 +278,10 @@ namespace Atma.Systems
                 if (other._writeComponents.Contains(read))
                     return true;
 
+            foreach (var write in _writeComponents)
+                if (other._writeComponents.Contains(write))
+                    return true;
+
             return false;
         }
 

@@ -83,6 +83,12 @@ namespace Atma.Entities
 
             return type;
         }
+        public ComponentType Get(Type type)
+        {
+            if (!Find(type, out var componentType))
+                throw new Exception($"{type.Name} not found.");
+            return componentType;
+        }
 
         public bool Find<T>(out ComponentType componentType) => Find(typeof(T), out componentType);
 

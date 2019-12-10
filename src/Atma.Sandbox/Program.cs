@@ -12,6 +12,7 @@
     using System.Linq.Expressions;
     using Atma.Common;
     using System.Reflection.Emit;
+    using System.Reflection;
 
     public static class Helpers
     {
@@ -190,101 +191,27 @@
         protected static ILoggerFactory _logFactory;
         protected static ILogger _logger;
 
-        public struct ActorTest
-        {
-            public Position position;
-            public Velocity velocity;
-        }
+
+
+
 
         public unsafe class SystemTest
         {
 
+            private SystemMethodList _systemMethodList;
 
-            private delegate void caller(SystemTest test, int length, void* it);
-
-            public void Execute()
+            public SystemTest()
             {
-                var memory = new HeapAllocator(_logFactory);
-                var actors = memory.Take<ActorTest>(10000);
-                var actor = (ActorTest*)actors.Address;
-                for (var j = 0; j < 10000; j++)
-                    actor[j] = new ActorTest() { position = new Position(j - 1), velocity = new Velocity(j + 1) };
-
-
-                //ExecuteMe(10000, actor);
-
-                var method = new DynamicMethod("Test", null, new Type[] { typeof(SystemTest), typeof(int), typeof(void*) });
-
-                var gen = method.GetILGenerator();
-                var i = gen.DeclareLocal(typeof(int));
-                var b = gen.DeclareLocal(typeof(bool));
-
-                var end = gen.DefineLabel();
-                var top = gen.DefineLabel();
-
-                //i = 0
-                gen.Emit(OpCodes.Ldc_I4_0);
-                gen.Emit(OpCodes.Stloc_0);
-
-                gen.Emit(OpCodes.Br_S, end);
-
-                gen.MarkLabel(top);
-                gen.Emit(OpCodes.Ldarg_0); //systemtest
-
-
-                gen.Emit(OpCodes.Ldarg_2);
-                gen.Emit(OpCodes.Ldloc_0);
-                gen.Emit(OpCodes.Conv_I);
-                gen.Emit(OpCodes.Sizeof, typeof(ActorTest));
-                gen.Emit(OpCodes.Mul);
-                gen.Emit(OpCodes.Add);
-                gen.Emit(OpCodes.Ldflda, typeof(ActorTest).GetField("position")); //void*   
-
-
-                gen.Emit(OpCodes.Ldarg_2);
-                gen.Emit(OpCodes.Ldloc_0);
-                gen.Emit(OpCodes.Conv_I);
-                gen.Emit(OpCodes.Sizeof, typeof(ActorTest));
-                gen.Emit(OpCodes.Mul);
-                gen.Emit(OpCodes.Add);
-                gen.Emit(OpCodes.Ldflda, typeof(ActorTest).GetField("velocity")); //void*   
-
-                gen.Emit(OpCodes.Call, typeof(SystemTest).GetMethod("ExecuteMe2"));
-
-                //i++
-                gen.Emit(OpCodes.Ldloc_0);
-                gen.Emit(OpCodes.Ldc_I4_1);
-                gen.Emit(OpCodes.Add);
-                gen.Emit(OpCodes.Stloc_0);
-
-                //i < length
-                gen.MarkLabel(end);
-                gen.Emit(OpCodes.Ldloc_0);
-                gen.Emit(OpCodes.Ldarg_1);
-                gen.Emit(OpCodes.Clt);
-                gen.Emit(OpCodes.Stloc_1);
-                gen.Emit(OpCodes.Ldloc_1);
-                gen.Emit(OpCodes.Brtrue_S, top);
-
-                gen.Emit(OpCodes.Ret);
-
-                var f = (caller)method.CreateDelegate(typeof(caller));
-                //Console.WriteLine(new IntPtr(actor));
-                //ExecuteMe(actor);
-                f(this, 100, actor);
+                _systemMethodList = new SystemMethodList(this.GetType());
             }
 
-            public void ExecuteMe(int length, ActorTest* actor)
+            public void Process(EntityManager entityManager)
             {
-                for (var i = 0; i < length; i++)
-                    ExecuteMe2(ref actor[i].position, actor[i].velocity);
-                // Console.WriteLine(new IntPtr(actor));
-                // Console.WriteLine(actor[0].x);
-                // Console.WriteLine(actor[0].y);
-                // Console.WriteLine(actor[1].x);
-                // Console.WriteLine(actor[1].y);
+                _systemMethodList.Execute(entityManager, this);
             }
-            public void ExecuteMe2(ref Position position, in Velocity velocity)
+
+
+            public void Execute(ref Position position, in Velocity velocity)
             {
                 //Console.WriteLine(new IntPtr(actor));
                 Console.WriteLine(position.X);
@@ -292,20 +219,13 @@
                 Console.WriteLine(velocity.X);
                 Console.WriteLine(velocity.Y);
             }
-
-
         }
 
 
-        static void Main(string[] args)
+        static unsafe void Main(string[] args)
         {
             _logFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = _logFactory.CreateLogger("Sandbox");
-
-
-            var sys = new SystemTest();
-            sys.Execute();
-            return;
 
 
             var memory = new HeapAllocator(_logFactory);
@@ -313,8 +233,27 @@
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);
             var e = em.Create(spec);
-
             em.Replace(e, new Velocity(1, -1));
+
+            var sys = new SystemTest();
+            sys.Process(em);
+            // em.EntityArrays.Filter(spec.ComponentTypes, array =>
+            // {
+            //     var c0 = array.Specification.GetComponentIndex(ComponentType<Position>.Type);
+            //     var c1 = array.Specification.GetComponentIndex(ComponentType<Velocity>.Type);
+
+            //     for (var i = 0; i < array.AllChunks.Count; i++)
+            //     {
+            //         var chunk = array.AllChunks[i];
+            //         var data = stackalloc void*[2];
+            //         data[0] = chunk.PackedArray[c0].Memory;
+            //         data[1] = chunk.PackedArray[c1].Memory;
+            //         sys.Execute(chunk.Count, data);
+            //     }
+            // });
+            return;
+
+
 
             var sm = new SystemManager(_logFactory);
             sm.Variable("dt", 0.16f);

@@ -190,5 +190,45 @@ namespace Atma.Systems
             c._readComponents.Count.ShouldBe(0);
             c._allComponents.Count.ShouldBe(1);
         }
+
+        [Fact]
+        public void WriteIsDependentOnWrite()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Write<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Write<Position>());
+
+            a.IsDependentOn(b).ShouldBe(true);
+            b.IsDependentOn(a).ShouldBe(true);
+        }
+
+        [Fact]
+        public void WriteIsNotDependentOnWriteWithPriorty()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Write<Position>());
+            var b = new DependencyList("b", -1, deps => deps.Write<Position>());
+
+            a.IsDependentOn(b).ShouldBe(true);
+            b.IsDependentOn(a).ShouldBe(false);
+        }
+
+        [Fact]
+        public void WriteIsNotDependentOnWriteWithBefore()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Write<Position>());
+            var b = new DependencyList("b", 0, deps => deps.Write<Position>().Before("a"));
+
+            a.IsDependentOn(b).ShouldBe(true);
+            b.IsDependentOn(a).ShouldBe(false);
+        }
+
+        [Fact]
+        public void WriteIsNotDependentOnWriteWithAfter()
+        {
+            var a = new DependencyList("a", 0, deps => deps.Write<Position>().After("b"));
+            var b = new DependencyList("b", 0, deps => deps.Write<Position>());
+
+            a.IsDependentOn(b).ShouldBe(true);
+            b.IsDependentOn(a).ShouldBe(false);
+        }
     }
 }

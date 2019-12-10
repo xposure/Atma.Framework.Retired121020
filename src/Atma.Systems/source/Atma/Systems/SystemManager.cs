@@ -78,9 +78,13 @@ namespace Atma.Systems
                     sb.AppendLine("Cyclic nodes detected");
 
                     sb.AppendLine();
-                    var depMatirx = new ComponentMatrix(_depGraph.PostOrder(_depGraph.CyclicNode));
-                    sb.AppendLine(depMatirx.ToString());
-                    sb.AppendLine();
+                    try
+                    {
+                        var depMatirx = new ComponentMatrix(_depGraph.PostOrder(_depGraph.CyclicNode));
+                        sb.AppendLine(depMatirx.ToString());
+                        sb.AppendLine();
+                    }
+                    catch (Exception ex) { }
 
                     sb.AppendLine(_depGraph.ToString());
 

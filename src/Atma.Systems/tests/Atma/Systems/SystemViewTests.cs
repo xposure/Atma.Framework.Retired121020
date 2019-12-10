@@ -30,18 +30,38 @@ namespace Atma.Systems
             public int x, y;
         }
 
-        public unsafe struct Actor
-        {
-            public Position* position;
-            public Velocity* velocity;
-        }
+        // public unsafe struct Actor
+        // {
+        //     public Position* position;
+        //     public Velocity* velocity;
+        // }
 
-        public sealed unsafe class ActorSystem : System<Actor>
+        // public sealed unsafe class ActorSystem : System<Actor>
+        // {
+        //     protected override void Execute(in Actor t)
+        //     {
+        //         t.position->x += t.velocity->x;
+        //         t.position->y += t.velocity->y;
+        //     }
+        // }
+
+        public class ActorSystem : SystemEntityProcessor
         {
-            protected override void Execute(in Actor t)
+            public ActorSystem(ILoggerFactory logFactory) : base(logFactory, nameof(ActorSystem), 0)
             {
-                t.position->x += t.velocity->x;
-                t.position->y += t.velocity->y;
+            }
+
+            private void Execute(ref Position position, in Velocity velocity)
+            {
+                position.x += velocity.x;
+                position.y += velocity.y;
+            }
+
+            [Priority(-1)]
+            private void Execute(ref Position position)
+            {
+                position.x += 0;
+                position.y += 0;
             }
         }
 
@@ -50,7 +70,10 @@ namespace Atma.Systems
         {
             var memory = new DynamicAllocator(_logFactory);
             var em = new EntityManager(_logFactory, memory);
-            var sys = new ActorSystem();
+            var sm = new SystemManager(_logFactory, em, memory);
+            sm.Add(new ActorSystem(_logFactory));
+
+            sm.Init();
 
             var spec = EntitySpec.Create<Position, Velocity>();
             var e0 = em.Create(spec);
@@ -61,8 +84,7 @@ namespace Atma.Systems
             em.Replace(e1, new Position() { x = 12, y = 13 });
             em.Replace(e1, new Velocity() { x = 2, y = 2 });
 
-            sys.Execute(em);
-
+            sm.Tick();
 
             em.Get<Position>(e0).x.ShouldBe(11);
             em.Get<Position>(e0).y.ShouldBe(12);
