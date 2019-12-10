@@ -200,7 +200,7 @@
         {
 
 
-            private delegate void caller(SystemTest test, void* it);
+            private delegate void caller(SystemTest test, int length, void* it);
 
             public void Execute()
             {
@@ -208,25 +208,30 @@
                 var actors = memory.Take<ActorTest>(10000);
                 var actor = (ActorTest*)actors.Address;
                 for (var j = 0; j < 10000; j++)
-                    actor[j] = new ActorTest() { position = new Position(j), velocity = new Velocity(j + 1) };
+                    actor[j] = new ActorTest() { position = new Position(j - 1), velocity = new Velocity(j + 1) };
 
-                var method = new DynamicMethod("Test", null, new Type[] { typeof(SystemTest), typeof(void*) });
+
+                //ExecuteMe(10000, actor);
+
+                var method = new DynamicMethod("Test", null, new Type[] { typeof(SystemTest), typeof(int), typeof(void*) });
 
                 var gen = method.GetILGenerator();
                 var i = gen.DeclareLocal(typeof(int));
-                //var b = gen.DeclareLocal(typeof(bool));
+                var b = gen.DeclareLocal(typeof(bool));
 
-                //var label = gen.DefineLabel();
+                var end = gen.DefineLabel();
+                var top = gen.DefineLabel();
 
                 //i = 0
                 gen.Emit(OpCodes.Ldc_I4_0);
                 gen.Emit(OpCodes.Stloc_0);
 
-                //gen.Emit(OpCodes.Br_S, label);
+                gen.Emit(OpCodes.Br_S, end);
+
+                gen.MarkLabel(top);
+                gen.Emit(OpCodes.Ldarg_0); //systemtest
 
 
-
-                gen.Emit(OpCodes.Ldarg_0); //void*, systemtest
                 gen.Emit(OpCodes.Ldarg_2);
                 gen.Emit(OpCodes.Ldloc_0);
                 gen.Emit(OpCodes.Conv_I);
@@ -236,8 +241,6 @@
                 gen.Emit(OpCodes.Ldflda, typeof(ActorTest).GetField("position")); //void*   
 
 
-
-                gen.Emit(OpCodes.Ldarg_0); //void*, systemtest
                 gen.Emit(OpCodes.Ldarg_2);
                 gen.Emit(OpCodes.Ldloc_0);
                 gen.Emit(OpCodes.Conv_I);
@@ -248,12 +251,27 @@
 
                 gen.Emit(OpCodes.Call, typeof(SystemTest).GetMethod("ExecuteMe2"));
 
+                //i++
+                gen.Emit(OpCodes.Ldloc_0);
+                gen.Emit(OpCodes.Ldc_I4_1);
+                gen.Emit(OpCodes.Add);
+                gen.Emit(OpCodes.Stloc_0);
+
+                //i < length
+                gen.MarkLabel(end);
+                gen.Emit(OpCodes.Ldloc_0);
+                gen.Emit(OpCodes.Ldarg_1);
+                gen.Emit(OpCodes.Clt);
+                gen.Emit(OpCodes.Stloc_1);
+                gen.Emit(OpCodes.Ldloc_1);
+                gen.Emit(OpCodes.Brtrue_S, top);
+
                 gen.Emit(OpCodes.Ret);
 
                 var f = (caller)method.CreateDelegate(typeof(caller));
                 //Console.WriteLine(new IntPtr(actor));
                 //ExecuteMe(actor);
-                f(this, actor);
+                f(this, 100, actor);
             }
 
             public void ExecuteMe(int length, ActorTest* actor)
