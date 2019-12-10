@@ -192,7 +192,8 @@
 
         public struct ActorTest
         {
-            public int x, y;
+            public Position position;
+            public Velocity velocity;
         }
 
         public unsafe class SystemTest
@@ -204,19 +205,47 @@
             public void Execute()
             {
                 var memory = new HeapAllocator(_logFactory);
-                var actors = memory.Take<ActorTest>(2);
+                var actors = memory.Take<ActorTest>(10000);
                 var actor = (ActorTest*)actors.Address;
-                actor[0] = new ActorTest() { x = 1, y = 2 };
-                actor[1] = new ActorTest() { x = 100, y = 200 };
-                //var actor = stackalloc[] { new ActorTest() { x = 1, y = 2 }, new ActorTest() { x = 100, y = 200 } };
-
+                for (var j = 0; j < 10000; j++)
+                    actor[j] = new ActorTest() { position = new Position(j), velocity = new Velocity(j + 1) };
 
                 var method = new DynamicMethod("Test", null, new Type[] { typeof(SystemTest), typeof(void*) });
 
                 var gen = method.GetILGenerator();
+                var i = gen.DeclareLocal(typeof(int));
+                //var b = gen.DeclareLocal(typeof(bool));
+
+                //var label = gen.DefineLabel();
+
+                //i = 0
+                gen.Emit(OpCodes.Ldc_I4_0);
+                gen.Emit(OpCodes.Stloc_0);
+
+                //gen.Emit(OpCodes.Br_S, label);
+
+
+
                 gen.Emit(OpCodes.Ldarg_0); //void*, systemtest
-                gen.Emit(OpCodes.Ldarg_1); //void*                
-                gen.Emit(OpCodes.Ldarg_1); //void*                
+                gen.Emit(OpCodes.Ldarg_2);
+                gen.Emit(OpCodes.Ldloc_0);
+                gen.Emit(OpCodes.Conv_I);
+                gen.Emit(OpCodes.Sizeof, typeof(ActorTest));
+                gen.Emit(OpCodes.Mul);
+                gen.Emit(OpCodes.Add);
+                gen.Emit(OpCodes.Ldflda, typeof(ActorTest).GetField("position")); //void*   
+
+
+
+                gen.Emit(OpCodes.Ldarg_0); //void*, systemtest
+                gen.Emit(OpCodes.Ldarg_2);
+                gen.Emit(OpCodes.Ldloc_0);
+                gen.Emit(OpCodes.Conv_I);
+                gen.Emit(OpCodes.Sizeof, typeof(ActorTest));
+                gen.Emit(OpCodes.Mul);
+                gen.Emit(OpCodes.Add);
+                gen.Emit(OpCodes.Ldflda, typeof(ActorTest).GetField("velocity")); //void*   
+
                 gen.Emit(OpCodes.Call, typeof(SystemTest).GetMethod("ExecuteMe2"));
 
                 gen.Emit(OpCodes.Ret);
@@ -227,21 +256,23 @@
                 f(this, actor);
             }
 
-            public void ExecuteMe(ActorTest* actor)
+            public void ExecuteMe(int length, ActorTest* actor)
             {
-                Console.WriteLine(new IntPtr(actor));
-                Console.WriteLine(actor[0].x);
-                Console.WriteLine(actor[0].y);
-                Console.WriteLine(actor[1].x);
-                Console.WriteLine(actor[1].y);
+                for (var i = 0; i < length; i++)
+                    ExecuteMe2(ref actor[i].position, actor[i].velocity);
+                // Console.WriteLine(new IntPtr(actor));
+                // Console.WriteLine(actor[0].x);
+                // Console.WriteLine(actor[0].y);
+                // Console.WriteLine(actor[1].x);
+                // Console.WriteLine(actor[1].y);
             }
-            public void ExecuteMe2(ref ActorTest actor, in ActorTest actor2)
+            public void ExecuteMe2(ref Position position, in Velocity velocity)
             {
                 //Console.WriteLine(new IntPtr(actor));
-                Console.WriteLine(actor.x);
-                Console.WriteLine(actor.y);
-                Console.WriteLine(actor2.x);
-                Console.WriteLine(actor2.y);
+                Console.WriteLine(position.X);
+                Console.WriteLine(position.Y);
+                Console.WriteLine(velocity.X);
+                Console.WriteLine(velocity.Y);
             }
 
 
