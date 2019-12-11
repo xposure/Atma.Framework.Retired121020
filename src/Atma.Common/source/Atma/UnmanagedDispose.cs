@@ -45,6 +45,7 @@ namespace Atma
 
         protected void Dispose(bool disposing)
         {
+            //System.Console.WriteLine($"{this.GetType().Name} [{this.GetHashCode()}] disposing");
             if (!disposedValue)
             {
                 Assert.EqualTo(disposing, true);

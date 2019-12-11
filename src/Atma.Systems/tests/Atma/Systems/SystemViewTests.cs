@@ -47,7 +47,7 @@ namespace Atma.Systems
 
         public class ActorSystem : SystemEntityProcessor
         {
-            public ActorSystem(ILoggerFactory logFactory) : base(logFactory, nameof(ActorSystem), 0)
+            public ActorSystem(ILoggerFactory logFactory) : base(nameof(ActorSystem), 0)
             {
             }
 

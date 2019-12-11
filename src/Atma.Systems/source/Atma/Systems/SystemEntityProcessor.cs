@@ -9,7 +9,7 @@ namespace Atma.Systems
     using System.Linq;
     using Microsoft.Extensions.Logging;
 
-    public sealed unsafe class SystemMethodExecutor : ISystem
+    public sealed unsafe class SystemMethodExecutor : UnmanagedDispose, ISystem
     {
         private HashSet<ComponentType> _componentTypes = new HashSet<ComponentType>();
         private HashSet<ComponentType> _readComponents = new HashSet<ComponentType>();
@@ -205,13 +205,11 @@ namespace Atma.Systems
 
     public unsafe class SystemEntityProcessor : SystemGroup
     {
-        private Type _type;
         private SystemMethodExecutor[] _methods;
 
-        public SystemEntityProcessor(ILoggerFactory logFactory, string name = null, int priority = 0) : base(logFactory, name, priority)
-        {
-            _type = this.GetType();
-        }
+        protected SystemEntityProcessor() : base() { }
+        protected SystemEntityProcessor(string name) : base(name) { }
+        protected SystemEntityProcessor(string name, int priority) : base(name, priority) { }
 
         public override void Init()
         {
