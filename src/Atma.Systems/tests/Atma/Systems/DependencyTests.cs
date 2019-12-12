@@ -34,12 +34,12 @@ namespace Atma.Systems
             private DependencyList _dependencies;
             public DependencyList Dependencies => _dependencies;
 
-            public bool Disabled { get; set; } = false;
-
-            public int Priority { get; } = 0;
-
             public string Name { get; }
+            public string Group => null;
+            public int Priority { get; } = 0;
+            public uint Stages => 0;
 
+            public bool Disabled { get; set; } = false;
             private int* _execution;
             public int ExecutionOrder { get; set; }
 

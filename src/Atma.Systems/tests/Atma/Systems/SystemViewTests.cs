@@ -45,9 +45,9 @@ namespace Atma.Systems
         //     }
         // }
 
-        public class ActorSystem : SystemEntityProcessor
+        public class ActorSystem : SystemProducer
         {
-            public ActorSystem(ILoggerFactory logFactory) : base(nameof(ActorSystem), 0)
+            public ActorSystem() : base("Test")
             {
             }
 
@@ -71,7 +71,9 @@ namespace Atma.Systems
             var memory = new DynamicAllocator(_logFactory);
             var em = new EntityManager(_logFactory, memory);
             var sm = new SystemManager(_logFactory, em, memory);
-            sm.Add(new ActorSystem(_logFactory));
+            sm.AddStage(1, "Default");
+
+            sm.Add(new ActorSystem());
 
             sm.Init();
 

@@ -24,9 +24,15 @@ namespace Atma.Systems
 
         public string Name { get; private set; }
 
+        public string Group { get; private set; }
+
+        public uint Stages { get; private set; }
+
         public bool Disabled { get; set; }
 
         private delegate void Executor(object owner, int length, void** data);
+
+        private object _owner;
         private Type _type;
         private MethodInfo _method;
 
@@ -36,15 +42,21 @@ namespace Atma.Systems
         private EntitySpec _spec;
         public EntitySpec Spec => _spec;
 
-        public SystemMethodExecutor(Type type, MethodInfo method)
+        public SystemMethodExecutor(object owner, Type type, MethodInfo method, string name = null, string defaultGroup = null, int? defaultPriority = null, uint? defaultStages = null)
         {
+            _owner = owner;
             _type = type;
             _method = method;
+
+            Name = name ?? _method.GetCustomAttribute<NameAttribute>()?.Name ?? method.ToString();
+            Group = _method.GetCustomAttribute<GroupAttribute>()?.Name ?? defaultGroup;
+            Priority = _method.GetCustomAttribute<PriorityAttribute>()?.Priority ?? defaultPriority ?? 0;
+            Stages = _method.GetCustomAttribute<StagesAttribute>()?.Stages ?? defaultStages ?? 0;
+
         }
 
         public void Init()
         {
-
             var componentList = new ComponentList();
             var parms = _method.GetParameters();
             var method = new DynamicMethod("Execute", null, new Type[] { typeof(object), typeof(int), typeof(void**) });
@@ -157,9 +169,6 @@ namespace Atma.Systems
 
             _spec = new EntitySpec(_componentTypes.ToArray());
 
-            Name = _method.GetCustomAttribute<NameAttribute>()?.Name ?? _method.ToString();
-            Priority = _method.GetCustomAttribute<PriorityAttribute>()?.Priority ?? 0;
-
             _dependencies = new DependencyList(Name, Priority, config =>
             {
                 foreach (var it in _readComponents)
@@ -195,7 +204,7 @@ namespace Atma.Systems
                     for (var k = 0; k < componentTypes.Length; k++)
                         data[k] = chunk.PackedArray[indices[k]].Memory;
 
-                    _execute(this, chunk.Count, data);
+                    _execute(_owner, chunk.Count, data);
                 }
             });
         }
@@ -203,26 +212,65 @@ namespace Atma.Systems
         public override string ToString() => Name;
     }
 
-    public unsafe class SystemEntityProcessor : SystemGroup
+    // public unsafe class SystemEntityProcessor : SystemGroup
+    // {
+    //     private SystemMethodExecutor[] _methods;
+
+    //     protected internal SystemEntityProcessor(string name = null, string group = null, int? priority = null)
+    //         : base(name, group, priority) { }
+
+    //     public override void Init()
+    //     {
+    //         var typeMethods = _type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+    //                                 .Where(x => string.Compare(x.Name, "Execute", true) == 0).ToArray();
+
+    //         _methods = new SystemMethodExecutor[typeMethods.Length];
+    //         for (var i = 0; i < _methods.Length; i++)
+    //             Add(BuildSystem(typeMethods[i]));
+
+    //         base.Init();
+    //     }
+
+    //     private SystemMethodExecutor BuildSystem(MethodInfo method) => new SystemMethodExecutor(this, _type, method);
+    // }
+
+    // public interface ISystemProducer
+    // {
+    //     void Register(SystemManager systemManager);
+    // }
+
+
+    public unsafe class SystemProducer// : ISystemProducer
     {
         private SystemMethodExecutor[] _methods;
+        private readonly Type _type;
 
-        protected SystemEntityProcessor() : base() { }
-        protected SystemEntityProcessor(string name) : base(name) { }
-        protected SystemEntityProcessor(string name, int priority) : base(name, priority) { }
+        public string DefaultGroup { get; private set; }
+        public int? DefaultPriority { get; private set; }
+        public uint? DefaultStages { get; private set; }
 
-        public override void Init()
+        protected internal SystemProducer(string group = null, int? priority = null, uint? stages = null)
+        {
+            _type = this.GetType();
+
+            DefaultGroup = group ?? _type.GetCustomAttribute<GroupAttribute>()?.Name ?? null;
+            DefaultPriority = priority ?? _type.GetCustomAttribute<PriorityAttribute>()?.Priority;
+            DefaultStages = stages ?? _type.GetCustomAttribute<StagesAttribute>()?.Stages;
+        }
+
+        internal void Register(SystemManager systemManager)
         {
             var typeMethods = _type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                                    .Where(x => string.Compare(x.Name, "Execute", true) == 0).ToArray();
+                                               .Where(x => string.Compare(x.Name, "Execute", true) == 0).ToArray();
 
             _methods = new SystemMethodExecutor[typeMethods.Length];
             for (var i = 0; i < _methods.Length; i++)
-                Add(BuildSystem(typeMethods[i]));
-
-            base.Init();
+            {
+                var system = BuildSystem(typeMethods[i]);
+                systemManager.Register(system);
+            }
         }
 
-        private SystemMethodExecutor BuildSystem(MethodInfo method) => new SystemMethodExecutor(_type, method);
+        private SystemMethodExecutor BuildSystem(MethodInfo method) => new SystemMethodExecutor(this, _type, method, null, DefaultGroup, DefaultPriority, DefaultStages);
     }
 }

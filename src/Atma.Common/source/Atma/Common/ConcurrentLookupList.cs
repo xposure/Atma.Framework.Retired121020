@@ -69,12 +69,30 @@
             }
         }
 
+        public void TryAdd(int id, T t)
+        {
+            try
+            {
+                _lock.EnterWriteLock();
+                var index = indexOf(id);
+                if (index == -1)
+                {
+                    _indexLookup.Add(id);
+                    _data.Add(t);
+                }
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
         public int IndexOf(int id)
         {
             try
             {
                 _lock.EnterReadLock();
-                return IndexOf(id);
+                return indexOf(id);
             }
             finally
             {

@@ -2,7 +2,7 @@ namespace Atma.Systems
 {
     using System;
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class NameAttribute : Attribute
     {
         private string _name;
@@ -15,7 +15,39 @@ namespace Atma.Systems
         }
     }
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
+    public class GroupAttribute : Attribute
+    {
+        private string _name;
+
+        public string Name => _name;
+
+        public GroupAttribute(string name)
+        {
+            _name = name;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
+    public class StagesAttribute : Attribute
+    {
+        private uint _stages;
+
+        public uint Stages => _stages;
+
+        public StagesAttribute(uint stages)
+        {
+            _stages = stages;
+        }
+
+        public StagesAttribute(params uint[] stages)
+        {
+            for (var i = 0; i < stages.Length; i++)
+                _stages |= stages[i];
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class BeforeAttribute : Attribute
     {
         private string[] _names;
@@ -29,7 +61,7 @@ namespace Atma.Systems
     }
 
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class AfterAttribute : Attribute
     {
         private string[] _names;
@@ -42,7 +74,7 @@ namespace Atma.Systems
         }
     }
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class PriorityAttribute : Attribute
     {
         private int _priority;

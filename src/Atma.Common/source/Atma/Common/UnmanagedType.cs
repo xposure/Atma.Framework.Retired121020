@@ -39,8 +39,23 @@
         }
     }
 
+    public struct UnknownType
+    {
+
+    }
+
     public sealed class UnmanagedHelper
     {
+        internal static ConcurrentLookupList<Type> _typeLookup = new ConcurrentLookupList<Type>();
+
+        public static Type LookUp(int id)
+        {
+            if (!_typeLookup.TryGetValue(id, out var type))
+                return typeof(UnknownType);
+
+            return type;
+        }
+
         private Dictionary<Type, bool> _unmanagedCache = new Dictionary<Type, bool>();
         private Dictionary<Type, UnmanagedType> _cacheTypes = new Dictionary<Type, UnmanagedType>();
 
@@ -72,6 +87,7 @@
                 var size = Size.Of(t);
                 unmanagedType = new UnmanagedType(t, size);
                 _cacheTypes.Add(t, unmanagedType);
+                _typeLookup.TryAdd(unmanagedType.ID, t);
             }
 
             return true;

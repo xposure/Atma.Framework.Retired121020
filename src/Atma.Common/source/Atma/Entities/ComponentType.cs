@@ -4,14 +4,19 @@
     using static Atma.Debug;
 
     using System;
-    using System.Collections.Generic;
 
     public unsafe readonly struct ComponentType : IEquatable<ComponentType>, IComparable<ComponentType>
     {
         internal static ConcurrentLookupList<Type> _typeLookup = new ConcurrentLookupList<Type>();
 
-        public static Type LookUp(in ComponentType type) => LookUp(type.ID);
-        public static Type LookUp(int id) => _typeLookup[id];
+        internal static Type LookUp(in ComponentType type) => LookUp(type.ID);
+        internal static Type LookUp(int id)
+        {
+            if (!_typeLookup.TryGetValue(id, out var type))
+                return UnmanagedHelper.LookUp(id);
+
+            return type;
+        }
 
         public readonly int ID;
         public readonly int Size;

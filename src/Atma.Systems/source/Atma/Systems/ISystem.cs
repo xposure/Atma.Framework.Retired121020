@@ -13,7 +13,12 @@ namespace Atma.Systems
         //string Group { get; }
         string Name { get; }
 
+        string Group { get; }
+
         bool Disabled { get; set; }
+
+        uint Stages { get; }
+
     }
 
     // public abstract class AbstractSystem : ISystem
