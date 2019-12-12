@@ -278,6 +278,10 @@ namespace Atma.Memory
 
             private int _largestFreeBlock = -1;
 
+            //private bool _enableLogging;
+
+            //private string[] _stackTrace;
+
             private HeapAllocation* _heap;
 
             public HeapPage(IAllocator allocator, int size)
@@ -287,6 +291,10 @@ namespace Atma.Memory
                 Size = size;
                 _heap = (HeapAllocation*)_handle.Address;
                 *_heap = new HeapAllocation(size);
+
+                // _enableLogging = enableLogging;
+                // if (_enableLogging)
+                //     _stackTrace = new string[_heap->Blocks];
             }
 
             public void Free(IntPtr handle)
@@ -358,18 +366,20 @@ namespace Atma.Memory
 
         // }
 
-        public HeapAllocator(ILoggerFactory logFactory)
+        public HeapAllocator(ILoggerFactory logFactory, bool enableLogging = false)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<HeapAllocator>();
 
-            _allocator = new DynamicAllocator(_logFactory);
+            _allocator = new DynamicAllocator(_logFactory, enableLogging);
             for (var i = 0; i < _pageAllocators.Length; i++)
                 _pageAllocators[i] = new HeapPageAllocator(_logFactory, _allocator, i);
         }
 
         public void Free(ref AllocationHandle handle)
         {
+            System.Console.WriteLine($"FREE: {handle}");
+
             var heapIndex = handle.Flags & 0xf;
             _pageAllocators[heapIndex].Free(ref handle);
         }
@@ -381,7 +391,9 @@ namespace Atma.Memory
                 if (size < _pageAllocators[i].DesiredSizes)
                     return _pageAllocators[i].Take(size); ;
 
-            return _pageAllocators[_pageAllocators.Length - 1].Take(size);
+            var handle = _pageAllocators[_pageAllocators.Length - 1].Take(size);
+            System.Console.WriteLine($"TAKE: {handle}");
+            return handle;
         }
 
         public AllocationHandle Transfer(ref AllocationHandle handle)

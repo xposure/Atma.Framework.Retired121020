@@ -39,13 +39,16 @@ namespace Atma
 #if DEBUG
         private readonly string _stackTrace = Environment.StackTrace;
 #endif
-
+        protected UnmanagedDispose()
+        {
+            System.Console.WriteLine($"CREATED: {this.GetType().Name} [{this.GetHashCode()}] -> {this.ToString()}");
+        }
         protected virtual void OnManagedDispose() { }
         protected virtual void OnUnmanagedDispose() { }
 
         protected void Dispose(bool disposing)
         {
-            //System.Console.WriteLine($"{this.GetType().Name} [{this.GetHashCode()}] disposing");
+            System.Console.WriteLine($"DISPOSING: {this.GetType().Name} [{this.GetHashCode()}] -> {this.ToString()} ");
             if (!disposedValue)
             {
                 Assert.EqualTo(disposing, true);
@@ -56,14 +59,15 @@ namespace Atma
 
                 disposedValue = true;
             }
+            System.Console.WriteLine($"DISPOSED: {this.GetType().Name} [{this.GetHashCode()}] -> {this.ToString()} ");
         }
 
         ~UnmanagedDispose()
         {
-            Dispose(false);
 #if DEBUG
             throw new Exception("Object was not disposed.\nCreated At:" + _stackTrace);
 #endif
+            Dispose(false);
         }
 
         public void Dispose()

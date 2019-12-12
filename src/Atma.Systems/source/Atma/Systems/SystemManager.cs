@@ -27,16 +27,16 @@ namespace Atma.Systems
 
         private Dictionary<string, int> _stages = new Dictionary<string, int>();
 
-        public string DefaultStage { get; private set; }
+        public string DefaultStage { get; set; }
 
-        public SystemManager(ILoggerFactory logFactory, EntityManager em, IAllocator allocator, string defaultStage = "Default")
+        public SystemManager(ILoggerFactory logFactory, EntityManager em, IAllocator allocator)
         {
             _logFactory = logFactory;
             _logger = logFactory.CreateLogger<SystemManager>();
             _entityManager = em;
             _allocator = allocator;
 
-            DefaultStage = defaultStage;
+            DefaultStage = "Default";
             _variables = new NativeBuffer(allocator);
         }
 
@@ -116,7 +116,22 @@ namespace Atma.Systems
                 }
             }
         }
+
+        protected override void OnManagedDispose()
+        {
+            if (_systems != null)
+            {
+                for (var i = 0; i < _systems.Length; i++)
+                {
+                    if (_systems[i] != null)
+                    {
+                        _systems[i].Dispose();
+                        _systems[i] = null;
+                    }
+                }
+
+                _systems = null;
+            }
+        }
     }
-
-
 }

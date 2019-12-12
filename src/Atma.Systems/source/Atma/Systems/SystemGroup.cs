@@ -108,6 +108,21 @@ namespace Atma.Systems
             }
         }
 
+        protected override void OnManagedDispose()
+        {
+            if (_systems != null)
+            {
+                for (var i = 0; i < _systems.Count; i++)
+                {
+                    _systems[i].Dispose();
+                    _systems[i] = null;
+                }
+
+                _systems.Clear();
+                _systems = null;
+            }
+        }
+
         public override string ToString() => $"{base.ToString()}, Count: {_systems.Count}";
     }
 }

@@ -38,13 +38,13 @@
         private ILoggerFactory _logFactory;
         private ObjectPoolInt _dynamicMemoryTracker = new ObjectPoolInt(1024);
         private DynamicMemoryHandle[] _handles = new DynamicMemoryHandle[1024];
-        private bool _enableStackTrace = false;
+        private bool _enableLogging = false;
 
-        public DynamicAllocator(ILoggerFactory logFactory, bool enableStackTrace = false)
+        public DynamicAllocator(ILoggerFactory logFactory, bool enableLogging = false)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<DynamicAllocator>();
-            _enableStackTrace = enableStackTrace;
+            _enableLogging = enableLogging;
 
             //take the first to enforce id = 0 as invalid
             _dynamicMemoryTracker.Take();

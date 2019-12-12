@@ -5,7 +5,7 @@ namespace Atma.Systems
     using Atma.Common;
     using Atma.Entities;
 
-    public abstract class SystemBase : ISystem
+    public abstract class SystemBase : UnmanagedDispose, ISystem
     {
         protected bool _inited { get; private set; }
         protected readonly Type _type;

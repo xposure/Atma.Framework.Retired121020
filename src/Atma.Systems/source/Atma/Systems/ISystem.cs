@@ -1,10 +1,12 @@
+
 namespace Atma.Systems
 {
+    using System;
     using System.Collections.Generic;
     using Atma.Entities;
     using Microsoft.Extensions.Logging;
 
-    public interface ISystem
+    public interface ISystem : IDisposable
     {
         void Init();
         void Tick(SystemManager systemManager, EntityManager entityManager);

@@ -240,9 +240,9 @@ namespace Atma.Systems
     // }
 
 
-    public unsafe class SystemProducer// : ISystemProducer
+    public unsafe class SystemProducer : UnmanagedDispose
     {
-        private SystemMethodExecutor[] _methods;
+        private SystemMethodExecutor[] _systems;
         private readonly Type _type;
 
         public string DefaultGroup { get; private set; }
@@ -263,14 +263,28 @@ namespace Atma.Systems
             var typeMethods = _type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                                                .Where(x => string.Compare(x.Name, "Execute", true) == 0).ToArray();
 
-            _methods = new SystemMethodExecutor[typeMethods.Length];
-            for (var i = 0; i < _methods.Length; i++)
+            _systems = new SystemMethodExecutor[typeMethods.Length];
+            for (var i = 0; i < _systems.Length; i++)
             {
-                var system = BuildSystem(typeMethods[i]);
-                systemManager.Register(system);
+                _systems[i] = BuildSystem(typeMethods[i]);
+                systemManager.Register(_systems[i]);
             }
         }
 
         private SystemMethodExecutor BuildSystem(MethodInfo method) => new SystemMethodExecutor(this, _type, method, null, DefaultGroup, DefaultPriority, DefaultStages);
+
+        protected override void OnManagedDispose()
+        {
+            if (_systems != null)
+            {
+                for (var i = 0; i < _systems.Length; i++)
+                {
+                    _systems[i].Dispose();
+                    _systems[i] = null;
+                }
+
+                _systems = null;
+            }
+        }
     }
 }
