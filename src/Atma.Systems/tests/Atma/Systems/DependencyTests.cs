@@ -37,7 +37,7 @@ namespace Atma.Systems
             public string Name { get; }
             public string Group => null;
             public int Priority { get; } = 0;
-            public uint Stages => 0;
+            public string[] Stages => null;
 
             public bool Disabled { get; set; } = false;
             private int* _execution;

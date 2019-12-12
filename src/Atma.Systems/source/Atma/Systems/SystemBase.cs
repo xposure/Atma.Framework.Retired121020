@@ -18,17 +18,17 @@ namespace Atma.Systems
         public string Name { get; }
         public string Group { get; }
 
-        public uint Stages { get; }
+        public string[] Stages { get; }
         public bool Disabled { get; set; }
 
-        protected internal SystemBase(string name = null, string group = null, int? priority = null, uint? stages = null)
+        protected internal SystemBase(string name = null, string group = null, int? priority = null, string[] stages = null)
         {
             _type = this.GetType();
 
             Name = name ?? _type.GetCustomAttribute<NameAttribute>()?.Name ?? _type.Name;
             Group = group ?? _type.GetCustomAttribute<GroupAttribute>()?.Name ?? null;
             Priority = priority ?? _type.GetCustomAttribute<PriorityAttribute>()?.Priority ?? 0;
-            Stages = stages ?? _type.GetCustomAttribute<StagesAttribute>()?.Stages ?? 0;
+            Stages = stages ?? _type.GetCustomAttribute<StagesAttribute>()?.Stages ?? null;
         }
 
         public void Tick(SystemManager systemManager, EntityManager entityManager)

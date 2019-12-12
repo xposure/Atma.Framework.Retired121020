@@ -71,9 +71,9 @@ namespace Atma.Systems
             var memory = new DynamicAllocator(_logFactory);
             var em = new EntityManager(_logFactory, memory);
             var sm = new SystemManager(_logFactory, em, memory);
-            sm.AddStage(1, "Default");
+            sm.AddStage("Default");
 
-            sm.Add(new ActorSystem());
+            sm.Register(new ActorSystem());
 
             sm.Init();
 

@@ -12,7 +12,7 @@ namespace Atma.Systems
         private DirectedGraph<ISystem> _depGraph = new DirectedGraph<ISystem>();
         private List<ISystem> _systems = new List<ISystem>();
 
-        protected internal SystemGroup(string name = null, string group = null, int? priority = null, uint? stages = null)
+        protected internal SystemGroup(string name = null, string group = null, int? priority = null, string[] stages = null)
             : base(name, group, priority, stages) { }
 
 

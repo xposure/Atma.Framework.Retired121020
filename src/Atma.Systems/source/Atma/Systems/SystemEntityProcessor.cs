@@ -26,7 +26,7 @@ namespace Atma.Systems
 
         public string Group { get; private set; }
 
-        public uint Stages { get; private set; }
+        public string[] Stages { get; private set; }
 
         public bool Disabled { get; set; }
 
@@ -42,7 +42,7 @@ namespace Atma.Systems
         private EntitySpec _spec;
         public EntitySpec Spec => _spec;
 
-        public SystemMethodExecutor(object owner, Type type, MethodInfo method, string name = null, string defaultGroup = null, int? defaultPriority = null, uint? defaultStages = null)
+        public SystemMethodExecutor(object owner, Type type, MethodInfo method, string name = null, string defaultGroup = null, int? defaultPriority = null, string[] defaultStages = null)
         {
             _owner = owner;
             _type = type;
@@ -51,7 +51,7 @@ namespace Atma.Systems
             Name = name ?? _method.GetCustomAttribute<NameAttribute>()?.Name ?? method.ToString();
             Group = _method.GetCustomAttribute<GroupAttribute>()?.Name ?? defaultGroup;
             Priority = _method.GetCustomAttribute<PriorityAttribute>()?.Priority ?? defaultPriority ?? 0;
-            Stages = _method.GetCustomAttribute<StagesAttribute>()?.Stages ?? defaultStages ?? 0;
+            Stages = _method.GetCustomAttribute<StagesAttribute>()?.Stages ?? defaultStages ?? null;
 
         }
 
@@ -247,9 +247,9 @@ namespace Atma.Systems
 
         public string DefaultGroup { get; private set; }
         public int? DefaultPriority { get; private set; }
-        public uint? DefaultStages { get; private set; }
+        public string[] DefaultStages { get; private set; }
 
-        protected internal SystemProducer(string group = null, int? priority = null, uint? stages = null)
+        protected internal SystemProducer(string group = null, int? priority = null, string[] stages = null)
         {
             _type = this.GetType();
 

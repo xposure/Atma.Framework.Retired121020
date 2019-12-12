@@ -25,43 +25,29 @@ namespace Atma.Systems
 
         private SystemGroup[] _systems = new SystemGroup[32];
 
-        public uint DefaultStages { get; private set; }
+        private Dictionary<string, int> _stages = new Dictionary<string, int>();
 
-        public SystemManager(ILoggerFactory logFactory, EntityManager em, IAllocator allocator, uint defaultStage = 1)
+        public string DefaultStage { get; private set; }
+
+        public SystemManager(ILoggerFactory logFactory, EntityManager em, IAllocator allocator, string defaultStage = "Default")
         {
             _logFactory = logFactory;
             _logger = logFactory.CreateLogger<SystemManager>();
             _entityManager = em;
             _allocator = allocator;
-            DefaultStages = defaultStage;
 
+            DefaultStage = defaultStage;
             _variables = new NativeBuffer(allocator);
-
-            // for (var i = 0; i < _systems.Length; i++)
-            //     _systems[i] = new SystemGroup($"Stage {i}", null, 0);
         }
 
-        public uint AddStage(uint stage, string name)
+        public void AddStage(string name)
         {
-            Assert.NotEqualTo(stage, 0);
-            var index = 0;
-            var bits = 0;
+            Assert.EqualTo(_stages.ContainsKey(name), false);
+            Assert.Range(_stages.Count, 0, 32);
 
-            for (; index < _systems.Length; index++)
-            {
-                if ((stage & 1) == 1)
-                    bits++;
-
-                stage >>= 1;
-
-                if (stage == 0)
-                    break;
-            }
-
-            Assert.EqualTo(bits, 1);
-            Assert.EqualTo(_systems[index], null);
-            _systems[index] = new SystemGroup(name, null, 0, stage);
-            return stage;
+            var index = _stages.Count;
+            _stages.Add(name, index);
+            _systems[index] = new SystemGroup(name, null, 0, null);
         }
 
         internal NativeBufferPtr GetVariable(string name, Type type)
@@ -73,11 +59,6 @@ namespace Atma.Systems
             }
 
             return ptr;
-        }
-
-        public void Add(SystemProducer system)
-        {
-            system.Register(this);
         }
 
         public void Init()
@@ -99,38 +80,40 @@ namespace Atma.Systems
             _variables.Dispose();
         }
 
+        public void Register(SystemProducer system)
+        {
+            system.Register(this);
+        }
         public T Register<T>(T system)
             where T : ISystem
         {
-            var stages = system.Stages == 0 ? DefaultStages : system.Stages;
-            var index = 0;
-            while (stages > 0)
+            var stages = system.Stages == null ? new string[] { DefaultStage } : system.Stages;
+            for (var i = 0; i < stages.Length; i++)
             {
-                if ((stages & 1) == 1)
-                    _systems[index].Add(system);
+                if (!_stages.TryGetValue(stages[i], out var index))
+                    throw new Exception($"Stage [{stages[i]}] was not registered.");
 
-                index++;
-                stages >>= 1;
+                _systems[index].Add(system);
             }
             return system;
         }
 
-        public void Tick(uint stages)
+        public void Tick(params string[] stages)
         {
-            Assert.NotEqualTo(stages, 0);
-            var index = 0;
-            while (stages > 0)
+            if (stages.Length == 0)
             {
-                if ((stages & 1) == 1)
+                foreach (var stage in _stages.Values)
+                    _systems[stage].Tick(this, _entityManager);
+            }
+            else
+            {
+                for (var i = 0; i < stages.Length; i++)
                 {
-                    if (_systems[index] == null)
-                        throw new Exception("Make sure you call add stage first to init and set its name.");
+                    if (!_stages.TryGetValue(stages[i], out var index))
+                        throw new Exception($"Stage [{stages[i]}] was not registered.");
 
                     _systems[index].Tick(this, _entityManager);
                 }
-
-                index++;
-                stages >>= 1;
             }
         }
     }

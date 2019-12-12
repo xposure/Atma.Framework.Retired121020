@@ -31,19 +31,18 @@ namespace Atma.Systems
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class StagesAttribute : Attribute
     {
-        private uint _stages;
+        private string[] _stages;
 
-        public uint Stages => _stages;
+        public string[] Stages => _stages;
 
-        public StagesAttribute(uint stages)
+        public StagesAttribute(string stage)
         {
-            _stages = stages;
+            _stages = new string[] { stage };
         }
 
-        public StagesAttribute(params uint[] stages)
+        public StagesAttribute(params string[] stages)
         {
-            for (var i = 0; i < stages.Length; i++)
-                _stages |= stages[i];
+            _stages = stages;
         }
     }
 

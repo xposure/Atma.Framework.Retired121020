@@ -17,7 +17,7 @@ namespace Atma.Systems
 
         bool Disabled { get; set; }
 
-        uint Stages { get; }
+        string[] Stages { get; }
 
     }
 

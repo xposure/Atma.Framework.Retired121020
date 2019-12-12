@@ -31,7 +31,7 @@ namespace Atma.Systems
         }
 
 
-        [Stages(1)]
+        [Stages("Default")]
         public class SystemTest : SystemProducer
         {
             public float dt = 0;
@@ -42,13 +42,13 @@ namespace Atma.Systems
                 Executed0++;
             }
 
-            [Stages(2)]
+            [Stages("Stage 2")]
             public void Execute(ref Velocity velocity)
             {
                 Executed1++;
             }
 
-            [Stages(4)]
+            [Stages("Stage 3")]
             public void Execute(ref Position position, ref Velocity velocity)
             {
                 Executed2++;
@@ -66,10 +66,10 @@ namespace Atma.Systems
             var spec = EntitySpec.Create<Position, Velocity>();
             var entity = em.Create(spec);
 
-            var s0 = sm.AddStage(1, "Default (Stage 1)");
-            var s1 = sm.AddStage(2, "Stage 2");
-            var s2 = sm.AddStage(4, "Stage 3");
-            var s3 = sm.AddStage(8, "Stage 4");
+            sm.AddStage("Default");
+            sm.AddStage("Stage 2");
+            sm.AddStage("Stage 3");
+            sm.AddStage("Stage 4");
 
             var sys = new SystemTest();
             sys.dt = 0.16f;
@@ -77,10 +77,7 @@ namespace Atma.Systems
 
             sm.Init();
 
-            sm.Tick(1);
-            sm.Tick(2);
-            sm.Tick(4);
-            sm.Tick(8);
+            sm.Tick("Default", "Stage 2", "Stage 3", "Stage 4");
 
             sys.Executed0.ShouldBe(1);
             sys.Executed1.ShouldBe(1);
