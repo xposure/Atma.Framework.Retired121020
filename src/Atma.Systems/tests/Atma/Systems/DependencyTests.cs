@@ -64,6 +64,8 @@ namespace Atma.Systems
             }
 
             public override string ToString() => Name;
+
+            public void Dispose() { }
         }
 
         [Fact]
