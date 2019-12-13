@@ -380,6 +380,8 @@ namespace Atma.Memory
             }
         }
 
+        public IAllocator ThreadSafe => new ThreadSafeAllocator(this);
+
         //going to cheat and use a linked list until performance becomes an issue
         private ILogger _logger;
         private ILoggerFactory _logFactory;
@@ -401,12 +403,12 @@ namespace Atma.Memory
 
         private List<AllocationCommand> _allocationCommands = new List<AllocationCommand>();
 
-        public HeapAllocator(ILoggerFactory logFactory, bool enableLogging = false)
+        public HeapAllocator(ILoggerFactory logFactory)
         {
             _logFactory = logFactory;
             _logger = _logFactory.CreateLogger<HeapAllocator>();
 
-            _allocator = new DynamicAllocator(_logFactory, enableLogging);
+            _allocator = new DynamicAllocator(_logFactory);
             for (var i = 0; i < _pageAllocators.Length; i++)
                 _pageAllocators[i] = new HeapPageAllocator(_logFactory, _allocator, i);
         }
