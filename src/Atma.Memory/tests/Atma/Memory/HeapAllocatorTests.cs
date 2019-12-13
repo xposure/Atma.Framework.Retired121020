@@ -204,5 +204,47 @@ namespace Atma.Memory
             //assert
             handle.Address.ShouldNotBe(IntPtr.Zero);
         }
+
+
+        [Fact]
+        public void WormCrash()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+
+            var handle0 = memory.Take(24);
+            //memory.Validate();
+
+            var handle1 = memory.Take(24);
+            //memory.Validate();
+
+            var handle2 = memory.Take(24);
+            //memory.Validate();
+
+            var handle4 = memory.Take(24);
+            //memory.Validate();
+
+            memory.Free(ref handle1);
+            //memory.Validate();
+
+            memory.Free(ref handle0);
+            //memory.Validate();
+
+            var handle5 = memory.Take(24);
+            //memory.Validate();
+            var handle6 = memory.Take(24);
+            //memory.Validate();
+
+            memory.Free(ref handle4);
+            //memory.Validate();
+
+            memory.Free(ref handle2);
+            //memory.Validate();
+
+            memory.Free(ref handle6);
+            //memory.Validate();
+
+            memory.Free(ref handle5);
+            //memory.Validate();
+        }
     }
 }

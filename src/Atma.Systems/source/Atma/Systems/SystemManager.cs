@@ -114,7 +114,6 @@ namespace Atma.Systems
 
         protected override void OnUnmanagedDispose()
         {
-            System.Console.WriteLine($"SM [{this.GetHashCode()}] Disposing VARIABLES: {_variables}");
             _variables.Dispose();
         }
 

@@ -66,14 +66,15 @@ namespace Atma.Systems
         }
 
         [Fact]
-        public void ShouldDoSomething()
+        public void ShouldExecuteSystemMethods()
         {
             var memory = new DynamicAllocator(_logFactory);
             var em = new EntityManager(_logFactory, memory);
             var sm = new SystemManager(_logFactory, em, memory);
             sm.AddStage("Default");
 
-            sm.Register(new ActorSystem());
+            using var sys = new ActorSystem();
+            sm.Register(sys);
 
             sm.Init();
 

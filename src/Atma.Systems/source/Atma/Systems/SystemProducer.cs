@@ -131,10 +131,16 @@ namespace Atma.Systems
                     return; //duplicate type
 
                 //check if we are read only (finally a decent way to enforce read only pointers!)
-                if (pType.GetCustomAttribute<System.Runtime.InteropServices.InAttribute>() != null)
+                if (parms[k].GetCustomAttribute<System.Runtime.InteropServices.InAttribute>() != null)
+                {
+                    System.Console.WriteLine($"{pType} read");
                     _readComponents.Add(componentType);
+                }
                 else
+                {
+                    System.Console.WriteLine($"{pType} write");
                     _writeComponents.Add(componentType);
+                }
             }
 
             //call method
@@ -211,34 +217,6 @@ namespace Atma.Systems
 
         public override string ToString() => Name;
     }
-
-    // public unsafe class SystemEntityProcessor : SystemGroup
-    // {
-    //     private SystemMethodExecutor[] _methods;
-
-    //     protected internal SystemEntityProcessor(string name = null, string group = null, int? priority = null)
-    //         : base(name, group, priority) { }
-
-    //     public override void Init()
-    //     {
-    //         var typeMethods = _type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-    //                                 .Where(x => string.Compare(x.Name, "Execute", true) == 0).ToArray();
-
-    //         _methods = new SystemMethodExecutor[typeMethods.Length];
-    //         for (var i = 0; i < _methods.Length; i++)
-    //             Add(BuildSystem(typeMethods[i]));
-
-    //         base.Init();
-    //     }
-
-    //     private SystemMethodExecutor BuildSystem(MethodInfo method) => new SystemMethodExecutor(this, _type, method);
-    // }
-
-    // public interface ISystemProducer
-    // {
-    //     void Register(SystemManager systemManager);
-    // }
-
 
     public unsafe class SystemProducer : UnmanagedDispose
     {
