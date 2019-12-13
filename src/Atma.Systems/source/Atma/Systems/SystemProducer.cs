@@ -132,15 +132,9 @@ namespace Atma.Systems
 
                 //check if we are read only (finally a decent way to enforce read only pointers!)
                 if (parms[k].GetCustomAttribute<System.Runtime.InteropServices.InAttribute>() != null)
-                {
-                    System.Console.WriteLine($"{pType} read");
                     _readComponents.Add(componentType);
-                }
                 else
-                {
-                    System.Console.WriteLine($"{pType} write");
                     _writeComponents.Add(componentType);
-                }
             }
 
             //call method

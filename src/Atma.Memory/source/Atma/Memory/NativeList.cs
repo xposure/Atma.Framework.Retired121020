@@ -50,8 +50,6 @@
 
             Length = 0;
             MaxLength = length;
-
-            System.Console.WriteLine($"NativeList Create: {Handle}");
         }
 
         public NativeList(ref NativeArray<T> array)
@@ -265,8 +263,6 @@
 
         public void Dispose()
         {
-            System.Console.WriteLine($"NativeList Dispose: {Handle}");
-
             Assert.EqualTo(Handle.IsValid, true);
             var copy = _listInfo->Handle;
             Allocator.Free(ref Handle);
