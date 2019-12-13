@@ -60,6 +60,6 @@ namespace Atma.Systems
 
         protected abstract void OnGatherDependencies(DependencyListConfig config);
 
-        public override string ToString() => $"Name: {Name}, Dep: {_dependencies.ToString()}";
+        public override string ToString() => $"Name: {Name}, Dep: {_dependencies}";
     }
 }

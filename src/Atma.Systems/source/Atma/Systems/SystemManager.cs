@@ -75,11 +75,6 @@ namespace Atma.Systems
                     _systems[i].Tick(this, _entityManager);
         }
 
-        protected override void OnUnmanagedDispose()
-        {
-            _variables.Dispose();
-        }
-
         public void Register(SystemProducer system)
         {
             system.Register(this);
@@ -115,6 +110,12 @@ namespace Atma.Systems
                     _systems[index].Tick(this, _entityManager);
                 }
             }
+        }
+
+        protected override void OnUnmanagedDispose()
+        {
+            System.Console.WriteLine($"SM [{this.GetHashCode()}] Disposing VARIABLES: {_variables}");
+            _variables.Dispose();
         }
 
         protected override void OnManagedDispose()

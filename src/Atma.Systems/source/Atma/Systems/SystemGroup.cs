@@ -123,6 +123,6 @@ namespace Atma.Systems
             }
         }
 
-        public override string ToString() => $"{base.ToString()}, Count: {_systems.Count}";
+        public override string ToString() => $"{base.ToString()}, Count: {_systems?.Count}";
     }
 }

@@ -380,26 +380,41 @@ namespace Atma.Memory
         {
             System.Console.WriteLine($"FREE: {handle}");
 
-            var heapIndex = handle.Flags & 0xf;
-            _pageAllocators[heapIndex].Free(ref handle);
+            lock (_pageAllocators)
+            {
+                var heapIndex = handle.Flags & 0xf;
+                _pageAllocators[heapIndex].Free(ref handle);
+            }
         }
 
         public AllocationHandle Take(int size)
         {
             //var allocatorSize = size 
-            for (var i = 0; i < _pageAllocators.Length - 1; i++)
-                if (size < _pageAllocators[i].DesiredSizes)
-                    return _pageAllocators[i].Take(size); ;
+            lock (_pageAllocators)
+            {
+                for (var i = 0; i < _pageAllocators.Length - 1; i++)
+                {
+                    if (size < _pageAllocators[i].DesiredSizes)
+                    {
+                        var handle = _pageAllocators[i].Take(size);
+                        System.Console.WriteLine($"TAKE: {handle}");
+                        return handle;
+                    }
+                }
 
-            var handle = _pageAllocators[_pageAllocators.Length - 1].Take(size);
-            System.Console.WriteLine($"TAKE: {handle}");
-            return handle;
+                var handle2 = _pageAllocators[_pageAllocators.Length - 1].Take(size);
+                System.Console.WriteLine($"TAKE: {handle2}");
+                return handle2;
+            }
         }
 
         public AllocationHandle Transfer(ref AllocationHandle handle)
         {
-            var heapIndex = handle.Flags & 0xf;
-            return _pageAllocators[heapIndex].Transfer(ref handle);
+            lock (_pageAllocators)
+            {
+                var heapIndex = handle.Flags & 0xf;
+                return _pageAllocators[heapIndex].Transfer(ref handle);
+            }
         }
 
         protected override void OnUnmanagedDispose()
