@@ -3,7 +3,7 @@ namespace Atma
     using System;
     using Microsoft.Extensions.Logging;
 
-    public class CustomLoggerProvider : ILoggerProvider
+    public class ConsoleLoggingProvider : ILoggerProvider
     {
         public void Dispose() { }
 
@@ -28,7 +28,7 @@ namespace Atma
                     return;
                 }
 
-                Console.WriteLine($"{logLevel}: {_categoryName}: {formatter(state, exception)}");
+                Console.WriteLine($"{logLevel}[{_categoryName}] : {formatter(state, exception)}");
             }
 
 
