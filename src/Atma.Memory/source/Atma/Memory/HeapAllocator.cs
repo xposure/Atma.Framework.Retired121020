@@ -423,7 +423,7 @@ namespace Atma.Memory
         {
             for (var i = 0; i < _pageAllocators.Length - 1; i++)
                 _pageAllocators[i].Validate();
-            System.Console.WriteLine(step);
+            //System.Console.WriteLine(step);
         }
 
         public void Free(ref AllocationHandle handle)
@@ -438,8 +438,8 @@ namespace Atma.Memory
                 // try
                 // {
                 var heapIndex = handle.Flags & 0xf;
-                var name = $"handle_{handle.Id}_{handle.Flags}";
-                System.Console.WriteLine($"memory.Free(ref {name});");
+                //var name = $"handle_{handle.Id}_{handle.Flags}";
+                //System.Console.WriteLine($"memory.Free(ref {name});");
                 _pageAllocators[heapIndex].Free(ref handle);
                 // }
                 // catch (AccessViolationException ex)
@@ -471,15 +471,15 @@ namespace Atma.Memory
 
                         //_logger.LogDebug($"TAKE: {handle}");
                         //_allocationCommands.Add(new AllocationCommand() { Allocate = true, Size = size, ID = handle.Id, Flags = handle.Flags });
-                        var name = $"handle_{handle.Id}_{handle.Flags}";
-                        System.Console.WriteLine($"var {name} = Take(memory, {size});");
+                        //var name = $"handle_{handle.Id}_{handle.Flags}";
+                        //System.Console.WriteLine($"var {name} = Take(memory, {size});");
                         return handle;
                     }
                 }
 
                 var handle2 = _pageAllocators[_pageAllocators.Length - 1].Take(size);
-                var name2 = $"handle_{handle2.Id}_{handle2.Flags}";
-                System.Console.WriteLine($"var {name2} = memory.Take({size});");
+                //var name2 = $"handle_{handle2.Id}_{handle2.Flags}";
+                //System.Console.WriteLine($"var {name2} = memory.Take({size});");
                 return handle2;
             }
         }
