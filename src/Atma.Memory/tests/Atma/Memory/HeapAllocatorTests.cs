@@ -207,7 +207,7 @@ namespace Atma.Memory
 
 
         [Fact]
-        public void WormCrash()
+        public void OrphanBlockWithSizeZeroShouldReclaim()
         {
             using var memory = new HeapAllocator(_logFactory);
 
@@ -245,6 +245,40 @@ namespace Atma.Memory
 
             memory.Free(ref handle5);
             //memory.Validate();
+        }
+
+        static unsafe AllocationHandle Take(IAllocator memory, int size)
+        {
+            var handle = memory.Take(size);
+            var addr = (byte*)handle.Address;
+            for (var k = 0; k < size; k++)
+                addr[k] = 0xfe;
+            return handle;
+        }
+
+        [Fact]
+        public void ReclaimedBlockShouldReinitializeToDefault()
+        {
+            using var memory = new HeapAllocator(_logFactory);
+
+
+            var handle_50331651_48 = Take(memory, 9150);
+            memory.Validate("1");
+
+            memory.Free(ref handle_50331651_48);
+            memory.Validate("2");
+
+            var handle_16777217_18 = Take(memory, 33831);
+            memory.Validate("3");
+
+            memory.Free(ref handle_16777217_18);
+            memory.Validate("4");
+
+            var handle_67108866_64 = Take(memory, 22);
+            memory.Validate("5");
+
+            memory.Free(ref handle_67108866_64);
+            memory.Validate("6");
         }
     }
 }

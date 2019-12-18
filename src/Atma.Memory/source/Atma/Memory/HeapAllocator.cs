@@ -2,14 +2,16 @@ namespace Atma.Memory
 {
     using System;
     using System.Collections.Generic;
+    using System.Runtime.ExceptionServices;
     using System.Runtime.InteropServices;
+    using System.Security;
     using System.Text;
     using Microsoft.Extensions.Logging;
 
     //using Atma.Common;
     //using static Atma.Debug;
 
-    [System.Diagnostics.DebuggerStepThrough]
+    //[System.Diagnostics.DebuggerStepThrough]
     [StructLayout(LayoutKind.Sequential, Size = 32)]
     public unsafe struct HeapAllocation
     {
@@ -35,23 +37,23 @@ namespace Atma.Memory
             Next = null;
         }
 
-        // internal static void Validate(HeapAllocation* root)
-        // {
-        //     var ptr = root;
-        //     while (ptr != null)
-        //     {
-        //         //System.Console.WriteLine(ptr->ToString());
-        //         ptr = ptr->Next;
-        //     }
-        // }
+        internal static void Validate(HeapAllocation* root)
+        {
+            var ptr = root;
+            while (ptr != null)
+            {
+                //         _logger.LogDebug(ptr->ToString());
+                ptr = ptr->Next;
+            }
+        }
 
         public static void ConsumeForward(HeapAllocation* root)
         {
-            //System.Console.WriteLine($"  ConsumeForward {*root}");
+            ////_logger.LogDebug($"  ConsumeForward {*root}");
             var ptr = root->Next;
             while (ptr != null)
             {
-                //System.Console.WriteLine($"  Walked forward {*ptr}");
+                ////_logger.LogDebug($"  Walked forward {*ptr}");
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
                 if (!ptr->IsFree)
                     break;
@@ -83,6 +85,7 @@ namespace Atma.Memory
             if (remainingBlocks > 1)
             {
                 var newBlock = &ptr[blocks + 1];
+                *newBlock = default;
                 newBlock->Blocks = remainingBlocks - 1;
                 newBlock->Previous = ptr;
                 newBlock->MagicSignature = MagicChecksum;
@@ -103,7 +106,7 @@ namespace Atma.Memory
 
         public static HeapAllocation* FindFreeBackwards(HeapAllocation* ptr)
         {
-            //System.Console.WriteLine($"  FindFreeBackwards {*ptr}");
+            ////_logger.LogDebug($"  FindFreeBackwards {*ptr}");
             while (ptr->Previous != null)
             {
                 Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -111,7 +114,7 @@ namespace Atma.Memory
                     break;
 
                 ptr = ptr->Previous;
-                //System.Console.WriteLine($"    Walked back {*ptr}");
+                ////_logger.LogDebug($"    Walked back {*ptr}");
             }
 
             Assert.EqualTo(ptr->MagicSignature, MagicChecksum);
@@ -219,17 +222,17 @@ namespace Atma.Memory
                 _allocations.Dispose();
             }
 
-            // internal void Validate()
-            // {
-            //     for (var i = 0; i < _pages.Count; i++)
-            //         _pages[i].Validate();
-            // }
+            internal void Validate()
+            {
+                for (var i = 0; i < _pages.Count; i++)
+                    _pages[i].Validate();
+            }
 
 
             public void Free(ref AllocationHandle handle)
             {
                 ref var ptr = ref _allocations[handle.Id];
-                //System.Diagnostics.Debug.WriteLine($"Free {{ Heap: {ptr}, Handle: {handle} }}");
+                //_logger.LogDebug($"Free {{ Heap: {ptr}, Handle: {handle} }}");
                 Assert.EqualTo(ptr.Address, handle.Address);
                 Assert.EqualTo(ptr.Version & 0xfffffff, handle.Flags >> 4);
 
@@ -253,21 +256,21 @@ namespace Atma.Memory
                     {
                         heapPagePtr = new HeapPagePointer(id, ptr, i, _version);
                         var handle = new AllocationHandle(ptr, id, flags);
-                        //System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                        //_logger.LogDebug($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
 
                         return handle;
                     }
                 }
 
                 {
-                    var page = new HeapPage(_allocator, _desiredSizes);
+                    var page = new HeapPage(_logFactory, _allocator, _desiredSizes);
                     _pages.Add(page);
 
                     Contract.EqualTo(page.TryTake(out var ptr, (uint)size), true);
 
                     heapPagePtr = new HeapPagePointer(id, ptr, _pages.Count - 1, _version);
                     var handle = new AllocationHandle(ptr, id, flags);
-                    //System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
+                    //_logger.LogDebug($"Alloc {{ Heap: {heapPagePtr}, Handle: {handle} }}");
                     return handle;
                 }
             }
@@ -301,10 +304,13 @@ namespace Atma.Memory
 
             //private string[] _stackTrace;
 
+            private ILogger _logger;
+
             private HeapAllocation* _heap;
 
-            public HeapPage(IAllocator allocator, int size)
+            public HeapPage(ILoggerFactory logFactory, IAllocator allocator, int size)
             {
+                _logger = logFactory.CreateLogger<HeapPage>();
                 _allocator = allocator;
                 _handle = allocator.Take((int)size);
                 Size = size;
@@ -316,11 +322,11 @@ namespace Atma.Memory
                 //     _stackTrace = new string[_heap->Blocks];
             }
 
-            // internal void Validate()
-            // {
-            //     HeapAllocation.Validate(_heap);
+            internal void Validate()
+            {
+                HeapAllocation.Validate(_heap);
 
-            // }
+            }
 
             public void Free(IntPtr handle)
             {
@@ -345,7 +351,7 @@ namespace Atma.Memory
                 var largestFree = 0u;
                 while (ptr != null)
                 {
-                    //System.Diagnostics.Debug.WriteLine($"Alloc {{ Heap: {*ptr} }}");
+                    //_logger.LogDebug($"Alloc {{ Heap: {*ptr} }}");
                     if (ptr->IsFree)
                     {
                         var freeBlocks = ptr->Blocks;
@@ -413,35 +419,39 @@ namespace Atma.Memory
                 _pageAllocators[i] = new HeapPageAllocator(_logFactory, _allocator, i);
         }
 
-        // public void Validate()
-        // {
-        //     for (var i = 0; i < _pageAllocators.Length - 1; i++)
-        //         _pageAllocators[i].Validate();
-        //     //System.Console.WriteLine();
-        // }
+        internal void Validate(string step)
+        {
+            for (var i = 0; i < _pageAllocators.Length - 1; i++)
+                _pageAllocators[i].Validate();
+            System.Console.WriteLine(step);
+        }
 
         public void Free(ref AllocationHandle handle)
         {
-            //System.Console.WriteLine($"FREE: {handle}");
+            //_logger.LogDebug($"FREE: {handle}");
 
             //lock (_pageAllocators)
             {
                 //_allocationCommands.Add(new AllocationCommand() { Allocate = false, Size = 0, ID = handle.Id, Flags = handle.Flags });
+
+
                 // try
                 // {
                 var heapIndex = handle.Flags & 0xf;
+                var name = $"handle_{handle.Id}_{handle.Flags}";
+                System.Console.WriteLine($"memory.Free(ref {name});");
                 _pageAllocators[heapIndex].Free(ref handle);
                 // }
-                // catch (Exception ex)
+                // catch (AccessViolationException ex)
                 // {
                 //     for (var i = 0; i < _allocationCommands.Count; i++)
                 //     {
                 //         var it = _allocationCommands[i];
                 //         var name = $"handle{it.ID}{it.Flags}";
                 //         if (it.Allocate)
-                //             //System.Console.WriteLine($"var {name} = memory.Take({it.Size});");
+                //             _logger.LogDebug($"var {name} = memory.Take({it.Size});");
                 //         else
-                //             //System.Console.WriteLine($"memory.Free(ref {name});");
+                //             _logger.LogDebug($"memory.Free(ref {name});");
                 //     }
                 //     throw;
                 // }
@@ -459,15 +469,17 @@ namespace Atma.Memory
                     {
                         var handle = _pageAllocators[i].Take(size);
 
-                        //System.Console.WriteLine($"TAKE: {handle}");
-                        _allocationCommands.Add(new AllocationCommand() { Allocate = true, Size = size, ID = handle.Id, Flags = handle.Flags });
+                        //_logger.LogDebug($"TAKE: {handle}");
+                        //_allocationCommands.Add(new AllocationCommand() { Allocate = true, Size = size, ID = handle.Id, Flags = handle.Flags });
+                        var name = $"handle_{handle.Id}_{handle.Flags}";
+                        System.Console.WriteLine($"var {name} = Take(memory, {size});");
                         return handle;
                     }
                 }
 
                 var handle2 = _pageAllocators[_pageAllocators.Length - 1].Take(size);
-                _allocationCommands.Add(new AllocationCommand() { Allocate = true, Size = size, ID = handle2.Id, Flags = handle2.Flags });
-                //System.Console.WriteLine($"TAKE: {handle2}");
+                var name2 = $"handle_{handle2.Id}_{handle2.Flags}";
+                System.Console.WriteLine($"var {name2} = memory.Take({size});");
                 return handle2;
             }
         }

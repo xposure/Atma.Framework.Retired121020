@@ -73,7 +73,7 @@ namespace Atma.Events
         public void Fire<T>(string name, T t)
         {
             Span<int> hashCodes = stackalloc[] { name.GetHashCode(), typeof(T).GetHashCode() };
-            var hashTypeId = HashCode.HashSpan(hashCodes);
+            var hashTypeId = HashCode.Hash(hashCodes);
 
             if (_handlers.TryGetValue(hashTypeId, out var handler))
             {
@@ -85,7 +85,7 @@ namespace Atma.Events
         public Observer Observe<T>(string name, EventCallback<T> callback)
         {
             Span<int> hashCodes = stackalloc[] { name.GetHashCode(), typeof(T).GetHashCode() };
-            var hashTypeId = HashCode.HashSpan(hashCodes);
+            var hashTypeId = HashCode.Hash(hashCodes);
             if (!_handlers.TryGetValue(hashTypeId, out var observerList))
             {
                 var observers = new ObserverList<T>(hashTypeId);

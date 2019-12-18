@@ -328,11 +328,11 @@ namespace Atma
             return hasher->ToHashCode();
         }
 
-        public unsafe static int Hash(ReadOnlySpan<char> types)
+        public unsafe static int Hash(ReadOnlySpan<char> value)
         {
             var hasher = stackalloc[] { new HashCode() };
-            for (var i = 0; i < types.Length; i++)
-                hasher->Add(types[i]);
+            for (var i = 0; i < value.Length; i++)
+                hasher->Add((int)char.ToLower(value[i]));
 
             return hasher->ToHashCode();
         }

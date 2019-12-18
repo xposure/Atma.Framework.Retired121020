@@ -154,12 +154,7 @@
 
         protected override void OnUnmanagedDispose()
         {
-            for (int i = _chunks.Count - 1; i >= 0; i--)
-            {
-                _chunks[i].Dispose();
-                _chunks[i] = null;
-            }
-
+            _chunks.DisposeAll();
             _chunks.Clear();
             _chunks = null;
         }

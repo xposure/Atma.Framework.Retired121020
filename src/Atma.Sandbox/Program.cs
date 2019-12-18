@@ -191,16 +191,87 @@
         protected static ILoggerFactory _logFactory;
         protected static ILogger _logger;
 
+        static unsafe AllocationHandle Take(IAllocator memory, int size)
+        {
+            var handle = memory.Take(size);
+            var addr = (byte*)handle.Address;
+            for (var k = 0; k < size; k++)
+                addr[k] = 0xfe;
+            return handle;
+        }
+
+        static unsafe void Verify(in AllocationHandle handle, int size)
+        {
+            var addr = (byte*)handle.Address;
+            for (var k = 0; k < size; k++)
+                if (addr[k] != 0xfe)
+                    throw new Exception($"{handle}[{k}] was {addr[k].ToString("X2")}");
+        }
 
         static unsafe void Main(string[] args)
         {
             _logFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = _logFactory.CreateLogger("Sandbox");
 
-
-
-
             var memory = new HeapAllocator(_logFactory);
+
+            var handle_50331651_48 = Take(memory, 9150);
+            memory.Validate("1");
+
+            memory.Free(ref handle_50331651_48);
+            memory.Validate("2");
+
+            var handle_67108866_64 = Take(memory, 22);
+            memory.Validate("5");
+
+            return;
+
+            var r = new Random();
+            var handles = new List<AllocationHandle>();
+            var sizes = new List<int>();
+            for (var i = 0; i < 10000; i++)
+            {
+                var action = r.Next(2);
+                if (action == 0)
+                {
+                    var size = 10;
+                    var sizeType = r.Next(0, 3);
+                    if (sizeType == 0)
+                        size = r.Next(10, 32);
+                    else if (sizeType == 1)
+                        size = r.Next(100, 10000);
+                    else if (sizeType == 2)
+                        size = r.Next(10000, 100000);
+
+                    var handle = memory.Take(size);
+
+                    handles.Add(handle);
+                    sizes.Add(size);
+                    var addr = (byte*)handle.Address;
+                    for (var k = 0; k < size; k++)
+                        addr[k] = 0xfe;
+                }
+                else if (action == 1 && handles.Count > 0)
+                {
+                    var index = r.Next(handles.Count);
+                    var handle = handles[index];
+                    var size = sizes[index];
+
+                    handles.RemoveFast(index);
+                    sizes.RemoveFast(index);
+
+                    var addr = (byte*)handle.Address;
+                    for (var k = 0; k < size; k++)
+                        if (addr[k] != 0xfe)
+                            throw new Exception();
+
+                    memory.Free(ref handle);
+                }
+            }
+
+
+            return;
+
             var em = new EntityManager(_logFactory, memory);
 
             var spec = new EntitySpec(ComponentType<Position>.Type, ComponentType<Velocity>.Type);

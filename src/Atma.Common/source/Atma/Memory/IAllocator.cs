@@ -85,6 +85,6 @@ namespace Atma.Memory
             Flags = flags;
         }
 
-        public override string ToString() => $"{{ Address: {Address}, Id: {Id:X8}, Flags: {Flags:X8} }}";
+        public override string ToString() => $"{{ Address: {Address.ToString("X2")}, Id: {Id:X8}, Flags: {Flags:X8} }}";
     }
 }
