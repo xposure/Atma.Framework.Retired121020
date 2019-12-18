@@ -120,10 +120,11 @@
             }
         }
 
-        public void Add(int id, T t)
+        public T Add(int id, T t)
         {
             _indexLookup.Add(id);
             _data.Add(t);
+            return t;
         }
 
         public int IndexOf(int id)

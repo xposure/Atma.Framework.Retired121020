@@ -42,6 +42,7 @@ build_script:
   #- cmd: build\build Jobs
   - cmd: build\build Entities
   - cmd: build\build Systems
+  - cmd: build\build Events
   #- cmd: build\build DI
   - cmd: dotnet run --project tools\PatchPackages --no-build -- src\Atma.Framework\MetaPackage\Package.nuspec
   - cmd: nuget pack src\Atma.Framework\MetaPackage\Package.nuspec -OutputDirectory publish\Atma.Framework

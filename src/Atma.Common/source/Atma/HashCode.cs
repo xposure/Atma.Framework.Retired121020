@@ -318,6 +318,16 @@ namespace Atma
         {
             Add(comparer != null ? comparer.GetHashCode(value) : (value?.GetHashCode() ?? 0));
         }
+
+        public unsafe static int HashSpan(Span<int> types)
+        {
+            var hasher = stackalloc[] { new HashCode() };
+            for (var i = 0; i < types.Length; i++)
+                hasher->Add(types[i]);
+
+            return hasher->ToHashCode();
+        }
+
         private void Add(int value)
         {
             // The original xxHash works as follows:
