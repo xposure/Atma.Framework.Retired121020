@@ -36,6 +36,9 @@ namespace Atma
     {
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
+
+        private List<IDisposable> _trackedDisposables;
+
 #if DEBUG
         private readonly string _stackTrace = Environment.StackTrace;
 #endif
@@ -55,11 +58,30 @@ namespace Atma
                 OnUnmanagedDispose();
 
                 if (disposing)
+                {
+                    if (_trackedDisposables != null)
+                    {
+                        for (var i = 0; i < _trackedDisposables.Count; i++)
+                            _trackedDisposables[i].Dispose();
+
+                        _trackedDisposables.Clear();
+                        _trackedDisposables = null;
+                    }
+
                     OnManagedDispose();
+                }
 
                 disposedValue = true;
             }
             //System.Console.WriteLine($"DISPOSED: {this.GetType().Name} [{this.GetHashCode()}] -> {this.ToString()} ");
+        }
+
+        protected void Track(IDisposable disposable)
+        {
+            if (_trackedDisposables == null)
+                _trackedDisposables = new List<IDisposable>();
+
+            _trackedDisposables.Add(disposable);
         }
 
         ~UnmanagedDispose()

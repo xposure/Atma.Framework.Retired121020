@@ -11,7 +11,10 @@
 
         public int EntityCount { get => EntityArrays.EntityCount(); }
 
-        public readonly EntityArrayList EntityArrays;
+
+        private EntityArrayList _entityArrays;
+
+        public EntityArrayList EntityArrays => _entityArrays;
 
         private ILogger _logger;
         private ILoggerFactory _logFactory;
@@ -26,7 +29,7 @@
             _allocator = allocator;
 
             _entityPool = new EntityPool(_logFactory, _allocator);
-            EntityArrays = new EntityArrayList(logFactory, allocator);
+            _entityArrays = new EntityArrayList(logFactory, allocator);
         }
 
 
@@ -651,6 +654,15 @@
             var array = EntityArrays[e.SpecIndex];
             var srcSpec = array.Specification;
             return srcSpec.GetGroupData<T>();
+        }
+
+        public void ClearAll()
+        {
+            _entityArrays.Dispose();
+            _entityArrays = new EntityArrayList(_logFactory, _allocator);
+
+            _entityPool.Dispose();
+            _entityPool = new EntityPool(_logFactory, _allocator);
         }
 
         protected override void OnUnmanagedDispose()
