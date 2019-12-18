@@ -166,5 +166,11 @@
             _indexLookup.RemoveFast(index);
             _data.RemoveFast(index);
         }
+
+        public void Clear()
+        {
+            _indexLookup.Clear();
+            _data.Clear();
+        }
     }
 }

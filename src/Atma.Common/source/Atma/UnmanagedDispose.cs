@@ -2,6 +2,7 @@ namespace Atma
 {
     using System;
     using System.Collections.Generic;
+    using Atma.Common;
 
     public static class DisposeExtensions
     {
@@ -28,6 +29,18 @@ namespace Atma
                     it[i].Dispose();
                     it[i] = default;
                 }
+            }
+        }
+
+        public static void DisposeAll<T>(this LookupList<T> it)
+           where T : IDisposable
+        {
+            if (it != null)
+            {
+                foreach (var item in it.AllObjects)
+                    item.Dispose();
+
+                it.Clear();
             }
         }
     }

@@ -319,7 +319,16 @@ namespace Atma
             Add(comparer != null ? comparer.GetHashCode(value) : (value?.GetHashCode() ?? 0));
         }
 
-        public unsafe static int HashSpan(Span<int> types)
+        public unsafe static int Hash(ReadOnlySpan<int> types)
+        {
+            var hasher = stackalloc[] { new HashCode() };
+            for (var i = 0; i < types.Length; i++)
+                hasher->Add(types[i]);
+
+            return hasher->ToHashCode();
+        }
+
+        public unsafe static int Hash(ReadOnlySpan<char> types)
         {
             var hasher = stackalloc[] { new HashCode() };
             for (var i = 0; i < types.Length; i++)
