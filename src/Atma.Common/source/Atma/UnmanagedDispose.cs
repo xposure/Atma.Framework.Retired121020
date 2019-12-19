@@ -89,7 +89,7 @@ namespace Atma
             //System.Console.WriteLine($"DISPOSED: {this.GetType().Name} [{this.GetHashCode()}] -> {this.ToString()} ");
         }
 
-        protected void Track(IDisposable disposable)
+        protected internal void Track(IDisposable disposable)
         {
             if (_trackedDisposables == null)
                 _trackedDisposables = new List<IDisposable>();

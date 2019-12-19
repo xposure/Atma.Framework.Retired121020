@@ -76,13 +76,13 @@ namespace Atma
             //return result;
         }
 
-        public static int Combine<T>(T[] arr)
+        public unsafe static int Combine<T>(T[] arr)
         {
-            var hashCode = new HashCode();
+            var hashCode = stackalloc[] { new HashCode() };
             for (var i = 0; i < arr.Length; i++)
-                hashCode.Add(arr[i]);
+                hashCode->Add(arr[i]);
 
-            return hashCode.ToHashCode();
+            return hashCode->ToHashCode();
         }
 
         public static int Combine<T1>(T1 value1)
@@ -327,6 +327,7 @@ namespace Atma
 
             return hasher->ToHashCode();
         }
+
 
         public unsafe static int Hash(ReadOnlySpan<char> value)
         {

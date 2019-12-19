@@ -2,3 +2,4 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Atma.Memory")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Atma.Entities")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Atma.Systems")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Atma.Events")]

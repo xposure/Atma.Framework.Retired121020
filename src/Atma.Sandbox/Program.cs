@@ -18,6 +18,9 @@
     {
 
     }
+
+
+
     public static class AutoWire
     {
         public delegate void WireUp(IDummyFace face, string name, Delegate o);
