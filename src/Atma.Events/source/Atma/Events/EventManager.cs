@@ -2,11 +2,12 @@ namespace Atma.Events
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
 
     public partial interface IEventManager
     {
     }
-
 
     public partial class EventManager : UnmanagedDispose, IEventManager
     {
@@ -57,8 +58,42 @@ namespace Atma.Events
     }
     public static partial class EventManagerExtensions
     {
+        // private static Action<UnmanagedDispose, MethodInfo> _autoSubscribers;
+
+        // static EventManagerExtensions()
+        // {
+        //     _autoSubscribers = new Action<UnmanagedDispose, MethodInfo>((target, mi) =>
+        //     {
+        //         var action = typeof(Action<>).MakeGenericType(mi.GetParameters().Select(x => x.ParameterType).ToArray());
+        //         var xyz = mi.CreateDelegate(action, target);
+        //         var ev = typeof(EventManagerExtensions);
+        //         var method = ev.GetMethods(BindingFlags.Static)
+        //                             .Where(x => x.Name == "Subscribe" &&
+        //                                    x.GetParameters().ToArray()[2].ParameterType.GenericTypeArguments.Length == mi.GetParameters().ToArray().Length).First();
+
+
+
+
+        //         //xyz.DynamicInvoke()
+
+        //     });
+        // }
+
         public static IDisposable Subscribe(this IEventManager events, string name, Action callback) => events.GetObservable(name).Subscribe(new EventObserver(callback));
         public static void Fire(this IEventManager events, string name) => events.GetObservable(name).Fire();
+        // public static void AutoWire<T>(this IEventManager events, T t) where T : UnmanagedDispose
+        // {
+
+
+        //     var type = t.GetType();
+        //     var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        //     foreach (var it in methods)
+        //     {
+
+        //     }
+
+
+        // }
     }
     public sealed class EventObservable : EventObservableBase, IObservable
     {

@@ -14,6 +14,45 @@
     using System.Reflection.Emit;
     using System.Reflection;
 
+    public interface IDummyFace
+    {
+
+    }
+    public static class AutoWire
+    {
+        public delegate void WireUp(IDummyFace face, string name, Delegate o);
+
+        public static void Subscribe<T>(this IDummyFace it, string name, Action<T> callback)
+        {
+
+        }
+
+        public static WireUp Build(MethodInfo _method)
+        {
+            //TODO: we don't need the method, just the type argues
+            //TODO: Need to store the funcs in the dictionary with ID based on hashid of types
+            var autoType = typeof(AutoWire);
+            var autoMethod = autoType.GetMethods(BindingFlags.Static | BindingFlags.Public).First(x => x.Name == "Subscribe" && x.GetGenericArguments().Length == 1);
+
+            var genericMethod = autoMethod.MakeGenericMethod(_method.GetParameters().Select(x => x.ParameterType).ToArray());
+
+            var parms = _method.GetParameters();
+            var method = new DynamicMethod(_method.ToString(), null, new Type[] { typeof(IDummyFace), typeof(string), typeof(Delegate) });
+
+            var gen = method.GetILGenerator();
+
+            //call method
+            gen.Emit(OpCodes.Ldarg_0);
+            //gen.Emit(OpCodes.Ldarg_0);
+            gen.Emit(OpCodes.Ldarg_1);
+            gen.Emit(OpCodes.Ldarg_2);
+            gen.Emit(OpCodes.Call, genericMethod);
+
+            gen.Emit(OpCodes.Ret);
+
+            return (WireUp)method.CreateDelegate(typeof(WireUp));
+        }
+    }
     public static class Helpers
     {
         public static void WriteLine<T>(this IEnumerable<T> it)
@@ -115,6 +154,13 @@
         //buffer buffer [65536]
 
         //generate file: obj/VelocitySystem.cs
+
+        public class DummyFace : IDummyFace
+        {
+
+        }
+
+
         public ref partial struct VelocitySystem
         {
             public float dt;
@@ -208,8 +254,25 @@
                     throw new Exception($"{handle}[{k}] was {addr[k].ToString("X2")}");
         }
 
+        public class TestWire
+        {
+            public void Hello(float dt)
+            {
+                System.Console.WriteLine(dt);
+            }
+
+        }
+
         static unsafe void Main(string[] args)
         {
+
+            var df = new DummyFace();
+            var tw = new TestWire();
+            var mi = typeof(TestWire).GetMethod("Hello");
+            var dg = mi.CreateDelegate(typeof(Action<float>), tw);
+            var wireUp = AutoWire.Build(mi);
+            wireUp(df, "Hello", dg);
+
             _logFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = _logFactory.CreateLogger("Sandbox");
 
