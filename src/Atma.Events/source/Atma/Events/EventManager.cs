@@ -2,101 +2,89 @@ namespace Atma.Events
 {
     using System;
     using System.Collections.Generic;
-    using Atma.Common;
 
-    public interface IEventManager
+    public partial interface IEventManager
     {
-
-        void Observe(string name, EventCallback callback);
     }
 
-    public delegate void EventCallback();
-    public delegate void EventCallback<T>(T dt);
 
-    internal abstract class Observers
+    public partial class EventManager : UnmanagedDispose, IEventManager
     {
-        public readonly int ID;
-
-        protected Observers(int id) => ID = id;
-
-
-        internal abstract void Remove(int id);
-
+        private Dictionary<int, EventObservableBase> _observables = new Dictionary<int, EventObservableBase>();
 
     }
 
-    public class Observer : UnmanagedDispose
+    public class EventObservableBase : UnmanagedDispose
     {
-        internal static int NextObserverID = 0;
-        public readonly int ID;
-
-        internal Observers _observers;
-
-        internal Observer(Observers observers, int id)
+        public readonly string Name;
+        internal EventObservableBase(string name)
         {
-            ID = id;
-            _observers = observers;
+            Name = name;
         }
-
-        protected override void OnManagedDispose() => _observers.Remove(ID);
-
     }
 
-    internal class ObserverRef<T> : Observer
+    internal class EventObserverBase
     {
-        public readonly EventCallback<T> EventCallback;
-        public ObserverRef(Observers observers, int id, EventCallback<T> callback) : base(observers, id) => EventCallback = callback;
-        public void Fire(T t) => EventCallback(t);
+        protected IDisposable _unsubscriber;
+
+        public void OnCompleted() => _unsubscriber.Dispose();
+
+        public void OnError(Exception error) { }
     }
 
-    internal class ObserverList<T> : Observers
+    public interface IObservable { IDisposable Subscribe(IObserver observer); }
+    public interface IObserver { void Fire(); }
+    internal class EventObserver : EventObserverBase, IObserver
     {
-        private LookupList<ObserverRef<T>> _observers = new LookupList<ObserverRef<T>>();
-
-        public ObserverList(int id) : base(id) { }
-
-        public Observer Add(EventCallback<T> callback) => _observers.Add(++Observer.NextObserverID, new ObserverRef<T>(this, Observer.NextObserverID, callback));
-
-        public void Fire(T t)
+        private Action _callback;
+        internal EventObserver(Action callback) => _callback = callback;
+        public void Fire() => _callback?.Invoke();
+    }
+    public partial interface IEventManager { EventObservable GetObservable(string name); }
+    public partial class EventManager : IEventManager
+    {
+        public EventObservable GetObservable(string name)
         {
-            foreach (var it in _observers.AllObjects)
-                it.Fire(t);
-        }
-
-        internal override void Remove(int id) => _observers.Remove(id);
-    }
-
-    public unsafe class EventManager : UnmanagedDispose
-    {
-        private LookupList<Observers> _handlers = new LookupList<Observers>();
-
-        public void Fire<T>(string name, T t)
-        {
-            Span<int> hashCodes = stackalloc[] { name.GetHashCode(), typeof(T).GetHashCode() };
+            Span<int> hashCodes = stackalloc[] { name.GetHashCode() };
             var hashTypeId = HashCode.Hash(hashCodes);
-
-            if (_handlers.TryGetValue(hashTypeId, out var handler))
+            if (!_observables.TryGetValue(hashTypeId, out var it))
             {
-                var observer = (ObserverList<T>)handler;
-                observer.Fire(t);
+                it = new EventObservable(name);
+                _observables.Add(hashTypeId, it);
             }
+            return (EventObservable)it;
         }
-
-        public Observer Observe<T>(string name, EventCallback<T> callback)
+    }
+    public static partial class EventManagerExtensions
+    {
+        public static IDisposable Subscribe(this IEventManager events, string name, Action callback) => events.GetObservable(name).Subscribe(new EventObserver(callback));
+        public static void Fire(this IEventManager events, string name) => events.GetObservable(name).Fire();
+    }
+    public sealed class EventObservable : EventObservableBase, IObservable
+    {
+        private List<IObserver> _observers = new List<IObserver>();
+        public EventObservable(string name) : base(name) { }
+        public IDisposable Subscribe(IObserver observer)
         {
-            Span<int> hashCodes = stackalloc[] { name.GetHashCode(), typeof(T).GetHashCode() };
-            var hashTypeId = HashCode.Hash(hashCodes);
-            if (!_handlers.TryGetValue(hashTypeId, out var observerList))
+            if (!_observers.Contains(observer))
+                _observers.Add(observer);
+            return new Unsubscriber(_observers, observer);
+        }
+        public void Fire()
+        {
+            foreach (var it in _observers)
+                it.Fire();
+        }
+        private class Unsubscriber : IDisposable
+        {
+            private List<IObserver> _observers;
+            private IObserver _observer;
+            public Unsubscriber(List<IObserver> observers, IObserver observer)
             {
-                var observers = new ObserverList<T>(hashTypeId);
-                _handlers.Add(hashTypeId, observers);
-                return observers.Add(callback);
+                this._observers = observers;
+                this._observer = observer;
             }
-            else
-            {
-                var observers = (ObserverList<T>)observerList;
-                return observers.Add(callback);
-            }
+            public void Dispose() { if (_observer != null && _observers.Contains(_observer)) _observers.Remove(_observer); }
         }
     }
 }

@@ -24,7 +24,8 @@ namespace Atma.Events
         {
             using var e = new EventManager();
             var i = 0f;
-            using var o = e.Observe("Tick", new EventCallback<float>(t => i += t));
+
+            e.Subscribe("Tick", (float t) => i += t);
 
             e.Fire("Tick", 123f);
 
