@@ -399,15 +399,15 @@ namespace Atma.Memory
 
         // }
 
-        private struct AllocationCommand
-        {
-            public bool Allocate;
-            public int Size;
-            public uint ID;
-            public uint Flags;
-        }
+        // private struct AllocationCommand
+        // {
+        //     public bool Allocate;
+        //     public int Size;
+        //     public uint ID;
+        //     public uint Flags;
+        // }
 
-        private List<AllocationCommand> _allocationCommands = new List<AllocationCommand>();
+        //private List<AllocationCommand> _allocationCommands = new List<AllocationCommand>();
 
         public HeapAllocator(ILoggerFactory logFactory)
         {

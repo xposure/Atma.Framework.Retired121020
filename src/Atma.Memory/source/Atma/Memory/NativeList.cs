@@ -138,6 +138,12 @@
         }
 
         /// <summary>
+        /// removes the last item from the list
+        /// </summary>
+        public bool RemoveLast(bool clear = false) => RemoveAtWithSwap(Length - 1, clear);
+
+
+        /// <summary>
         /// removes the item at the given index from the list
         /// </summary>
         public void RemoveAt(int index)
