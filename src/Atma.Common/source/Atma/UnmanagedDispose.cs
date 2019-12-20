@@ -32,6 +32,28 @@ namespace Atma
             }
         }
 
+        public static void DisposeAll<T>(this IEnumerable<T> it)
+            where T : IDisposable
+        {
+            if (it != null)
+            {
+                foreach (var x in it)
+                    x.Dispose();
+            }
+        }
+
+        public static void DisposeAll<T, K>(this Dictionary<T, K> it)
+            where K : IDisposable
+        {
+            if (it != null)
+            {
+                foreach (var x in it.Values)
+                    x.Dispose();
+
+                it.Clear();
+            }
+        }
+
         public static void DisposeAll<T>(this LookupList<T> it)
            where T : IDisposable
         {
@@ -75,7 +97,11 @@ namespace Atma
                     if (_trackedDisposables != null)
                     {
                         for (var i = 0; i < _trackedDisposables.Count; i++)
+                        {
+                            var disposable = _trackedDisposables[i];
+                            //System.Console.WriteLine($"Disposing [{disposable.GetType()}]:[{disposable.GetHashCode()}]");
                             _trackedDisposables[i].Dispose();
+                        }
 
                         _trackedDisposables.Clear();
                         _trackedDisposables = null;
@@ -94,13 +120,15 @@ namespace Atma
             if (_trackedDisposables == null)
                 _trackedDisposables = new List<IDisposable>();
 
+            //System.Console.WriteLine($"Tracking [{disposable.GetType()}]:[{disposable.GetHashCode()}]");
+
             _trackedDisposables.Add(disposable);
         }
 
         ~UnmanagedDispose()
         {
 #if DEBUG
-            throw new Exception("Object was not disposed.\nCreated At:" + _stackTrace);
+            throw new Exception($"[{this.GetType().FullName}] was not disposed.\nCreated At:" + _stackTrace);
 #endif
             Dispose(false);
         }
