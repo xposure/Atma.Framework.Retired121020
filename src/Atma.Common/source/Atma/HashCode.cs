@@ -338,6 +338,26 @@ namespace Atma
             return hasher->ToHashCode();
         }
 
+        public unsafe static int Hash(int baseId, ReadOnlySpan<char> value, int id)
+        {
+            var hasher = stackalloc[] { new HashCode() };
+            hasher->Add(baseId);
+            for (var i = 0; i < value.Length; i++)
+                hasher->Add((int)char.ToLower(value[i]));
+            hasher->Add(id);
+            return hasher->ToHashCode();
+        }
+
+        public unsafe static int Hash(ReadOnlySpan<char> value, int id)
+        {
+            var hasher = stackalloc[] { new HashCode() };
+            for (var i = 0; i < value.Length; i++)
+                hasher->Add((int)char.ToLower(value[i]));
+
+            hasher->Add(id);
+            return hasher->ToHashCode();
+        }
+
         private void Add(int value)
         {
             // The original xxHash works as follows:

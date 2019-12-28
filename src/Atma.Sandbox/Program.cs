@@ -45,6 +45,15 @@
             using var memory = new HeapAllocator(_logFactory);
             using var entities = new EntityManager(_logFactory, memory);
 
+            using var buffer = new NativeBuffer(memory);
+            var t0 = buffer.Add(new Test());
+            var t1 = buffer.Add(new Test2());
+
+            t0.Value->Layout();
+            t1.Value->Layout();
+
+            var xxx = (Test*)t1.Value;
+            xxx->aLayout();
 
             var data = stackalloc Test[2];
             var ptr = (ITest)data[0];
@@ -87,11 +96,23 @@
                 _size.Max.X = 20;
                 _size.Max.Y = 20;
             }
+
+            public void aLayout()
+            {
+                _size.Min.X = 1000;
+                _size.Max.X = 1000;
+            }
         }
         public struct Test2 : ITest
         {
             private Layout _size;
             public Layout Size => _size;
+
+            public void noLayout()
+            {
+                _size.Min.Y = 1000;
+                _size.Max.Y = 1000;
+            }
             public void Layout()
             {
                 _size.Min.X = 100;
