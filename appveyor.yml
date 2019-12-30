@@ -28,7 +28,8 @@ skip_tags: true
 
 before_build:
   #- cmd: nuget sources
-  - cmd: dotnet test src\Atma.Framework.sln -c %configuration% -v q
+  - cmd: dotnet build src\Atma.Framework.sln -c %configuration% -v q
+  - cmd: dotnet test src\Atma.Framework.sln -c %configuration% -v q --no-nuild
   - cmd: mkdir %APPVEYOR_BUILD_FOLDER%\packages
   - cmd: nuget source add -Name Local -Source %APPVEYOR_BUILD_FOLDER%\packages
   - cmd: nuget sources add -Name "AccountFeed" -Source %nuget_feed% -UserName %nuget_user% -Password %nuget_pass%
