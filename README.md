@@ -1,1 +1,1 @@
-# Atma.Test
+This repository is currently not maintained.
